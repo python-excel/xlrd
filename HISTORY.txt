@@ -1,0 +1,69 @@
+Version 0.3a1, 2005-05-15, first public release
+    
+Version 0.4a1, 2005-09-07, released to Laurent T.
+
+    * Book and sheet objects can now be pickled and unpickled.
+        Instead of reading a large spreadsheet multiple times,
+        consider pickling it once and loading the saved pickle;
+        can be much faster. Thanks to Laurent Thioudellet for the
+        enhancement request.
+
+    * Using the mmap module can be turned off.
+        But you would only do that for benchmarking purposes.
+
+    * Handling NUMBER records has been made faster
+    
+Version 0.5, 2006-02-07, released to Journyx
+
+    * Now works with Python 2.1. Backporting to Python 2.1 was partially
+    	funded by Journyx - provider of timesheet and project accounting
+    	solutions (http://journyx.com/)
+
+    * open_workbook() can be given the contents of a file
+        instead of its name. Thanks to Remco Boerma for the suggestion.
+
+    * New module attribute __VERSION__ (as a string; for example "0.5")
+
+    * Minor enhancements to classification of formats as date or not-date.
+    
+    * Added warnings about files with inconsistent OLE compound document
+    	structures. Thanks to Roman V. Kiseliov (author of pyexcelerator)
+    	for the tip-off.
+    
+Version 0.5.1, 2006-02-18, released to Journyx    
+
+    * Python 2.1 mmap requires file to be opened for update access.
+        Added fall-back to read-only access withoup mmap if 2.1 open fails
+        because "permission denied".
+    
+Version 0.5.2a1, 2006-03-06
+
+    * pyXLwriter writes DIMENSIONS record with antique opcode 0x0000
+    	instead of 0x0200; worked around
+    * A file written by Gnumeric had zeroes in DIMENSIONS record
+        but data in cell A1; worked around
+        
+Version 0.5.2a2, 2006-03-09
+
+    * Found that Gnumeric writes all DIMENSIONS records with nrows and ncols
+    	each 1 less than they should be (except when it clamps ncols at 256!),
+    	and pyXLwriter doesn't write ROW records. Cell memory pre-allocation was
+    	generalised to use ROW records if available with fall-back to DIMENSIONS records.
+        
+Version 0.5.2a3, 2006-03-13
+
+    * Gnumeric writes user-defined formats with format codes starting at
+    	50 instead of 164; worked around.
+    	
+    * Thanks to Didrik Pinte for reporting the need for xlrd to be more tolerant
+    	of the idiosyncracies of other software, for supplying sample files,
+    	and for performing alpha testing.
+        
+    * '_' character in a format should be treated like an escape character; fixed.
+    
+    * An "empty" formula result means a zero-length string, not an empty cell! Fixed.
+    
+Version 0.5.2, 2006-03-14, public release
+
+    * Updated version numbers, README, HISTORY.
+    
