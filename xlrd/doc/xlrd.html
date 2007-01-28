@@ -1,0 +1,430 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html>
+<head>
+<meta http-equiv='Content-Type' content='text/html; charset=us-ascii' />
+<title>The xlrd Module</title>
+</head>
+<body>
+<h1>The xlrd Module</h1>
+<p /><p><b>A Python module for extracting data from MS Excel &#8482; spreadsheet files.</b></p>
+
+<h2>General information</h2>
+<h3>Unicode</h3>
+<p>This module presents all text strings as Python unicode objects.
+From Excel 97 onwards, text in Excel spreadsheets has been stored as Unicode.
+Earlier spreadsheets have a "codepage" number indicating the local representation; this
+is used to derive an "encoding" which is used to translate to Unicode.
+
+<h3>Dates in Excel spreadsheets</h3>
+</p><p>In reality, there are no such things. What you have are floating point numbers and pious hope.
+There are several problems with Excel dates:</p>
+
+<p>(1) Dates are not stored as a separate data type; they are stored as floating point numbers
+and you have to rely on (a) the "number format" applied to them in Excel and/or (b) knowing
+which cells are supposed to have dates in them. This module helps with (a) by inspecting the
+format that has been applied to each number cell; if it appears to be a date format, the cell
+is classified as a date rather than a number. Feedback on this feature,
+especially from non-English-speaking locales, would be appreciated.</p>
+
+<p>(2) Excel for Windows stores dates by default as the number of days (or fraction thereof) since 1899-12-31T00:00:00.
+Excel for Macintosh uses a default start date of 1904-01-01T00:00:00. The date system can be changed in Excel
+on a per-workbook basis (for example: Tools -&gt; Options -&gt; Calculation, tick the "1904 date system" box).
+This is of course a bad idea if there are already dates in the workbook. There is no good reason to change it
+even if there are no dates in the workbook. Which date system is in use is recorded in the workbook.
+A workbook transported from Windows to Macintosh (or vice versa) will work correctly with the host Excel.
+When using this module's xldate_as_tuple function to convert numbers from a workbook, you must use
+the datemode attribute of the Book object. If you guess, or make a judgement depending on where you
+believe the workbook was created, you run the risk of being 1462 days out of kilter.</p>
+
+<p>Reference: http://support.microsoft.com/default.aspx?scid=KB;EN-US;q180162</p>
+
+<p>(3) The Windows-default 1900-based date system works on the incorrect premise that 1900 was a leap year.
+It interprets
+the number 60 as meaning 1900-02-29, which is not a valid date. Consequently any number less than 61
+is ambiguous. Example: is 59 the result of 1900-02-28 entered directly, or is it 1900-03-01 minus 2 days?</p>
+
+<p>Reference: http://support.microsoft.com/default.aspx?scid=kb;en-us;214326</p>
+
+<p>(4) The Macintosh-default 1904-based date system counts 1904-01-02 as day 1 and 1904-01-01 as day zero.
+Thus any number such that (0.0 &lt;= number &lt; 1.0) is ambiguous. Is 0.625 a time of day (15:00:00),
+independent of the calendar,
+or should it be interpreted as an instant on a particular day (1904-01-01T15:00:00)?
+The xldate_* functions in this module
+take the view that such a number is a calendar-independent time of day (like Python's datetime.time type) for both
+date systems. This is consistent with more recent Microsoft documentation
+(for example, the help file for Excel 2002 which says that the first day
+in the 1904 date system is 1904-01-02).
+
+</p><p>(5) Usage of the Excel DATE() function may leave strange dates in a spreadsheet. Quoting the help file,
+in respect of the 1900 date system: "If year is between 0 (zero) and 1899 (inclusive),
+Excel adds that value to 1900 to calculate the year. For example, DATE(108,1,2) returns January 2, 2008 (1900+108)."
+This gimmick, semi-defensible only for arguments up to 99 and only in the pre-Y2K-awareness era,
+means that DATE(1899, 12, 31) is interpreted as 3799-12-31.</p>
+
+<p>For further information, please refer to the documentation for the xldate_* functions.</p>
+<h2>Module Contents</h2>
+<dl>
+<dt><b>Book(filename, logfile=sys.stdout, verbosity=0)</b> (class) [<a href='#__init__.Book-class'>#</a>]</dt>
+<dd>
+<p>Contents of a &quot;workbook&quot;.</p>
+<p>For more information about this class, see <a href='#__init__.Book-class'><i>The Book Class</i></a>.</p>
+</dd>
+<dt><a id='__init__.dump-function' name='__init__.dump-function'><b>dump(filename, outfile=sys.stdout)</b></a> [<a href='#__init__.dump-function'>#</a>]</dt>
+<dd>
+<p>For debugging: dump the file's BIFF records in char &amp; hex.
+</p><dl>
+<dt><i>filename</i></dt>
+<dd>
+The path to the file to be dumped.</dd>
+<dt><i>outfile</i></dt>
+<dd>
+An open file, to which the dump is written.</dd>
+</dl><br />
+</dd>
+<dt><a id='__init__.open_workbook-function' name='__init__.open_workbook-function'><b>open_workbook(filename, logfile=sys.stdout, verbosity=0)</b></a> [<a href='#__init__.open_workbook-function'>#</a>]</dt>
+<dd>
+<p>Open a spreadsheet file for data extraction.</p>
+<dl>
+<dt><i>filename</i></dt>
+<dd>
+The path to the spreadsheet file to be opened.</dd>
+<dt><i>logfile</i></dt>
+<dd>
+An open file to which messages and diagnostics are written.</dd>
+<dt><i>verbosity</i></dt>
+<dd>
+Increases the volume of trace material written to the logfile.</dd>
+<dt>Returns:</dt>
+<dd>
+An instance of the Book class.</dd>
+</dl><br />
+</dd>
+<dt><a id='biffh.error_text_from_code-variable' name='biffh.error_text_from_code-variable'><b>error_text_from_code</b></a> (variable) [<a href='#biffh.error_text_from_code-variable'>#</a>]</dt>
+<dd>
+<p /><p>This dictionary can be used to produce a text version of the internal codes
+that Excel uses for error cells. Here are its contents:
+<pre>
+0x00: '#NULL!',  # Intersection of two cell ranges is empty
+0x07: '#DIV/0!', # Division by zero
+0x0F: '#VALUE!', # Wrong type of operand
+0x17: '#REF!',   # Illegal or deleted cell reference
+0x1D: '#NAME?',  # Wrong function or range name
+0x24: '#NUM!',   # Value range overflow
+0x2A: '#N/A!',   # Argument or function not available
+</pre></p>
+</dd>
+<dt><b>Cell(ctype, value)</b> (class) [<a href='#sheet.Cell-class'>#</a>]</dt>
+<dd>
+<p>Contains the data for one cell.</p>
+<p>For more information about this class, see <a href='#sheet.Cell-class'><i>The Cell Class</i></a>.</p>
+</dd>
+<dt><a id='sheet.empty_cell-variable' name='sheet.empty_cell-variable'><b>empty_cell</b></a> (variable) [<a href='#sheet.empty_cell-variable'>#</a>]</dt>
+<dd>
+<p>There is one and only one instance of an empty cell -- it's a singleton. This is it.
+You may use a test like &quot;acell is empty_cell&quot;.</p>
+</dd>
+<dt><b>Sheet(biff_version, position, logfile)</b> (class) [<a href='#sheet.Sheet-class'>#</a>]</dt>
+<dd>
+<p>Contains the data for one worksheet.</p>
+<p>For more information about this class, see <a href='#sheet.Sheet-class'><i>The Sheet Class</i></a>.</p>
+</dd>
+<dt><a id='xldate.xldate_as_tuple-function' name='xldate.xldate_as_tuple-function'><b>xldate_as_tuple(xldate, datemode)</b></a> [<a href='#xldate.xldate_as_tuple-function'>#</a>]</dt>
+<dd>
+<p>Convert an Excel number (presumed to represent a date, a datetime or a time) into
+a tuple suitable for feeding to datetime or mx.DateTime constructors.</p>
+<dl>
+<dt><i>xldate</i></dt>
+<dd>
+The Excel number</dd>
+<dt><i>datemode</i></dt>
+<dd>
+0: 1900-based, 1: 1904-based.
+<br />WARNING: when using this function to
+interpret the contents of a workbook, you should pass in the Book.datemode
+attribute of that workbook. Whether
+the workbook has ever been anywhere near a Macintosh is irrelevant.
+</dd>
+<dt>Returns:</dt>
+<dd>
+Gregorian (year, month, day, hour, minute, nearest_second).
+<br />Special case: if 0.0 &lt;= xldate &lt; 1.0, it is assumed to represent a time;
+(0, 0, 0, hour, minute, second) will be returned.
+<br />Note: 1904-01-01 is not regarded as a valid date in the datemode 1 system; its "serial number"
+is zero.
+</dd>
+<dt>Raises <b>XLDateNegative</b>:</dt><dd>
+xldate &lt; 0.00
+</dd>
+<dt>Raises <b>XLDateAmbiguous</b>:</dt><dd>
+The 1900 leap-year problem (datemode == 0 and 1.0 &lt;= xldate &lt; 61.0)
+</dd>
+<dt>Raises <b>XLDateTooLarge</b>:</dt><dd>
+Gregorian year 10000 or later</dd>
+<dt>Raises <b>XLDateBadDatemode</b>:</dt><dd>
+datemode arg is neither 0 nor 1</dd>
+<dt>Raises <b>XLDateError</b>:</dt><dd>
+Covers the 4 specific errors</dd>
+</dl><br />
+</dd>
+<dt><a id='xldate.xldate_from_date_tuple-function' name='xldate.xldate_from_date_tuple-function'><b>xldate_from_date_tuple((year, month, day), datemode)</b></a> [<a href='#xldate.xldate_from_date_tuple-function'>#</a>]</dt>
+<dd>
+<p>Convert a date tuple (year, month, day) to an Excel date.</p>
+<dl>
+<dt><i>year</i></dt>
+<dd>
+Gregorian year.</dd>
+<dt><i>month</i></dt>
+<dd>
+1 &lt;= month &lt;= 12
+</dd>
+<dt><i>day</i></dt>
+<dd>
+1 &lt;= day &lt;= last day of that (year, month)
+</dd>
+<dt><i>datemode</i></dt>
+<dd>
+0: 1900-based, 1: 1904-based.</dd>
+<dt>Raises <b>XLDateAmbiguous</b>:</dt><dd>
+The 1900 leap-year problem (datemode == 0 and 1.0 &lt;= xldate &lt; 61.0)
+</dd>
+<dt>Raises <b>XLDateBadDatemode</b>:</dt><dd>
+datemode arg is neither 0 nor 1</dd>
+<dt>Raises <b>XLDateBadTuple</b>:</dt><dd>
+(year, month, day) is too early/late or has invalid component(s)</dd>
+<dt>Raises <b>XLDateError</b>:</dt><dd>
+Covers the specific errors</dd>
+</dl><br />
+</dd>
+<dt><a id='xldate.xldate_from_datetime_tuple-function' name='xldate.xldate_from_datetime_tuple-function'><b>xldate_from_datetime_tuple(datetime_tuple, datemode)</b></a> [<a href='#xldate.xldate_from_datetime_tuple-function'>#</a>]</dt>
+<dd>
+<p>Convert a datetime tuple (year, month, day, hour, minute, second) to an Excel date value.
+For more details, refer to other xldate_from_*_tuple functions.</p>
+<dl>
+<dt><i>datetime_tuple</i></dt>
+<dd>
+(year, month, day, hour, minute, second)</dd>
+<dt><i>datemode</i></dt>
+<dd>
+0: 1900-based, 1: 1904-based.</dd>
+</dl><br />
+</dd>
+<dt><a id='xldate.xldate_from_time_tuple-function' name='xldate.xldate_from_time_tuple-function'><b>xldate_from_time_tuple((hour, minute, second))</b></a> [<a href='#xldate.xldate_from_time_tuple-function'>#</a>]</dt>
+<dd>
+<p>Convert a time tuple (hour, minute, second) to an Excel &quot;date&quot; value (fraction of a day).</p>
+<dl>
+<dt><i>hour</i></dt>
+<dd>
+0 &lt;= hour &lt; 24
+</dd>
+<dt><i>minute</i></dt>
+<dd>
+0 &lt;= minute &lt; 60
+</dd>
+<dt><i>second</i></dt>
+<dd>
+0 &lt;= second &lt; 60
+</dd>
+<dt>Raises <b>XLDateBadTuple</b>:</dt><dd>
+Out-of-range hour, minute, or second</dd>
+</dl><br />
+</dd>
+</dl>
+<h2><a id='__init__.Book-class' name='__init__.Book-class'>The Book Class</a></h2>
+<dl>
+<dt><b>Book(filename, logfile=sys.stdout, verbosity=0)</b> (class) [<a href='#__init__.Book-class'>#</a>]</dt>
+<dd>
+<p>Contents of a "workbook".
+</p><p>WARNING: You don't call this class yourself. You use the Book object that
+was returned when you called xlrd.open_workbook("myfile.xls").</p>
+</dd>
+<dt><a id='__init__.Book.biff_version-attribute' name='__init__.Book.biff_version-attribute'><b>biff_version</b></a> [<a href='#__init__.Book.biff_version-attribute'>#</a>]</dt>
+<dd>
+<p>Version of BIFF (Binary Interchange File Format) used to create the file.
+Latest is 8.0 (represented here as 80), introduced with Excel 97.
+Earliest supported by this module: 3.0 (rep'd as 30).</p>
+</dd>
+<dt><a id='__init__.Book.codepage-attribute' name='__init__.Book.codepage-attribute'><b>codepage</b></a> [<a href='#__init__.Book.codepage-attribute'>#</a>]</dt>
+<dd>
+<p>An integer denoting the character set used for strings in this file.
+For BIFF 8 and later, this will be 1200, meaning Unicode; more precisely, UTF_16_LE.
+For earlier versions, this is used to derive the appropriate Python encoding
+to be used to convert to Unicode.
+Examples: 1252 -&gt; 'cp1252', 10000 -&gt; 'mac_roman'</p>
+</dd>
+<dt><a id='__init__.Book.countries-attribute' name='__init__.Book.countries-attribute'><b>countries</b></a> [<a href='#__init__.Book.countries-attribute'>#</a>]</dt>
+<dd>
+<p>A tuple containing the (telephone system) country code for:<br />
+   [0]: the user-interface setting when the file was created.<br />
+   [1]: the regional settings.<br />
+Example: (1, 61) meaning (USA, Australia).
+This information may give a clue to the correct encoding for an unknown codepage.
+For a long list of observed values, refer to the OpenOffice.org documentation for
+the COUNTRY record.
+</p></dd>
+<dt><a id='__init__.Book.datemode-attribute' name='__init__.Book.datemode-attribute'><b>datemode</b></a> [<a href='#__init__.Book.datemode-attribute'>#</a>]</dt>
+<dd>
+<p>Which date system was in force when this file was last saved.<br />
+   0 =&gt; 1900 system (the Excel for Windows default).<br />
+   1 =&gt; 1904 system (the Excel for Macintosh default).<br />
+</p></dd>
+<dt><a id='__init__.Book.encoding-attribute' name='__init__.Book.encoding-attribute'><b>encoding</b></a> [<a href='#__init__.Book.encoding-attribute'>#</a>]</dt>
+<dd>
+<p>The encoding that was derived from the codepage.</p>
+</dd>
+<dt><a id='__init__.Book.nsheets-attribute' name='__init__.Book.nsheets-attribute'><b>nsheets</b></a> [<a href='#__init__.Book.nsheets-attribute'>#</a>]</dt>
+<dd>
+<p>The number of worksheets in the workbook.</p>
+</dd>
+<dt><a id='__init__.Book.sheet_by_index-method' name='__init__.Book.sheet_by_index-method'><b>sheet_by_index(sheetx)</b></a> [<a href='#__init__.Book.sheet_by_index-method'>#</a>]</dt>
+<dd>
+<dl>
+<dt><i>sheetx</i></dt>
+<dd>
+Sheet index in range(nsheets)</dd>
+<dt>Returns:</dt>
+<dd>
+An object of the Sheet class</dd>
+</dl><br />
+</dd>
+<dt><a id='__init__.Book.sheet_by_name-method' name='__init__.Book.sheet_by_name-method'><b>sheet_by_name(sheet_name)</b></a> [<a href='#__init__.Book.sheet_by_name-method'>#</a>]</dt>
+<dd>
+<dl>
+<dt><i>sheet_name</i></dt>
+<dd>
+Name of sheet required</dd>
+<dt>Returns:</dt>
+<dd>
+An object of the Sheet class</dd>
+</dl><br />
+</dd>
+<dt><a id='__init__.Book.sheet_names-method' name='__init__.Book.sheet_names-method'><b>sheet_names()</b></a> [<a href='#__init__.Book.sheet_names-method'>#</a>]</dt>
+<dd>
+<dl>
+<dt>Returns:</dt>
+<dd>
+A list of the names of the sheets in the book.</dd>
+</dl><br />
+</dd>
+<dt><a id='__init__.Book.user_name-attribute' name='__init__.Book.user_name-attribute'><b>user_name</b></a> [<a href='#__init__.Book.user_name-attribute'>#</a>]</dt>
+<dd>
+<p>What (if anything) is recorded as the name of the last user to save the file.</p>
+</dd>
+</dl>
+<h2><a id='sheet.Cell-class' name='sheet.Cell-class'>The Cell Class</a></h2>
+<dl>
+<dt><b>Cell(ctype, value)</b> (class) [<a href='#sheet.Cell-class'>#</a>]</dt>
+<dd>
+<p /><p>Contains the data for one cell.</p>
+
+<p>WARNING: You don't call this class yourself. You access Cell objects
+via methods of the Sheet object(s) that you found in the Book object that
+was returned when you called xlrd.open_workbook("myfile.xls").</p>
+<p> Cell objects have two attributes: <i>ctype</i> is an int, and <i>value</i>
+which depends on <i>ctype</i>.
+The following table describes the types of cells and how their values
+are represented in Python.</p>
+
+<table border="1" cellpadding="7">
+<tr>
+<th>Type symbol</th>
+<th>Type number</th>
+<th>Python value</th>
+</tr>
+<tr>
+<td>XL_CELL_EMPTY</td>
+<td align="center">0</td>
+<td>empty string u''</td>
+</tr>
+<tr>
+<td>XL_CELL_TEXT</td>
+<td align="center">1</td>
+<td>a Unicode string</td>
+</tr>
+<tr>
+<td>XL_CELL_NUMBER</td>
+<td align="center">2</td>
+<td>float</td>
+</tr>
+<tr>
+<td>XL_CELL_DATE</td>
+<td align="center">3</td>
+<td>float</td>
+</tr>
+<tr>
+<td>XL_CELL_BOOLEAN</td>
+<td align="center">4</td>
+<td>int; 1 means TRUE, 0 means FALSE</td>
+</tr>
+<tr>
+<td>XL_CELL_ERROR</td>
+<td align="center">5</td>
+<td>int representing internal Excel codes; for a text representation,
+refer to the supplied dictionary error_text_from_code</td>
+</tr>
+</table>
+<p />
+</dd>
+</dl>
+<h2><a id='sheet.Sheet-class' name='sheet.Sheet-class'>The Sheet Class</a></h2>
+<dl>
+<dt><b>Sheet(biff_version, position, logfile)</b> (class) [<a href='#sheet.Sheet-class'>#</a>]</dt>
+<dd>
+<p /><p>Contains the data for one worksheet.</p>
+
+<p>In the cell access functions, "rowx" is a row index, counting from zero, and "colx" is a
+column index, counting from zero.
+Negative values for row/column indexes and slice positions are supported in the expected fashion.</p>
+
+<p>For information about cell types and cell values, refer to the documentation of the Cell class.</p>
+
+<p>WARNING: You don't call this class yourself. You access Sheet objects via the Book object that
+was returned when you called xlrd.open_workbook("myfile.xls").</p>
+</dd>
+<dt><a id='sheet.Sheet.cell_type-method' name='sheet.Sheet.cell_type-method'><b>cell_type(rowx, colx)</b></a> [<a href='#sheet.Sheet.cell_type-method'>#</a>]</dt>
+<dd>
+<p>Type of the cell in the given row and column. Refer to the documentation of the Cell class.</p>
+</dd>
+<dt><a id='sheet.Sheet.cell_value-method' name='sheet.Sheet.cell_value-method'><b>cell_value(rowx, colx)</b></a> [<a href='#sheet.Sheet.cell_value-method'>#</a>]</dt>
+<dd>
+<p>Value of the cell in the given row and column.</p>
+</dd>
+<dt><a id='sheet.Sheet.col-method' name='sheet.Sheet.col-method'><b>col(colx)</b></a> [<a href='#sheet.Sheet.col-method'>#</a>]</dt>
+<dd>
+<p>Returns a sequence of the Cell objects in the given column.</p>
+</dd>
+<dt><a id='sheet.Sheet.col_slice-method' name='sheet.Sheet.col_slice-method'><b>col_slice(colx, start_rowx=0, end_rowx=None)</b></a> [<a href='#sheet.Sheet.col_slice-method'>#</a>]</dt>
+<dd>
+<p>Returns a slice of the Cell objects in the given column.</p>
+</dd>
+<dt><a id='sheet.Sheet.name-attribute' name='sheet.Sheet.name-attribute'><b>name</b></a> [<a href='#sheet.Sheet.name-attribute'>#</a>]</dt>
+<dd>
+<p>Name of sheet.</p>
+</dd>
+<dt><a id='sheet.Sheet.ncols-attribute' name='sheet.Sheet.ncols-attribute'><b>ncols</b></a> [<a href='#sheet.Sheet.ncols-attribute'>#</a>]</dt>
+<dd>
+<p>Number of columns in sheet. A column index is in range(thesheet.ncols).</p>
+</dd>
+<dt><a id='sheet.Sheet.nrows-attribute' name='sheet.Sheet.nrows-attribute'><b>nrows</b></a> [<a href='#sheet.Sheet.nrows-attribute'>#</a>]</dt>
+<dd>
+<p>Number of rows in sheet. A row index is in range(thesheet.nrows).</p>
+</dd>
+<dt><a id='sheet.Sheet.row-method' name='sheet.Sheet.row-method'><b>row(rowx)</b></a> [<a href='#sheet.Sheet.row-method'>#</a>]</dt>
+<dd>
+<p>Returns a sequence of the Cell objects in the given row.</p>
+</dd>
+<dt><a id='sheet.Sheet.row_slice-method' name='sheet.Sheet.row_slice-method'><b>row_slice(rowx, start_colx=0, end_colx=None)</b></a> [<a href='#sheet.Sheet.row_slice-method'>#</a>]</dt>
+<dd>
+<p>Returns a slice of the Cell objects in the given row.</p>
+</dd>
+<dt><a id='sheet.Sheet.row_types-method' name='sheet.Sheet.row_types-method'><b>row_types(rowx)</b></a> [<a href='#sheet.Sheet.row_types-method'>#</a>]</dt>
+<dd>
+<p>Returns a sequence of the types
+of the cells in the given row.</p>
+</dd>
+<dt><a id='sheet.Sheet.row_values-method' name='sheet.Sheet.row_values-method'><b>row_values(rowx)</b></a> [<a href='#sheet.Sheet.row_values-method'>#</a>]</dt>
+<dd>
+<p>Returns a sequence of the values
+of the cells in the given row.</p>
+</dd>
+</dl>
+</body></html>
