@@ -1,11 +1,14 @@
 # -*- coding: cp1252 -*-
-
+__VERSION__ = "0.5.2"
 import licences
 
 ##
 # <p><b>A Python module for extracting data from MS Excel ™ spreadsheet files.</b></p>
 #
 # <h2>General information</h2>
+# <h3>Acknowledgements</h3>
+# <p>Backporting to Python 2.1 was partially funded by
+# <a href=http://journyx.com/>Journyx - provider of timesheet and project accounting solutions.</a></p>
 # <h3>Unicode</h3>
 # <p>This module presents all text strings as Python unicode objects.
 # From Excel 97 onwards, text in Excel spreadsheets has been stored as Unicode.
@@ -61,9 +64,11 @@ import licences
 # <p>For further information, please refer to the documentation for the xldate_* functions.</p>
 ##
 
+from timemachine import *
 from biffh import *
 from struct import unpack
 import sys
+import time
 import sheet
 import compdoc
 from xldate import xldate_as_tuple, XLDateError
@@ -73,14 +78,14 @@ empty_cell = sheet.empty_cell # for exposure to the world ...
 
 DEBUG = 0
 
-USE_MMAP = 1
 USE_FANCY_CD = 1
 
-if USE_MMAP:
-    try:
-        import mmap
-    except ImportError:
-        USE_MMAP = 0
+try:
+    import mmap
+    MMAP_AVAILABLE = 1
+except ImportError:
+    MMAP_AVAILABLE = 0
+USE_MMAP = MMAP_AVAILABLE 
 
 MY_EOF = 0xF00BAAA # not a 16-bit number
 
@@ -88,16 +93,35 @@ def fprintf(f, fmt, *vargs):
     print >> f, fmt % vargs,
 
 SUPPORTED_VERSIONS = (80, 70, 50, 45, 40, 30)
-
-##
+     
+##               
+#    
 # Open a spreadsheet file for data extraction.
+# 
 # @param filename The path to the spreadsheet file to be opened.
 # @param logfile An open file to which messages and diagnostics are written.
 # @param verbosity Increases the volume of trace material written to the logfile.
+# @param pickleable Default = True. Setting to False *may* cause use of array.array
+# objects which save some memory but can't be pickled in Python 2.4 or earlier.
+# @param use_mmap Whether to use the mmap module is determined heuristically.
+# Use this arg to override the result. Current heuristic: mmap is used if it exists.
+# @param file_contents ... as a string or an mmap.mmap object or some other behave-alike object. 
+# If file_contents is supplied, filename will not be used, except (possibly) in messages.
 # @return An instance of the Book class.
-
-def open_workbook(filename, logfile=sys.stdout, verbosity=0):
-    bk = Book(filename, logfile=logfile, verbosity=verbosity)
+      
+def open_workbook(filename=None,    
+    logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
+    file_contents=None, 
+    ):
+    if not filename and not file_contents:
+        raise XLRDError("open_workbook: must supply filename or file_contents")
+    t0 = time.clock()
+    bk = Book(
+        filename=filename, file_contents=file_contents,
+        logfile=logfile, verbosity=verbosity, pickleable=pickleable, use_mmap=use_mmap,
+        )
+    t1 = time.clock()
+    bk.load_time_stage_1 = t1 - t0
     biff_version = bk.getbof(XL_WORKBOOK_GLOBALS)
     if not biff_version:
         raise XLRDError("Can't determine file's BIFF version")
@@ -115,6 +139,8 @@ def open_workbook(filename, logfile=sys.stdout, verbosity=0):
         bk.get_sheets()
     bk.nsheets = len(bk._sheet)
     bk.release_resources()
+    t2 = time.clock()
+    bk.load_time_stage_2 = t2 - t1
     return bk
 
 ##
@@ -174,14 +200,22 @@ class Book(object):
     ##
     # What (if anything) is recorded as the name of the last user to save the file.
     user_name = ''
+    
+    ##
+    # Time in seconds to extract the XLS image as a contiguous string (or mmap equivalent).
+    load_time_stage_1 = -1.0
+
+    ##
+    # Time in seconds to parse the data from the contiguous string (or mmap equivalent).
+    load_time_stage_2 = -1.0
 
     ##
     # @param sheetx Sheet index in range(nsheets)
     # @return An object of the Sheet class
     def sheet_by_index(self, sheetx):
-        return self._sheet[sheetx]
+        return self._sheet[sheetx] 
 
-    ##
+    ##  
     # @param sheet_name Name of sheet required
     # @return An object of the Sheet class
     def sheet_by_name(self, sheet_name):
@@ -196,10 +230,14 @@ class Book(object):
     def sheet_names(self):
         return self._sheet_names[:]
 
-    def __init__(self, filename, logfile=sys.stdout, verbosity=0):
+    def __init__(self, filename=None, file_contents=None,
+        logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
+        ):
         # DEBUG = 0
         self.logfile = logfile
         self.verbosity = verbosity
+        self.pickleable = pickleable
+        self.use_mmap = use_mmap
         self._sheet = []
         #### self.sheet = self._sheet ###### self.sheet is slated for removal RSN
         self._sheet_names = []
@@ -211,19 +249,47 @@ class Book(object):
         self._sheethdr_count = 0 # BIFF 4W only
         self.builtinfmtcount = -1 # unknown as yet. BIFF 3, 4S, 4W
         self.initialise_format_info()
-
-        f = file(filename, "rb")
-        if USE_MMAP:
-            self.fileno = f.fileno()
-            f.seek(0, 2) # EOF
-            size = f.tell()
-            f.seek(0, 0) # BOF
-            filestr = mmap.mmap(self.fileno, size, access=mmap.ACCESS_READ)
-            self.stream_len = size
-        else:
-            filestr = f.read()
-            self.stream_len = len(filestr)
+        
+        need_close_filestr = 0
+        if not file_contents: 
+            if python_version < (2, 2) and self.use_mmap:
+                # need to open for update
+                open_mode = "r+b" 
+            else:
+                open_mode = "rb"
+            retry = False
+            try:
+                f = open(filename, open_mode)
+            except IOError:
+                e, v = sys.exc_info()[:2]
+                if open_mode == "r+b" \
+                and (v.errno == 13 or v.strerror == "Permission denied"):
+                    # Maybe the file is read-only
+                    retry = True
+                    self.use_mmap = False
+                else:
+                    raise
+            if retry:
+                f = open(filename, "rb")
+            if self.use_mmap:
+                f.seek(0, 2) # EOF
+                size = f.tell()
+                f.seek(0, 0) # BOF
+                if python_version < (2, 2):
+                    filestr = mmap.mmap(f.fileno(), size)
+                else:
+                    filestr = mmap.mmap(f.fileno(), size, access=mmap.ACCESS_READ)
+                need_close_filestr = 1
+                self.stream_len = size
+            else:
+                filestr = f.read()
+                self.stream_len = len(filestr)
             f.close()
+        else:
+            filestr = file_contents
+            self.stream_len = len(file_contents)
+        
+
         self.base = 0
         if filestr[:8] != compdoc.SIGNATURE:
             # got this one at the antique store
@@ -245,11 +311,9 @@ class Book(object):
                 self.stream_len = len(self.mem)
             del cd
             if self.mem is not filestr:
-                if USE_MMAP:
+                if need_close_filestr:
                     filestr.close()
-                    f.close()
-                else:
-                    del filestr
+                del filestr
         self._position = self.base
         if DEBUG:
             print >> self.logfile, "mem: %s, base: %d, len: %d" % (type(self.mem), self.base, self.stream_len)
@@ -268,12 +332,12 @@ class Book(object):
 
     def get2bytes(self):
         pos = self._position
-        buff = self.mem[pos:pos+2]
-        lenbuff = len(buff)
+        buff_two = self.mem[pos:pos+2]
+        lenbuff = len(buff_two)
         self._position += lenbuff
         if lenbuff < 2:
             return MY_EOF
-        lo, hi = buff
+        lo, hi = buff_two
         return (ord(hi) << 8) | ord(lo)
 
     def get_record_parts(self):
@@ -296,14 +360,22 @@ class Book(object):
         self._position = pos + length
         return (code, length, data)
 
-    def get_sheet(self):
+    def get_sheet(self, sh_number):
         _unused_biff_version = self.getbof(XL_WORKSHEET)
         # assert biff_version == self.biff_version ### FAILS
         # Have an example where book is v7 but sheet reports v8!!!
         # It appears to work OK if the sheet version is ignored.
         # Confirmed by Daniel Rentz: happens when Excel does "save as"
         # creating an old version file; ignore version details on sheet BOF.
-        sh = sheet.Sheet(self.biff_version, self._position, self.logfile)
+        sh = sheet.Sheet(
+                self.biff_version,
+                self._position,
+                self.logfile,
+                self.pickleable,
+                self._sheet_names[sh_number],
+                sh_number,
+                self.verbosity,
+                )
         sh.read(self)
         return sh
 
@@ -314,8 +386,7 @@ class Book(object):
             if DEBUG: print >> self.logfile, "GET_SHEETS: sheetno =", sheetno, self._sheet_names, self._sh_abs_posn
             newposn = self._sh_abs_posn[sheetno]
             self.position(newposn)
-            sht = self.get_sheet()
-            sht.name = self._sheet_names[sheetno]
+            sht = self.get_sheet(sheetno)
             self._sheet.append(sht)
 
     def fake_globals_get_sheet(self): # for BIFF 4.0 and earlier
@@ -327,9 +398,10 @@ class Book(object):
     def handle_boundsheet(self, data):
         # DEBUG = 0
         bv = self.biff_version
-        if DEBUG: fprintf(self.logfile, "BOUNDSHEET: bv=%d data %r\n", bv, data);
+        if DEBUG:
+            fprintf(self.logfile, "BOUNDSHEET: bv=%d data %r\n", bv, data);
         if bv == 45: # BIFF4W
-            name = unpack_string(data, 0, self.encoding, lenlen=1)
+            sheet_name = unpack_string(data, 0, self.encoding, lenlen=1)
             _unused_visibility = 0
             sheet_type = XL_BOUNDSHEET_WORKSHEET # guess
             if len(self._sh_abs_posn) == 0:
@@ -343,23 +415,28 @@ class Book(object):
             offset, _unused_visibility, sheet_type = unpack('<iBB', data[0:6])
             abs_posn = offset + self.base # because global BOF is always at posn 0 in the stream
             if bv < BIFF_FIRST_UNICODE:
-                name = unpack_string(data, 6, self.encoding, lenlen=1)
+                sheet_name = unpack_string(data, 6, self.encoding, lenlen=1)
             else:
-                name = unpack_unicode(data, 6, lenlen=1)
-        if DEBUG: fprintf(self.logfile, "BOUNDSHEET: name=%r abs_posn=%d sheet_type=0x%02x\n", name, abs_posn, sheet_type)
+                sheet_name = unpack_unicode(data, 6, lenlen=1)
+        if DEBUG or self.verbosity >= 2:
+            fprintf(self.logfile,
+                "BOUNDSHEET: sheet_name=%r abs_posn=%d sheet_type=0x%02x\n",
+                sheet_name, abs_posn, sheet_type)
         if sheet_type != XL_BOUNDSHEET_WORKSHEET:
             descr = {
                 1: 'Macro sheet',
                 2: 'Chart',
                 6: 'Visual Basic module',
                 }.get(sheet_type, 'UNKNOWN')
-            print >> self.logfile, \
-                "*** BOUNDSHEET: Ignoring non-worksheet data (type 0x%02x = %s)" % (sheet_type, descr)
+            fprintf (self.logfile,
+                "NOTE *** Ignoring non-worksheet data named %r (type 0x%02x = %s)\n",
+                sheet_name, sheet_type, descr)
             return
-        self._sheet_names.append(name)
+        self._sheet_names.append(sheet_name)
         self._sh_abs_posn.append(abs_posn)
 
     def handle_builtinfmtcount(self, data):
+        ### N.B. This count appears to be utterly useless.
         # DEBUG = 1
         builtinfmtcount = unpack('<H', data[0:2])[0]
         if DEBUG: fprintf(self.logfile, "BUILTINFMTCOUNT: %r\n", builtinfmtcount)
@@ -369,24 +446,24 @@ class Book(object):
         # DEBUG = 0
         codepage = unpack('<H', data[0:2])[0]
         self.codepage = codepage
-        if codepage in encoding_from_codepage:
+        if  encoding_from_codepage.has_key(codepage):
             encoding = encoding_from_codepage[codepage]
         elif 300 <= codepage <= 1999:
             encoding = 'cp' + str(codepage)
         else:
             encoding = 'unknown_codepage_' + str(codepage)
-        if DEBUG or self.verbosity: fprintf(self.logfile, "CODEPAGE: codepage %r -> encoding %r\n", codepage, encoding)
+        if DEBUG or self.verbosity: 
+            fprintf(self.logfile, "CODEPAGE: codepage %r -> encoding %r\n", codepage, encoding)
         if codepage != 1200: # utf_16_le
             # If we don't have a codec that can decode ASCII into Unicode,
             # we're well & truly stuffed -- let the punter know ASAP.
             try:
-                _unused = 'trial'.decode(encoding)
+                _unused = unicode('trial', encoding)
             except:
                 ei = sys.exc_info()[:2]
-                msg = "*** codepage %d -> encoding %r -> %s" \
-                    % (codepage, encoding, ei[1])
-                print >> self.logfile, msg
-                print >> sys.stderr, msg
+                fprintf(self.logfile,
+                    "ERROR *** codepage %d -> encoding %r -> %s: %s",
+                    codepage, encoding, ei[0].__name__.split(".")[-1], ei[1])
                 raise
         self.encoding = encoding
         if self.raw_user_name:
@@ -406,11 +483,12 @@ class Book(object):
 
     def handle_datemode(self, data):
         datemode = unpack('<H', data[0:2])[0]
-        if DEBUG or self.verbosity: fprintf(self.logfile, "DATEMODE: datemode %r\n", datemode)
+        if DEBUG or self.verbosity:
+            fprintf(self.logfile, "DATEMODE: datemode %r\n", datemode)
         assert datemode in (0, 1)
         self.datemode = datemode
 
-    def handle_filepass(self, data):
+    def handle_filepass(self, _unused_data):
         raise XLRDError("Workbook is encrypted")
 
     def handle_format(self, data):
@@ -429,22 +507,30 @@ class Book(object):
         else:
             unistrg = unpack_string(data, strpos, self.encoding, lenlen=1)
         if DEBUG or self.verbosity >= 3:
-            print "FORMAT: count=%d code=0x%04x (%d) s=%r" % (self.actualfmtcount, fmtcode, fmtcode, unistrg)
+            fprintf(self.logfile,
+                "FORMAT: count=%d code=0x%04x (%d) s=%r\n",
+                self.actualfmtcount, fmtcode, fmtcode, unistrg)
         is_date_s = self.is_date_format_string(unistrg)
         ty = std_format_code_types.get(fmtcode, FUN)
+        # print "std ty", ty
         is_date_c = ty == FDT
-        if (fmtcode >= 163 # user_defined
-        or bv < 50):
-            is_date = is_date_s
+        if fmtcode > 163 or bv < 50:
+            # user_defined if fmtcode > 163
+            # N.B. Gnumeric incorrectly starts these at 50 instead of 164 :-(
+            # if earlier than BIFF 5, standard info is useless
+            ty = [FGE, FDT][is_date_s]
         else:
             if fmtcode >= 0 and (is_date_c ^ is_date_s):
                 DEBUG = 2
-                print >> self.logfile, '\n****** Conflict between std format code and its fmt string ***'
-            is_date = is_date_c | is_date_s
-        if is_date:
-            ty = FDT
+                fprintf(self.logfile,
+                    'WARNING *** Conflict between std format code %d and its format string %r\n',
+                    fmtcode, unistrg)
+                if is_date_s:
+                    ty = FDT
+                    # go with the analysis of the format
         if DEBUG == 2: print >> self.logfile, "ty: %d; is_date_c: %r; is_date_s: %r; fmt_strg: %r" \
             % (ty, is_date_c, is_date_s, unistrg)
+        # print "final ty", ty
         xfrec = Format(fmtcode, ty, unistrg)
         self.format_dict[fmtcode] = xfrec
         self.format_list.append(xfrec)
@@ -457,13 +543,13 @@ class Book(object):
         # if DEBUG: print "---> handle_obj type=%d id=0x%08x" % (obj_type, obj_id)
 
     def handle_xf(self, data):
-        # DEBUG = 0
+        # DEBUG = 1
         bv = self.biff_version
         # fill in the known standard formats
         if bv >= 50 and not self.xfcount:
             # i.e. do this once before we process the first XF record
-            for x in std_format_code_types:
-                if x not in self.format_dict:
+            for x in std_format_code_types.keys():
+                if not self.format_dict.has_key(x):
                     ty = std_format_code_types[x]
                     xfrec = Format(x, ty, u'')
                     self.format_dict[x] = xfrec
@@ -489,8 +575,10 @@ class Book(object):
             used = ((pkd_used & 0xfc) >> 2) & 1
         else:
             raise XLRDError('programmer stuff-up: bv=%d' % bv)
-        if DEBUG: fprintf(self.logfile, "XF record: %d code: 0x%04x (%d) sty=%d par=%d used=%d\n", \
-            self.xfcount, fmtcode, fmtcode, is_style, parent, used)
+        if DEBUG:
+            fprintf(self.logfile,
+                "XF record: %d code: 0x%04x (%d) sty=%d par=%d used=%d\n",
+                self.xfcount, fmtcode, fmtcode, is_style, parent, used)
         if is_style:
             if used: # misnomer; bit set means "ignore attribute"
                 xsfn = -1
@@ -507,15 +595,19 @@ class Book(object):
                     myfn = self.xf_style_fmt_no[parent]
                 else:
                     myfn = fmtcode
-        if DEBUG: fprintf(self.logfile, "XF record: %d; style code %d, own code %d\n", \
-            self.xfcount, xsfn, myfn)
+        if DEBUG:
+            fprintf(self.logfile,
+                "XF record: %d; style code %d, own code %d\n",
+                self.xfcount, xsfn, myfn)
         self.xf_style_fmt_no.append(xsfn)
         # if bv < 50:
         #     xfrec = self.format_list[fmtcode]
         # elif fmtcode not in self.format_dict:
-        if myfn not in self.format_dict:
+        if not self.format_dict.has_key(myfn):
             if myfn != -1:
-                print >> self.logfile, "*** XF(%d): Unknown format code 0x%04x (%d)" % (self.xfcount, myfn, myfn)
+                fprintf(self.logfile,
+                    "WARNING *** XF(%d): Unknown format code 0x%04x (%d)\n",
+                    self.xfcount, myfn, myfn)
             ty = std_format_code_types.get(myfn, FUN)
             xfrec = Format(myfn, ty, u'')
             self.format_dict[myfn] = xfrec
@@ -538,10 +630,9 @@ class Book(object):
         posn = BOF_posn - 4 - len(data)
         if DEBUG: print >> self.logfile, 'SHEETHDR %d at posn %d: len=%d name=%r' % (sheetno, posn, sheet_len, sheet_name)
         self.initialise_format_info()
-        sht = self.get_sheet()
+        sht = self.get_sheet(sheetno)
         if DEBUG: print >> self.logfile, 'SHEETHDR: posn after get_sheet() =', self._position
         self.position(BOF_posn + sheet_len)
-        sht.name = self._sheet_names[sheetno]
         self._sheet.append(sht)
 
     def handle_sheetsoffset(self, data):
@@ -551,17 +642,20 @@ class Book(object):
         self._sheetsoffset = posn
 
     def handle_sst(self, data):
+        # DEBUG = 0
         if DEBUG: print >> self.logfile, "SST Processing"
         nbt = len(data)
         strlist = [data]
         uniquestrings = unpack('<i', data[4:8])[0]
-        if DEBUG or self.verbosity >= 2: fprintf(self.logfile, "SST: unique strings: %d\n", uniquestrings)
+        if DEBUG or self.verbosity >= 2:
+            fprintf(self.logfile, "SST: unique strings: %d\n", uniquestrings)
         while 1:
             code, nb, data = self.get_record_parts_conditional(XL_CONTINUE)
             if code is None:
                 break
             nbt += nb
-            if DEBUG: fprintf(self.logfile, "CONTINUE: adding %d bytes to SST -> %d\n", nb, nbt)
+            if DEBUG:
+                fprintf(self.logfile, "CONTINUE: adding %d bytes to SST -> %d\n", nb, nbt)
             # if DEBUG: print "first 30", repr(data[:30])
             # if DEBUG: print " last 30", repr(data[-30:])
             strlist.append(data)
@@ -610,20 +704,26 @@ class Book(object):
             else:
                 if c == u'"':
                     state = 0
-        if s in non_date_formats:
+        if non_date_formats.has_key(s):
             return False
         state = 0
+        separator = ";"
+        got_sep = 0
         date_count = num_count = 0
         for c in s:
             if state == 0:
                 if c == u'[':
                     state = 2
-                elif c == u'\\':
+                elif c == u'\\' or c == "_":
+                    # underscore used as escape char in currency symbol
+                    # e.g. "_m_k_-" for the Finnish markka
                     state = 3
-                elif c in date_char_dict:
+                elif date_char_dict.has_key(c):
                     date_count += date_char_dict[c]
-                elif c in num_char_dict:
+                elif num_char_dict.has_key(c):
                     num_count += num_char_dict[c]
+                elif c == separator:
+                    got_sep = 1
             elif state == 2:
                 if c == u']':
                     state = 0
@@ -631,15 +731,22 @@ class Book(object):
                 # ignore the escaped character
                 state = 0
         if state != 0:
-            print >> self.logfile, '*** is_date_format: parse failure: state=%d; s=%r' % (state, s)
+            fprintf(self.logfile,
+                "WARNING *** is_date_format(): parse failure: fmt=%r s=%r state=%d\n",
+                fmt, s, state)
+        # print num_count, date_count, repr(fmt)
         if date_count and not num_count:
             return True
         if num_count and not date_count:
             return False
         if date_count:
-            print >> self.logfile, '*** is_date_format: ambiguous d=%d n=%d s=%r' % (date_count, num_count, s)
-        else:
-            print >> self.logfile, '*** is_date_format: no signif. format codes? s=%r' % s
+            fprintf(self.logfile,
+                'WARNING *** is_date_format: ambiguous d=%d n=%d fmt=%r\n',
+                date_count, num_count, fmt)
+        elif not got_sep:
+            fprintf(self.logfile,
+                "WARNING *** format %r produces constant result\n",
+                fmt)
         return date_count > num_count
 
     def parse_globals(self):
@@ -700,7 +807,7 @@ class Book(object):
         savpos = self._position
         opcode = self.get2bytes()
         if opcode == MY_EOF: raise XLRDError('Expected BOF record; met end of file')
-        if opcode not in boflen: raise XLRDError('Expected BOF record; found 0x%04x' % opcode)
+        if opcode not in bofcodes: raise XLRDError('Expected BOF record; found 0x%04x' % opcode)
         length = self.get2bytes()
         if length == MY_EOF: raise XLRDError('Incomplete BOF record[1]; met end of file')
         if length < boflen[opcode] or length > 20:
@@ -734,9 +841,10 @@ class Book(object):
                     0x0400: 4,
                     }.get(version2, 0) * 10
         elif version1 in (0x04, 0x02, 0x00):
-            version = (version1 // 2 + 2) * 10 #  i.e. 2, 3, or 4
+            version = {0x04: 40, 0x02: 30, 0x00: 20}[version1]
+
         if version == 40 and streamtype == XL_WORKBOOK_GLOBALS_4W:
-            version += 5 # i.e. 4W
+            version = 45 # i.e. 4W
 
         if DEBUG or self.verbosity >= 2:
             print >> self.logfile, "BOF: op=0x%04x vers=0x%04x stream=0x%04x buildid=%d buildyr=%d -> BIFF%d" \
@@ -776,10 +884,18 @@ def unpack_unicode_table(datatab, datainx, pos, lenlen=2):
         charsneed = nchars - charsgot
         if options & 0x01:
             # Uncompressed UTF-16
-            charsavail = min((datalen - pos) // 2, charsneed)
+            charsavail = min((datalen - pos) >> 1, charsneed)
             rawstrg = data[pos:pos+2*charsavail]
             # if DEBUG: print "SST U16: nchars=%d pos=%d rawstrg=%r" % (nchars, pos, rawstrg)
-            accstrg += rawstrg.decode('utf-16le')
+            try:
+                accstrg += unicode(rawstrg, 'utf-16le')
+            except:
+                # print "SST U16: nchars=%d pos=%d rawstrg=%r" % (nchars, pos, rawstrg)
+                # Probable cause: dodgy data e.g. unfinished surrogate pair.
+                # E.g. file unicode2.xls in pyExcelerator's examples has cells containing
+                # unichr(i) for i in range(0x100000)
+                # so this will include 0xD800 etc
+                raise
             pos += 2*charsavail
         else:
             # Note: this is COMPRESSED (not ASCII!) encoding!!!
@@ -822,12 +938,13 @@ fmt_code_ranges = [ # both-inclusive ranges of "standard" format codes
     ( 0,  0, FGE),
     ( 1, 13, FNU),
     (14, 22, FDT),
-    (27, 36, FDT), # Japanese
+    (27, 36, FDT), # Japanese dates -- not sure of reliability of this
     (37, 44, FNU),
     (45, 47, FDT),
     (48, 48, FNU),
     (49, 49, FTX),
-    (50, 58, FDT), # Japanese
+    (50, 58, FDT), # Japanese dates -- but Gnumeric assumes 
+                     # built-in formats finish at 49, not at 163
     ]
 
 std_format_code_types = {}
@@ -846,13 +963,14 @@ num_char_dict = {
     u'0': 5,
     u'#': 5,
     u'?': 5,
-    u';': 1,
+    ##### u';': 1, # This is really a separator
     }
 
 non_date_formats = {
     u'0.00E+00':1,
     u'##0.0E+0':1,
     u'General' :1,
+    u'GENERAL' :1, # OOo 1.1.4 does this ...
     u'@'       :1,
     }
 

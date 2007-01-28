@@ -9,17 +9,17 @@
 <p>Implements the mimimal functionality required
 to extract a "Workbook" or "Book" stream (as one big string)
 from an OLE2 Compound Document file.
-</p><p>Copyright &#169; 2005 John Machin, Lingfo Pty Ltd</p>
+</p><p>Copyright &#169; 2005-2006 Stephen John Machin, Lingfo Pty Ltd</p>
 <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 <h2>Module Contents</h2>
 <dl>
-<dt><b>CompDoc(mem, DEBUG=0)</b> (class) [<a href='#compdoc.CompDoc-class'>#</a>]</dt>
+<dt><b>CompDoc(mem, logfile=sys.stdout, DEBUG=0)</b> (class) [<a href='#compdoc.CompDoc-class'>#</a>]</dt>
 <dd>
 <p>Compound document handler.</p>
 <dl>
 <dt><i>mem</i></dt>
 <dd>
-The raw contents of the file, as a string, or as a mmap.mmap() object. The
+The raw contents of the file, as a string, or as an mmap.mmap() object. The
 only operation it needs to support is slicing.</dd>
 </dl><br />
 <p>For more information about this class, see <a href='#compdoc.CompDoc-class'><i>The CompDoc Class</i></a>.</p>
@@ -31,13 +31,13 @@ only operation it needs to support is slicing.</dd>
 </dl>
 <h2><a id='compdoc.CompDoc-class' name='compdoc.CompDoc-class'>The CompDoc Class</a></h2>
 <dl>
-<dt><b>CompDoc(mem, DEBUG=0)</b> (class) [<a href='#compdoc.CompDoc-class'>#</a>]</dt>
+<dt><b>CompDoc(mem, logfile=sys.stdout, DEBUG=0)</b> (class) [<a href='#compdoc.CompDoc-class'>#</a>]</dt>
 <dd>
 <p>Compound document handler.</p>
 <dl>
 <dt><i>mem</i></dt>
 <dd>
-The raw contents of the file, as a string, or as a mmap.mmap() object. The
+The raw contents of the file, as a string, or as an mmap.mmap() object. The
 only operation it needs to support is slicing.</dd>
 </dl><br />
 </dd>

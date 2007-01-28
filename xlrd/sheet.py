@@ -3,10 +3,14 @@
 ##
 
 from biffh import *
+from timemachine import *
 from struct import unpack
 import array
 
 DEBUG = 0
+DEBUG_COORDS = 1
+
+# rc_stats = {}
 
 def fprintf(f, fmt, *vargs): print >> f, fmt % vargs,
 
@@ -33,13 +37,21 @@ class Sheet(object):
     # Number of columns in sheet. A column index is in range(thesheet.ncols).
     ncols = 0
 
-    def __init__(self, biff_version, position, logfile):
+    def __init__(
+        self, biff_version, position, logfile, pickleable=False,
+        name='', number=0, verbosity=0,
+        ):
         self.biff_version = biff_version
         self._position = position
         self.logfile = logfile
-        self.name = ''
-        self.nrows = 0
+        self.pickleable = pickleable
+        self.name = name
+        self.number = number
+        self.verbosity = verbosity
+        self.nrows = 0 # actual
         self.ncols = 0
+        self._dnrows = 0 # as per DIMENSIONS record
+        self._dncols = 0
         self._cell_values = []
         self._cell_types = []
 
@@ -117,23 +129,109 @@ class Sheet(object):
     # === Following methods are used in building the worksheet.
     # === They are not part of the API.
 
-    def initcells(self):
-        nc = self.ncols
-        aa = array.array
+    def initcells(self, nr, nc):
         scta = self._cell_types.append
         scva = self._cell_values.append
         xce = XL_CELL_EMPTY
-        for _unused in xrange(self.nrows):
-            scta(aa('B', [xce]) * nc)
-            scva([''] * nc)
+        if self.pickleable:
+            for _unused in xrange(nr):
+                scta([xce] * nc)
+                scva([''] * nc)
+        else:
+            aa = array.array
+            for _unused in xrange(nr):
+                scta(aa('B', [xce]) * nc)
+                scva([''] * nc)
+        self.nrows = nr
+        self.ncols = nc
 
-    def put_cell(self, rowx, colx, ctype, value):
-        self._cell_types[rowx][colx] = ctype
-        self._cell_values[rowx][colx] = value
+    def extend_cells(self, nr, nc):
+        if nc > self.ncols:
+            xce = XL_CELL_EMPTY
+            nextra = nc - self.ncols
+            if self.pickleable:
+                for arow in self._cell_types:
+                    arow.extend([xce] * nextra)
+                for arow in self._cell_values:
+                    arow.extend([''] * nextra)
+            else:
+                aa = array.array
+                for arow in self._cell_types:
+                    arow.extend(aa('B', [xce]) * nextra)
+                for arow in self._cell_values:
+                    arow.extend([''] * nextra)
+            self.ncols = nc
+        if nr > self.nrows:
+            scta = self._cell_types.append
+            scva = self._cell_values.append
+            xce = XL_CELL_EMPTY
+            nc = self.ncols
+            if self.pickleable:
+                for _unused in xrange(self.nrows, nr):
+                    scta([xce] * nc)
+                    scva([''] * nc)
+            else:
+                aa = array.array
+                for _unused in xrange(self.nrows, nr):
+                    scta(aa('B', [xce]) * nc)
+                    scva([''] * nc)
+            self.nrows = nr
 
-    def put_number_cell(self, rowx, colx, value, fmt_ty=FNU):
-        self._cell_types[rowx][colx] = cellty_from_fmtty[fmt_ty]
-        self._cell_values[rowx][colx] = value
+
+    def tidy_dimensions(self):
+        if 0:
+            # retract unused parts of the safety zone
+            maxusedrowx = self._dnrows - 1
+            colrange = range(self.ncols)
+            for rowx in range(self._dnrows, self.nrows):
+                for colx in colrange:
+                    if self._cell_types[rowx][colx] != XL_CELL_EMPTY:
+                        maxusedrowx = rowx
+                        break
+            maxusedcolx = self._dncols - 1
+            rowrange = range(self.nrows)
+            for colx in range(self._dncols, self.ncols):
+                for rowx in rowrange:
+                    if self._cell_types[rowx][colx] != XL_CELL_EMPTY:
+                        maxusedcolx = colx
+                        break
+            self.nrows, self.ncols = (maxusedrowx+1, maxusedcolx+1)
+        if self.verbosity >= 3:
+            print >> self.logfile, "tidy_dimensions", self.nrows, self.ncols
+        if self.verbosity >= 2 \
+        and (self.nrows != self._dnrows or self.ncols != self._dncols):
+            fprintf(self.logfile,
+                "NOTE *** sheet %d(%r): invalid DIMENSIONS record R,C = %d,%d\n",
+                self.number,
+                self.name,
+                self._dnrows,
+                self._dncols
+                )
+            
+    if DEBUG_COORDS:
+        def put_cell(self, rowx, colx, ctype, value):
+            try:
+                self._cell_types[rowx][colx] = ctype
+                self._cell_values[rowx][colx] = value
+            except:
+                print >> self.logfile, "put_cell", rowx, colx
+                raise
+                
+        def put_number_cell(self, rowx, colx, value, fmt_ty=FNU):
+            try:
+                self._cell_types[rowx][colx] = cellty_from_fmtty[fmt_ty]
+                self._cell_values[rowx][colx] = value
+            except:
+                print >> self.logfile, "put_number_cell", rowx, colx
+                raise
+    else:
+        def put_cell(self, rowx, colx, ctype, value):
+            self._cell_types[rowx][colx] = ctype
+            self._cell_values[rowx][colx] = value
+
+        def put_number_cell(self, rowx, colx, value, fmt_ty=FNU):
+            self._cell_types[rowx][colx] = cellty_from_fmtty[fmt_ty]
+            self._cell_values[rowx][colx] = value
 
     # === Methods after this line neither know nor care about how cells are stored.
 
@@ -142,67 +240,99 @@ class Sheet(object):
         DEBUG = 0
         oldpos = bk._position
         bk.position(self._position)
-        DEBUG = 0
         XL_SHRFMLA_ETC_ETC = (XL_SHRFMLA, XL_ARRAY, XL_TABLEOP, XL_TABLEOP2, XL_TABLEOP_B2)
+        unpack_number_fmt = '<HHHd'
+        self_put_number_cell = self.put_number_cell
+        local_unpack = unpack
+        local_check_xf = check_xf
+        bk_get_record_parts = bk.get_record_parts
+        bk_xfrecords = bk.xfrecords
+        empty_string = u""
+        verbo = self.verbosity
+        no_storage = 1
         while 1:
             # if DEBUG: print "SHEET.READ: about to read from position %d" % bk._position
-            rc, length, data = bk.get_record_parts()
+            rc, length, data = bk_get_record_parts()
             # if rc in rc_stats:
             #     rc_stats[rc] += 1
             # else:
             #     rc_stats[rc] = 1
-            # if DEBUG: print "SHEET.READ: op 0x%04x, %d bytes %r" % (rc, len(data), data)
+            if DEBUG: print "SHEET.READ: op 0x%04x, %d bytes %r" % (rc, len(data), data)
+            if no_storage:
+                if is_cell_opcode(rc):
+                    # We have reached a cell data record without finding a ROW record.
+                    # Files written by pyXLwriter (and presumably the Perl package
+                    # from which it was cloned) don't write ROW records.
+                    # So we allocate space according to what was given in the 
+                    # DIMENSIONS record.
+                    self.initcells(self._dnrows, self._dncols)
+                    no_storage = 0
             if rc == XL_NUMBER:
-                rowx, colx, xfindex, d = unpack('<HHHd', data)
+                rowx, colx, xfindex, d = local_unpack(unpack_number_fmt, data)
                 # if DEBUG: printf("NUMBER Double 8 byte: %d %d %d %f\n", rowx, colx, xfindex, d)
-                fty = check_xf(bk, rowx, colx, xfindex, d)
-                self.put_number_cell(rowx, colx, d, fty)
+                # fty = local_check_xf(bk, rowx, colx, xfindex, d)
+                xfrec = bk_xfrecords[xfindex]
+                if xfrec:
+                    fty = xfrec.type
+                else:
+                    print >> bk.logfile, "*** No XF for xfindex %d; rowx=%d colx=%d value=%r" \
+                        % (xfindex, rowx, colx, d)
+                    fty = None
+                self_put_number_cell(rowx, colx, d, fty)
             elif rc == XL_LABELSST:
-                rowx, colx, index = unpack('<HHxxi', data)
+                rowx, colx, index = local_unpack('<HHxxi', data)
+                # print "LABELSST", rowx, colx, index, bk._sharedstrings[index]
                 self.put_cell(rowx, colx, XL_CELL_TEXT, bk._sharedstrings[index])
             elif rc == XL_LABEL or rc == XL_RSTRING:
                 # RSTRING has extra richtext info at the end, but we ignore it.
-                rowx, colx, xfindex = unpack('<HHH', data[0:6])
+                rowx, colx, xfindex = local_unpack('<HHH', data[0:6])
                 if self.biff_version < BIFF_FIRST_UNICODE:
                     strg = unpack_string(data, 6, bk.encoding, lenlen=2)
                 else:
                     strg = unpack_unicode(data, 6, lenlen=2)
                 self.put_cell(rowx, colx, XL_CELL_TEXT, strg)
             elif rc == XL_RK:
-                rowx, colx, xfindex = unpack('<HHH', data[:6])
+                rowx, colx, xfindex = local_unpack('<HHH', data[:6])
                 d = unpack_RK(data[6:10])
                 # if DEBUG: printf("RK Double 4 byte: %f\n",d);
-                fty = check_xf(bk, rowx, colx, xfindex, d)
-                self.put_number_cell(rowx, colx, d, fty);
+                fty = local_check_xf(bk, rowx, colx, xfindex, d)
+                self_put_number_cell(rowx, colx, d, fty);
             elif rc == XL_MULRK:
-                mulrk_row, mulrk_first = unpack('<HH', data[0:4])
-                mulrk_last  = unpack('<H', data[-2:])[0]
+                mulrk_row, mulrk_first = local_unpack('<HH', data[0:4])
+                mulrk_last  = local_unpack('<H', data[-2:])[0]
                 # mulrk_numrks = mulrk_last - mulrk_first + 1
                 # if DEBUG: printf("MulRK first: %d last: %d records: %d\n",mulrk_first,mulrk_last,mulrk_numrks);
                 pos = 4
                 for colx in xrange(mulrk_first, mulrk_last+1):
-                    xfindex = unpack('<H', data[pos:pos+2])[0]
+                    xfindex = local_unpack('<H', data[pos:pos+2])[0]
                     d = unpack_RK(data[pos+2:pos+6])
                     # printf("MULRK r%d c%d: %s -> %f\n",
                     #     mulrk_row, colx, ''.join(["%02x " % ord(c) for c in data[pos+2:pos+6]]), d);
-                    fty = check_xf(bk, mulrk_row, colx, xfindex, d)
+                    fty = local_check_xf(bk, mulrk_row, colx, xfindex, d)
                     pos += 6
-                    self.put_number_cell(mulrk_row, colx, d, fty)
+                    self_put_number_cell(mulrk_row, colx, d, fty)
             elif rc == XL_ROW:
-                # We don't use the ROW record ... but there are enough of them to warrant
-                # this being here to save exhaustive testing.
-                # A dictionary of known-but-ignored worksheet records would be a better idea.
-                # Would need separate dicts, one for each version.
-                pass
+                rowx, colx, ncols = local_unpack('<HHH', data[0:6])
+                if self.verbosity >=3 and (rowx >= self.nrows or ncols > self.ncols):
+                    msg = "*** sheet %d(%r): ROW record rowx=%d (nrows=%d), max colx=%d (ncols=%d)" % \
+                        (self.number, self.name, rowx, self._dnrows, ncols-1, self._dncols)
+                    print >> self.logfile, msg
+                self.extend_cells(rowx+1, ncols)
+                no_storage = 0
             elif rc & 0xff == XL_FORMULA: # 06, 0206, 0406
                 # if DEBUG: print "FORMULA: rc: 0x%04x data: %r" % (rc, data)
-                rowx, colx, xfindex = unpack('<HHH', data[0:6])
+                rowx, colx, xfindex, flags = local_unpack('<HHH8xH', data[0:16])
                 # if DEBUG: print "FORMULA: rowx=%d colx=%d" % (rowx, colx)
+                if 0: # this recalc checking stuff not ready yet #######################
+                # if flags & 3: # needs recalc?
+                    msg = "*** sheet %d(%r): FORMULA rowx=%d colx=%d flags=%d" % \
+                        (self.number, self.name, rowx, colx, flags & 3)
+                    print >> self.logfile, msg
                 if data[12] == '\xff' and data[13] == '\xff':
                     if data[6] == '\x00':
                         # need to read next record (STRING)
                         gotstring = 0
-                        if ord(data[14]) & 8:
+                        if flags & 8:
                             # actually there's an optional SHRFMLA or ARRAY etc record to skip over
                             rc2, _unused_len, data2 = bk.get_record_parts()
                             if rc2 == XL_STRING:
@@ -231,36 +361,41 @@ class Sheet(object):
                         value = ord(data[8])
                         self.put_cell(rowx, colx, XL_CELL_ERROR, value)
                     elif data[6] == '\x03':
-                        # empty cell
-                        # Do nothing, its place in the grid is already bound to empty_cell
-                        pass
+                        # empty ... i.e. empty (zero-length) string, NOT an empty cell.
+                        self.put_cell(rowx, colx, XL_CELL_TEXT, empty_string)
                     else:
                         raise XLRDError("unexpected special case (0x%02x) in FORMULA" % ord(data[6]))
                 else:
                     # it is a number
-                    d = unpack('<d', data[6:14])[0]
-                    fty = check_xf(bk, rowx, colx, xfindex, d)
-                    self.put_number_cell(rowx, colx, d, fty)
+                    d = local_unpack('<d', data[6:14])[0]
+                    fty = local_check_xf(bk, rowx, colx, xfindex, d)
+                    self_put_number_cell(rowx, colx, d, fty)
             elif rc == XL_BOOLERR:
-                rowx, colx, xfindex, value, is_err = unpack('<HHHBB', data)
+                rowx, colx, xfindex, value, is_err = local_unpack('<HHHBB', data)
                 cellty = (XL_CELL_BOOLEAN, XL_CELL_ERROR)[is_err]
                 # if DEBUG: print "XL_BOOLERR", rowx, colx, xfindex, value, is_err
                 self.put_cell(rowx, colx, cellty, value)
-            elif rc == XL_DIMENSION:
+            elif rc == XL_DIMENSION or rc == XL_DIMENSION2:
                 if length == 10:
-                    self.nrows, self.ncols = unpack('<HxxH', data[2:8])
+                    dim_tuple = local_unpack('<HxxH', data[2:8])
                 else:
-                    self.nrows, self.ncols = unpack('<ixxH', data[4:12])
-                self.initcells()
-                if DEBUG: fprintf(self.logfile, "Dimension ncols: %d nrows: %d\n", self.ncols, self.nrows)
+                    dim_tuple = local_unpack('<ixxH', data[4:12])
+                self.nrows, self.ncols = 0, 0
+                self._dnrows, self._dncols = dim_tuple
+                if DEBUG or verbo >= 3:
+                    fprintf(self.logfile,
+                        "sheet %d(%r) DIMENSIONS: ncols=%d nrows=%d\n",
+                        self.number, self.name, self._dncols, self._dnrows
+                        )
             elif rc == XL_EOF:
                 DEBUG = 0
                 if DEBUG: print >> self.logfile, "SHEET.READ: EOF"
+                self.tidy_dimensions()
                 break
             elif rc == XL_OBJ:
                 bk.handle_obj(data)
-            elif rc in boflen: ##### EMBEDDED BOF #####
-                version, boftype = unpack('<HH', data[0:4])
+            elif rc in bofcodes: ##### EMBEDDED BOF #####
+                version, boftype = local_unpack('<HH', data[0:4])
                 if boftype != 0x20: # embedded chart
                     print >> self.logfile, \
                         "*** Unexpected embedded BOF (0x%04x) at offset %d: version=0x%04x type=0x%04x" \
@@ -299,18 +434,22 @@ def unpack_RK(rk_str):
     flags = ord(rk_str[0])
     if flags & 2:
         # There's a SIGNED 30-bit integer in there!
-        d = float(unpack('<i', rk_str)[0] // 4) # div by 4 to drop the 2 flag bits
+        i,  = unpack('<i', rk_str)
+        i >>= 2 # div by 4 to drop the 2 flag bits
+        if flags & 1:
+            return i / 100.0
+        return float(i)
     else:
         # It's the most significant 30 bits of an IEEE 754 64-bit FP number
-        d = unpack('<d', '\0\0\0\0' + chr(flags & 252) + rk_str[1:4])[0]
-    if flags & 1:
-        return d / 100.0
-    return d
+        d, = unpack('<d', '\0\0\0\0' + chr(flags & 252) + rk_str[1:4])
+        if flags & 1:
+            return d / 100.0
+        return d
 
 def check_xf(bk, rowx, colx, xfindex, value):
     xfrec = bk.xfrecords[xfindex]
     if xfrec:
-        # if DEBUG: print "OK xfindex %d; rowx=%d colx=%d value=%r" % (xfindex, rowx, colx, value)
+        # if rowx <= 5: print "OK xfindex %d; rowx=%d colx=%d value=%r type=%r" % (xfindex, rowx, colx, value, xfrec.type)
         return xfrec.type
     else:
         print >> bk.logfile, "*** No XF for xfindex %d; rowx=%d colx=%d value=%r" % (xfindex, rowx, colx, value)
@@ -403,10 +542,10 @@ class Cell(object):
 empty_cell = Cell(XL_CELL_EMPTY, '')
 
 # === grimoire ===
-
-try:
-    from _xlrdutils import *
-    # print "_xlrdutils imported"
-except ImportError:
-    # print "_xlrdutils *NOT* imported"
-    pass
+if 0:
+    try:
+        from _xlrdutils import *
+        print "_xlrdutils imported"
+    except ImportError:
+        # print "_xlrdutils *NOT* imported"
+        pass

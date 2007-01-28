@@ -9,6 +9,9 @@
 <p /><p><b>A Python module for extracting data from MS Excel &#8482; spreadsheet files.</b></p>
 
 <h2>General information</h2>
+<h3>Acknowledgements</h3>
+<p>Backporting to Python 2.1 was partially funded by
+<a href="http://journyx.com/">Journyx - provider of timesheet and project accounting solutions.</a></p>
 <h3>Unicode</h3>
 <p>This module presents all text strings as Python unicode objects.
 From Excel 97 onwards, text in Excel spreadsheets has been stored as Unicode.
@@ -64,7 +67,9 @@ means that DATE(1899, 12, 31) is interpreted as 3799-12-31.</p>
 <p>For further information, please refer to the documentation for the xldate_* functions.</p>
 <h2>Module Contents</h2>
 <dl>
-<dt><b>Book(filename, logfile=sys.stdout, verbosity=0)</b> (class) [<a href='#__init__.Book-class'>#</a>]</dt>
+<dt><b>Book(filename=None, file_contents=None, 
+logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP, 
+)</b> (class) [<a href='#__init__.Book-class'>#</a>]</dt>
 <dd>
 <p>Contents of a &quot;workbook&quot;.</p>
 <p>For more information about this class, see <a href='#__init__.Book-class'><i>The Book Class</i></a>.</p>
@@ -81,7 +86,10 @@ The path to the file to be dumped.</dd>
 An open file, to which the dump is written.</dd>
 </dl><br />
 </dd>
-<dt><a id='__init__.open_workbook-function' name='__init__.open_workbook-function'><b>open_workbook(filename, logfile=sys.stdout, verbosity=0)</b></a> [<a href='#__init__.open_workbook-function'>#</a>]</dt>
+<dt><a id='__init__.open_workbook-function' name='__init__.open_workbook-function'><b>open_workbook(filename=None, 
+logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP, 
+file_contents=None, 
+)</b></a> [<a href='#__init__.open_workbook-function'>#</a>]</dt>
 <dd>
 <p>Open a spreadsheet file for data extraction.</p>
 <dl>
@@ -94,6 +102,18 @@ An open file to which messages and diagnostics are written.</dd>
 <dt><i>verbosity</i></dt>
 <dd>
 Increases the volume of trace material written to the logfile.</dd>
+<dt><i>pickleable</i></dt>
+<dd>
+Default = True. Setting to False *may* cause use of array.array
+objects which save some memory but can't be pickled in Python 2.4 or earlier.</dd>
+<dt><i>use_mmap</i></dt>
+<dd>
+Whether to use the mmap module is determined heuristically.
+Use this arg to override the result. Current heuristic: mmap is used if it exists.</dd>
+<dt><i>file_contents</i></dt>
+<dd>
+... as a string or an mmap.mmap object or some other behave-alike object.
+If file_contents is supplied, filename will not be used, except (possibly) in messages.</dd>
 <dt>Returns:</dt>
 <dd>
 An instance of the Book class.</dd>
@@ -123,7 +143,9 @@ that Excel uses for error cells. Here are its contents:
 <p>There is one and only one instance of an empty cell -- it's a singleton. This is it.
 You may use a test like &quot;acell is empty_cell&quot;.</p>
 </dd>
-<dt><b>Sheet(biff_version, position, logfile)</b> (class) [<a href='#sheet.Sheet-class'>#</a>]</dt>
+<dt><b>Sheet( biff_version, position, logfile, pickleable=False, 
+name='', number=0, verbosity=0, 
+)</b> (class) [<a href='#sheet.Sheet-class'>#</a>]</dt>
 <dd>
 <p>Contains the data for one worksheet.</p>
 <p>For more information about this class, see <a href='#sheet.Sheet-class'><i>The Sheet Class</i></a>.</p>
@@ -231,7 +253,9 @@ Out-of-range hour, minute, or second</dd>
 </dl>
 <h2><a id='__init__.Book-class' name='__init__.Book-class'>The Book Class</a></h2>
 <dl>
-<dt><b>Book(filename, logfile=sys.stdout, verbosity=0)</b> (class) [<a href='#__init__.Book-class'>#</a>]</dt>
+<dt><b>Book(filename=None, file_contents=None, 
+logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP, 
+)</b> (class) [<a href='#__init__.Book-class'>#</a>]</dt>
 <dd>
 <p>Contents of a "workbook".
 </p><p>WARNING: You don't call this class yourself. You use the Book object that
@@ -270,6 +294,14 @@ the COUNTRY record.
 <dt><a id='__init__.Book.encoding-attribute' name='__init__.Book.encoding-attribute'><b>encoding</b></a> [<a href='#__init__.Book.encoding-attribute'>#</a>]</dt>
 <dd>
 <p>The encoding that was derived from the codepage.</p>
+</dd>
+<dt><a id='__init__.Book.load_time_stage_1-attribute' name='__init__.Book.load_time_stage_1-attribute'><b>load_time_stage_1</b></a> [<a href='#__init__.Book.load_time_stage_1-attribute'>#</a>]</dt>
+<dd>
+<p>Time in seconds to extract the XLS image as a contiguous string (or mmap equivalent).</p>
+</dd>
+<dt><a id='__init__.Book.load_time_stage_2-attribute' name='__init__.Book.load_time_stage_2-attribute'><b>load_time_stage_2</b></a> [<a href='#__init__.Book.load_time_stage_2-attribute'>#</a>]</dt>
+<dd>
+<p>Time in seconds to parse the data from the contiguous string (or mmap equivalent).</p>
 </dd>
 <dt><a id='__init__.Book.nsheets-attribute' name='__init__.Book.nsheets-attribute'><b>nsheets</b></a> [<a href='#__init__.Book.nsheets-attribute'>#</a>]</dt>
 <dd>
@@ -367,7 +399,9 @@ refer to the supplied dictionary error_text_from_code</td>
 </dl>
 <h2><a id='sheet.Sheet-class' name='sheet.Sheet-class'>The Sheet Class</a></h2>
 <dl>
-<dt><b>Sheet(biff_version, position, logfile)</b> (class) [<a href='#sheet.Sheet-class'>#</a>]</dt>
+<dt><b>Sheet( biff_version, position, logfile, pickleable=False, 
+name='', number=0, verbosity=0, 
+)</b> (class) [<a href='#sheet.Sheet-class'>#</a>]</dt>
 <dd>
 <p /><p>Contains the data for one worksheet.</p>
 

@@ -1,5 +1,5 @@
 """
-Portions copyright (c) 2005, Stephen John Machin, Lingfo Pty Ltd
+Portions copyright (c) 2005-2006, Stephen John Machin, Lingfo Pty Ltd
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

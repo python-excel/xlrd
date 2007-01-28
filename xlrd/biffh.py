@@ -71,6 +71,7 @@ XL_CONTINUE = 0x3c
 XL_COUNTRY = 0x8C
 XL_DATEMODE = 0x22
 XL_DIMENSION = 0x200
+XL_DIMENSION2 = 0x0
 XL_EOF = 0x0a
 XL_EXTSST = 0xff
 XL_FILEPASS = 0x2f
@@ -103,6 +104,7 @@ XL_TABLEOP = 0x236
 XL_TABLEOP2 = 0x37
 XL_TABLEOP_B2 = 0x36
 XL_TXO = 0x1b6
+XL_UNCALCED = 0x5e
 XL_UNKNOWN = 0xffff
 XL_WRITEACCESS = 0x5C
 XL_XF = 0xe0
@@ -111,13 +113,29 @@ XL_XF3 = 0x0243 # BIFF3 version of XF record
 XL_XF4 = 0x0443 # BIFF4 version of XF record
 
 boflen = {0x0809: 8, 0x0409: 6, 0x0209: 6, 0x0009: 4}
+bofcodes = (0x0809, 0x0409, 0x0209, 0x0009)
+
+_cell_opcode_list = [
+    XL_BOOLERR,
+    XL_FORMULA,
+    XL_FORMULA3,
+    XL_FORMULA4,
+    XL_LABEL,
+    XL_LABELSST,
+    XL_MULRK,
+    XL_NUMBER,
+    XL_RK,
+    XL_RSTRING,
+    ]
+_cell_opcode_dict = {}
+for _cell_opcode in _cell_opcode_list:
+    _cell_opcode_dict[_cell_opcode] = 1
+is_cell_opcode = _cell_opcode_dict.has_key
 
 def unpack_string(data, pos, encoding, lenlen=1):
     nchars = unpack('<' + 'BH'[lenlen-1], data[pos:pos+lenlen])[0]
     pos += lenlen
-    rawstrg = data[pos:pos+nchars]
-    strg = rawstrg.decode(encoding)
-    return strg
+    return unicode(data[pos:pos+nchars], encoding)
 
 def unpack_unicode(data, pos, lenlen=2):
     "Return unicode_strg"
@@ -137,7 +155,8 @@ def unpack_unicode(data, pos, lenlen=2):
         # Uncompressed UTF-16-LE
         rawstrg = data[pos:pos+2*nchars]
         # if DEBUG: print "nchars=%d pos=%d rawstrg=%r" % (nchars, pos, rawstrg)
-        strg = rawstrg.decode('utf-16le')
+        # strg = rawstrg.decode('utf-16le')
+        strg = unicode(rawstrg, 'utf-16le')
         # pos += 2*nchars
     else:
         # Note: this is COMPRESSED (not ASCII!) encoding!!!

@@ -12,19 +12,21 @@ Author: John Machin, Lingfo Pty Ltd (sjmachin@lexicon.net)
 
 Licence: BSD-style (see licences.py)
 
-Version of xlrd: 0.3a1  <<<=== *ALPHA* use at own risk
+Version of xlrd: 0.5.2
 
-Version of Python required: 2.2 or later.
+Version of Python required: 2.1 or later.
     
 External modules required:
-    Nil. This is pure Python with no dependencies on modules or packages
-    outside the standard Python distribution.
+    The package itself is pure Python with no dependencies on modules or packages
+    outside the standard Python distribution. To run the demo script runxlrd.py with
+    Python 2.2 or 2.1 requires the Optik module (version 1.4.1 or later) from 
+    http://optik.sourceforge.net/
   
 Versions of Excel supported:
     2004, 2002, XP, 2000, 97, 95, 5.0, 4.0, 3.0.
     2.x could be done readily enough if any demand.
     
-Outside the scope: xlrd will safely and reliably ignore any of these
+Outside the current scope: xlrd will safely and reliably ignore any of these
 if present in the file:
     * Anything to do with the on-screen presentation of the data (fonts, panes,
       column widths, row heights, ...)
@@ -41,7 +43,6 @@ Unlikely to be done:
 Particular emphasis (refer docs for details):
 
     * Operability across OS, regions, platforms
-      [needs testing and feedback]
       
     * Handling Excel's date problems, including the Windows / Macintosh
       four-year differential.
@@ -64,14 +65,15 @@ Installation:
 
     * On Windows: use the installer.
 
-    * Others: There's a ZIP file which you unzip into a suitable directory,
-    cd to that directory, then do "python setup.py install".
+    * Any OS: Starting with either the .zip file or the .tar.gz file, unzip into a suitable directory,
+    chdir to that directory, then do "python setup.py install".
 
 Where did it go?
 
-    If <PD> is your Python installation directory,
-    the main files are in <PD>/Lib/site-packages/xlrd,
-    the docs are in <PD>/Lib/site-packages/xlrd/doc,
+    If <PD> is your Python installation directory:
+    the main files are in <PD>/Lib/site-packages/xlrd
+    (except for Python 2.1 where they will be in <PD>/xlrd),
+    the docs are in the doc subdirectory,
     and there's a sample script: <PD>/Scripts/runxlrd.py
     
     If os.sep != "/": make the appropriate adjustments.
@@ -98,4 +100,7 @@ and Compound Document file format, authored by Daniel Rentz. See http://sc.openo
 
 * Ksenia Marasanova: sample Macintosh and non-Latin1 files, alpha testing
 
-* <your name here>: feedback, alpha/beta testing, ...
+* Backporting to Python 2.1 was partially funded by Journyx - provider of
+timesheet and project accounting solutions (http://journyx.com/).
+
+* << a growing list of names; see HISTORY.txt >>: feedback, testing, test files, ...
