@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: xlrd
-Version: 0.5.2
+Version: 0.6.1a3
 Summary: Library for developers to extract data from Microsoft Excel (tm) spreadsheet files
 Home-page: http://www.lexicon.net/sjmachin/xlrd.htm
 Author: John Machin

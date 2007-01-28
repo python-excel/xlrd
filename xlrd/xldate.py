@@ -9,7 +9,8 @@
 # <p>Provides function(s) for dealing with Microsoft Excel ™ dates.</p>
 ##
 
-# The conversion from days to (year, month, day) starts with an integral "julian day number" aka JDN.
+# The conversion from days to (year, month, day) starts with
+# an integral "julian day number" aka JDN.
 # FWIW, JDN 0 corresponds to noon on Monday November 24 in Gregorian year -4713.
 # More importantly:
 #    Noon on Gregorian 1900-03-01 (day 61 in the 1900-based system) is JDN 2415080.0
@@ -29,7 +30,6 @@ class XLDateBadDatemode(XLDateError): pass
 class XLDateBadTuple(XLDateError): pass
 
 _XLDAYS_TOO_LARGE = (2958466, 2958466 - 1462) # This is equivalent to 10000-01-01
-
 
 ##
 # Convert an Excel number (presumed to represent a date, a datetime or a time) into
@@ -60,7 +60,7 @@ def xldate_as_tuple(xldate, datemode):
         raise XLDateNegative(xldate)
     xldays = int(xldate)
     frac = xldate - xldays
-    seconds = int(round(frac * 86400.0))    
+    seconds = int(round(frac * 86400.0))
     assert 0 <= seconds <= 86400
     if seconds == 86400:
         hour = minute = second = 0
@@ -90,7 +90,6 @@ def xldate_as_tuple(xldate, datemode):
         return (ifd(yreg, 1461) - 4715, mp - 9, d, hour, minute, second)
     else:
         return (ifd(yreg, 1461) - 4716, mp + 3, d, hour, minute, second)
-
 
 # === conversions from date/time to xl numbers
 
@@ -137,7 +136,7 @@ def xldate_from_date_tuple((year, month, day), datemode):
     else:
         Mp = M - 3
     jdn = ifd(1461 * Yp, 4) + ifd(979 * Mp + 16, 32) + \
-        day - 1364 - (3 * ifd(ifd(Yp + 184, 100)), 4)
+        day - 1364 - (3 * ifd(ifd(Yp + 184, 100), 4))
     xldays = jdn - _JDN_delta[datemode]
     if xldays <= 0:
         raise XLDateBadTuple("Invalid (year, month, day): %r" % ((year, month, day),))
@@ -164,4 +163,8 @@ def xldate_from_time_tuple((hour, minute, second)):
 # @param datemode 0: 1900-based, 1: 1904-based.
 
 def xldate_from_datetime_tuple(datetime_tuple, datemode):
-    return xldate_from_date_tuple(datetime_tuple[:3], datemode) + xldate_from_time_tuple(datetime_tuple[3:])
+    return (
+        xldate_from_date_tuple(datetime_tuple[:3], datemode)
+        +
+        xldate_from_time_tuple(datetime_tuple[3:])
+        )

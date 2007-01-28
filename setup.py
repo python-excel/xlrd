@@ -2,8 +2,16 @@
 # -*- coding: ascii -*-
 
 import sys
-from distutils.core import setup
 python_version = sys.version_info[:2]
+
+av = sys.argv
+if len(av) > 1 and av[1].lower() == "--egg":
+    if python_version < (2, 3):
+        raise Exception("Can't lay eggs with Python version %d.%d " % python_version)
+    del av[1]
+    from setuptools import setup
+else:
+    from distutils.core import setup
 
 the_url = 'http://www.lexicon.net/sjmachin/xlrd.htm'
 
@@ -11,24 +19,26 @@ def mkargs(**kwargs):
     return kwargs
 
 args = mkargs(
-      name = 'xlrd',
-      version = '0.5.2',
-      author = 'John Machin',
-      author_email = 'sjmachin@lexicon.net',
-      url = the_url,
-      packages = ['xlrd'],
-      scripts = ['scripts/runxlrd.py'],
-      description = 'Library for developers to extract data from Microsoft Excel (tm) spreadsheet files',
-      long_description = \
-            "Extract data from new and old Excel spreadsheets on any platform. " \
-            "Pure Python (2.1 or later). Strong support for Excel dates. Unicode-aware.",
-      platforms = ["Any platform -- don't need Windows"],
-      license = 'BSD',
-      keywords = ['xls', 'excel', 'spreadsheet', 'workbook'],
-      )
-      
-if python_version >= (2, 3):      
-    args23 = mkargs(      
+    name = 'xlrd',
+    version = '0.6.1a3',
+    author = 'John Machin',
+    author_email = 'sjmachin@lexicon.net',
+    url = the_url,
+    packages = ['xlrd'],
+    scripts = [
+        'scripts/runxlrd.py',
+        ],
+    description = 'Library for developers to extract data from Microsoft Excel (tm) spreadsheet files',
+    long_description = \
+        "Extract data from new and old Excel spreadsheets on any platform. " \
+        "Pure Python (2.1 or later). Strong support for Excel dates. Unicode-aware.",
+    platforms = ["Any platform -- don't need Windows"],
+    license = 'BSD',
+    keywords = ['xls', 'excel', 'spreadsheet', 'workbook'],
+    )
+
+if python_version >= (2, 3):
+    args23 = mkargs(
         download_url = the_url,
         classifiers = [
             'Development Status :: 5 - Production/Stable',
@@ -38,19 +48,22 @@ if python_version >= (2, 3):
             'Operating System :: OS Independent',
             'Topic :: Database',
             'Topic :: Office/Business',
-            'Topic :: Software Development :: Libraries :: Python Modules',      
+            'Topic :: Software Development :: Libraries :: Python Modules',
             ],
-          )
+        )
     args.update(args23)
 
-if python_version >= (2, 4):      
-    args24 = mkargs(      
-        package_data={'xlrd': ['doc/*.htm*', 'doc/*.txt']},
-          )
+if python_version >= (2, 4):
+    args24 = mkargs(
+        package_data={
+            'xlrd': [
+                'doc/*.htm*',
+                # 'doc/*.txt',
+                'examples/*.*',
+                ],
+
+            },
+        )
     args.update(args24)
 
-
-# print python_version    
-# print args
 setup(**args)
-

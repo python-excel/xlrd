@@ -1,7 +1,7 @@
 # -*- coding: cp1252 -*-
 
 ##
-# Implements the mimimal functionality required
+# Implements the minimal functionality required
 # to extract a "Workbook" or "Book" stream (as one big string)
 # from an OLE2 Compound Document file.
 # <p>Copyright © 2005-2006 Stephen John Machin, Lingfo Pty Ltd</p>
@@ -31,15 +31,20 @@ class DirNode(object):
     def __init__(self, DID, dent, DEBUG=0):
         # dent is the 128-byte directory entry
         self.DID = DID
+        # (cbufsize, self.etype, self.colour, self.left_DID, self.right_DID,
+        # self.root_DID,
+        # self.first_SID,
+        # self.tot_size) = \
+        #     unpack('<HBBiii16x4x8x8xii4x', dent[64:128])
         (cbufsize, self.etype, self.colour, self.left_DID, self.right_DID,
-        self.root_DID,
-        self.first_SID,
-        self.tot_size) = \
-            unpack('<HBBiii16x4x8x8xii4x', dent[64:128])
+        self.root_DID) = \
+            unpack('<HBBiii', dent[64:80])
+        (self.first_SID, self.tot_size) = \
+            unpack('ii', dent[116:124])
         if cbufsize == 0:
             self.name = u''
         else:
-            self.name = unicode(dent[0:cbufsize-2], 'utf-16le') # omit the trailing U+0000
+            self.name = unicode(dent[0:cbufsize-2], 'utf_16_le') # omit the trailing U+0000
         self.children = [] # filled in later
         self.parent = -1 # indicates orphan; fixed up later
         self.tsinfo = unpack('<IIII', dent[100:116])
@@ -84,14 +89,18 @@ class CompDoc(object):
         self.sec_size = sec_size = 1 << ssz
         self.short_sec_size = 1 << sssz
         (
-            SAT_tot_secs, self.dir_first_sec_sid, self.min_size_std_stream,
+            SAT_tot_secs, self.dir_first_sec_sid, _unused, self.min_size_std_stream,
             SSAT_first_sec_sid, SSAT_tot_secs,
             MSAT_first_sec_sid, MSAT_tot_secs,
-        ) = unpack('<ii4xiiiii', mem[44:76])
+        # ) = unpack('<ii4xiiiii', mem[44:76])
+        ) = unpack('<iiiiiiii', mem[44:76])
         mem_data_len = len(mem) - 512
         mem_data_secs, left_over = divmod(mem_data_len, sec_size)
         if left_over:
-            raise CompDocError("Not a whole number of sectors")
+            #### raise CompDocError("Not a whole number of sectors")
+            print >> logfile, \
+                "*** WARNING: file size (%d) not 512 + multiple of sector size (%d)" \
+                % (len(mem), sec_size)
         if DEBUG:
             print >> logfile, 'sec sizes', ssz, sssz, sec_size, self.short_sec_size
             print >> logfile, "mem data: %d bytes == %d sectors" % (mem_data_len, mem_data_secs)
@@ -139,7 +148,7 @@ class CompDoc(object):
             # print >> logfile, "SAT ",
             # for i, s in enumerate(self.SAT):
                 # print >> logfile, "entry: %4d offset: %6d, next entry: %4d" % (i, 512 + sec_size * i, s)
-                # print >> logfile, "%d:%d " % (i, s), 
+                # print >> logfile, "%d:%d " % (i, s),
             print
 
         # === build the directory ===
@@ -151,8 +160,8 @@ class CompDoc(object):
             did += 1
             dirlist.append(DirNode(did, dbytes[pos:pos+128], 0))
         self.dirlist = dirlist
-        _build_family_tree(dirlist, 0, dirlist[0].root_DID) # and stand well back ...    
-        if DEBUG:    
+        _build_family_tree(dirlist, 0, dirlist[0].root_DID) # and stand well back ...
+        if DEBUG:
             for d in dirlist:
                 d.dump(DEBUG)
         #
@@ -175,8 +184,8 @@ class CompDoc(object):
             while sid >= 0 and nsecs > 0:
                 nsecs -= 1
                 start_pos = 512 + sid * sec_size
-                news = list(unpack(fmt, mem[start_pos:start_pos+sec_size]))  
-                self.SSAT.extend(news)  
+                news = list(unpack(fmt, mem[start_pos:start_pos+sec_size]))
+                self.SSAT.extend(news)
                 sid = self.SAT[sid]
             # assert SSAT_tot_secs == 0 or sid == EOCSID
             if DEBUG: print >> logfile, "SSAT last sid %d; remaining sectors %d" % (sid, nsecs)
@@ -214,7 +223,7 @@ class CompDoc(object):
         tail = path[1:]
         dl = self.dirlist
         for child in dl[storage_DID].children:
-            if dl[child].name == head:
+            if dl[child].name.lower() == head.lower():
                 et = dl[child].etype
                 if et == 2:
                     return dl[child]
@@ -231,7 +240,7 @@ class CompDoc(object):
     # return None.
     # @param qname Name of the desired stream e.g. u'Workbook'. Should be in Unicode or convertible thereto.
 
-    def get_named_stream(self, qname):    
+    def get_named_stream(self, qname):
         d = self._dir_search(qname.split("/"))
         if d is None:
             return None
@@ -289,8 +298,8 @@ class CompDoc(object):
         # print >> self.logfile, len(slices) + 1, "slices"
         if not slices:
             # The stream is contiguous ... just what we like!
-            return (mem, start_pos, size)    
-        slices.append((start_pos, end_pos))    
-        return (''.join([mem[start_pos:end_pos] for start_pos, end_pos in slices]), 0, size)    
+            return (mem, start_pos, size)
+        slices.append((start_pos, end_pos))
+        return (''.join([mem[start_pos:end_pos] for start_pos, end_pos in slices]), 0, size)
 
 # ==========================================================================================

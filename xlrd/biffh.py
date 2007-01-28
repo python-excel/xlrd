@@ -1,20 +1,75 @@
+# -*- coding: cp1252 -*-
+
 ##
 # Support module for the xlrd package.
+#
+# <p> Portions copyright © 2005-2006 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
 DEBUG = 0
 
 from struct import unpack
 import sys
+from timemachine import *
 
 class XLRDError(Exception):
     pass
+
+##
+# Parent of almost all other classes in the package. Defines a common "dump" method
+# for debugging.
+
+class BaseObject(object):
+
+    _repr_these = []
+
+    ##
+    # @param f open file object, to which the dump is written
+    # @param header text to write before the dump
+    # @param footer text to write after the dump
+    # @param indent number of leading spaces (for recursive calls)
+
+    def dump(self, f=None, header=None, footer=None, indent=0):
+        if f is None:
+            f = sys.stderr
+        alist = self.__dict__.items()
+        alist.sort()
+        pad = " " * indent
+        if header is not None: print >> f, header
+        list_type = type([])
+        dict_type = type({})
+        for attr, value in alist:
+            if getattr(value, 'dump', None) and attr != 'book':
+                value.dump(f,
+                    header="%s%s (%s object):" % (pad, attr, value.__class__.__name__),
+                    indent=indent+4)
+            elif attr not in self._repr_these and (
+                isinstance(value, list_type) or isinstance(value, dict_type)
+                ):
+                print >> f, "%s%s: %s, len = %d" % (pad, attr, type(value), len(value))
+            else:
+                print >> f, "%s%s: %r" % (pad, attr, value)
+        if footer is not None: print >> f, footer
 
 FUN, FDT, FNU, FGE, FTX = range(5) # unknown, date, number, general, text
 DATEFORMAT = FDT
 NUMBERFORMAT = FNU
 
-XL_CELL_EMPTY, XL_CELL_TEXT, XL_CELL_NUMBER, XL_CELL_DATE, XL_CELL_BOOLEAN, XL_CELL_ERROR = range(6)
+(
+    XL_CELL_EMPTY,
+    XL_CELL_TEXT,
+    XL_CELL_NUMBER,
+    XL_CELL_DATE,
+    XL_CELL_BOOLEAN,
+    XL_CELL_ERROR,
+    XL_CELL_BLANK, # for use in debugging, gathering stats, etc
+) = range(7)
+
+# for open_workbook(..., formatting_info=?????)
+##### FMT_INFO_NONE = 0
+FMT_INFO_TRIMMED = 2 ##### This will vanish RSN
+##### FMT_INFO_ALL = 1
 
 biff_text_from_num = {
     20: "2",
@@ -62,36 +117,50 @@ XL_BOUNDSHEET_VB_MODULE = 0x06
 
 # XL_RK2 = 0x7e
 XL_ARRAY = 0x221
+XL_BLANK = 0x0201
 XL_BOF = 0x809
 XL_BOOLERR = 0x205
 XL_BOUNDSHEET = 0x85
 XL_BUILTINFMTCOUNT = 0x56
+XL_CF = 0x01B1
 XL_CODEPAGE = 0x42
+XL_COLINFO = 0x7D
+XL_CONDFMT = 0x01B0
 XL_CONTINUE = 0x3c
 XL_COUNTRY = 0x8C
 XL_DATEMODE = 0x22
+XL_DEFAULTROWHEIGHT = 0x0225
+XL_DEFCOLWIDTH = 0x55
 XL_DIMENSION = 0x200
 XL_DIMENSION2 = 0x0
 XL_EOF = 0x0a
+XL_EXTERNSHEET = 0x17
 XL_EXTSST = 0xff
 XL_FILEPASS = 0x2f
+XL_FONT = 0x31
+XL_FONT_B3B4 = 0x231
 XL_FORMAT = 0x41e
 XL_FORMAT2 = 0x1E # BIFF2, BIFF3
 XL_FORMULA = 0x6
 XL_FORMULA3 = 0x206
 XL_FORMULA4 = 0x406
+XL_GCW = 0xab
 XL_INDEX = 0x20b
 XL_LABEL = 0x204
 XL_LABEL2 = 0x04
+XL_LABELRANGES = 0x15f
 XL_LABELSST = 0xfd
+XL_MERGEDCELLS = 0xE5
 XL_MSO_DRAWING = 0x00EC
 XL_MSO_DRAWING_GROUP = 0x00EB
 XL_MSO_DRAWING_SELECTION = 0x00ED
 XL_MULRK = 0xbd
+XL_MULBLANK = 0xbe
 XL_NAME = 0x18
 XL_NOTE = 0x1c
 XL_NUMBER = 0x203
 XL_OBJ = 0x5D
+XL_PALETTE = 0x92
 XL_RK = 0x27e
 XL_ROW = 0x208
 XL_RSTRING = 0xd6
@@ -99,13 +168,17 @@ XL_SHEETHDR = 0x8F # BIFF4W only
 XL_SHEETSOFFSET = 0x8E # BIFF4W only
 XL_SHRFMLA = 0x04bc
 XL_SST = 0xfc
+XL_STANDARDWIDTH = 0x99
 XL_STRING = 0x207
+XL_STYLE = 0x293
+XL_SUPBOOK = 0x1AE
 XL_TABLEOP = 0x236
 XL_TABLEOP2 = 0x37
 XL_TABLEOP_B2 = 0x36
 XL_TXO = 0x1b6
 XL_UNCALCED = 0x5e
 XL_UNKNOWN = 0xffff
+XL_WINDOW2 = 0x023E
 XL_WRITEACCESS = 0x5C
 XL_XF = 0xe0
 XL_XF2 = 0x0043 # BIFF2 version of XF record
@@ -132,10 +205,36 @@ for _cell_opcode in _cell_opcode_list:
     _cell_opcode_dict[_cell_opcode] = 1
 is_cell_opcode = _cell_opcode_dict.has_key
 
+# def fprintf(f, fmt, *vargs): f.write(fmt % vargs)
+
+def fprintf(f, fmt, *vargs):
+    if fmt.endswith('\n'):
+        print >> f, fmt[:-1] % vargs
+    else:
+        print >> f, fmt % vargs,
+
+def upkbits(tgt_obj, src, manifest, local_setattr=setattr):
+    for n, mask, attr in manifest:
+        local_setattr(tgt_obj, attr, (src & mask) >> n)
+
+def upkbitsL(tgt_obj, src, manifest, local_setattr=setattr, local_int=int):
+    for n, mask, attr in manifest:
+        local_setattr(tgt_obj, attr, local_int((src & mask) >> n))
+
 def unpack_string(data, pos, encoding, lenlen=1):
     nchars = unpack('<' + 'BH'[lenlen-1], data[pos:pos+lenlen])[0]
     pos += lenlen
     return unicode(data[pos:pos+nchars], encoding)
+
+def unpack_string_update_pos(data, pos, encoding, lenlen=1, known_len=None):
+    if known_len is not None:
+        # On a NAME record, the length byte is detached from the front of the string.
+        nchars = known_len
+    else:
+        nchars = unpack('<' + 'BH'[lenlen-1], data[pos:pos+lenlen])[0]
+        pos += lenlen
+    newpos = pos + nchars
+    return (unicode(data[pos:newpos], encoding), newpos)
 
 def unpack_unicode(data, pos, lenlen=2):
     "Return unicode_strg"
@@ -155,15 +254,15 @@ def unpack_unicode(data, pos, lenlen=2):
         # Uncompressed UTF-16-LE
         rawstrg = data[pos:pos+2*nchars]
         # if DEBUG: print "nchars=%d pos=%d rawstrg=%r" % (nchars, pos, rawstrg)
-        # strg = rawstrg.decode('utf-16le')
-        strg = unicode(rawstrg, 'utf-16le')
+        strg = unicode(rawstrg, 'utf_16_le')
         # pos += 2*nchars
     else:
         # Note: this is COMPRESSED (not ASCII!) encoding!!!
         # Merely returning the raw bytes would work OK 99.99% of the time
         # if the local codepage was cp1252 -- however this would rapidly go pear-shaped
         # for other codepages so we grit our Anglocentric teeth and return Unicode :-)
-        strg = u''.join([unichr(ord(x)) for x in data[pos:pos+nchars]])
+
+        strg = unicode(data[pos:pos+nchars], "latin_1")
         # pos += nchars
     # if richtext:
     #     pos += 4 * rt
@@ -172,7 +271,59 @@ def unpack_unicode(data, pos, lenlen=2):
     # return (strg, pos)
     return strg
 
-brecstrg = """\
+def unpack_unicode_update_pos(data, pos, lenlen=2, known_len=None):
+    "Return (unicode_strg, updated value of pos)"
+    if known_len is not None:
+        # On a NAME record, the length byte is detached from the front of the string.
+        nchars = known_len
+    else:
+        nchars = unpack('<' + 'BH'[lenlen-1], data[pos:pos+lenlen])[0]
+        pos += lenlen
+    options = ord(data[pos])
+    pos += 1
+    phonetic = options & 0x04
+    richtext = options & 0x08
+    if richtext:
+        rt = unpack('<H', data[pos:pos+2])[0]
+        pos += 2
+    if phonetic:
+        sz = unpack('<i', data[pos:pos+4])[0]
+        pos += 4
+    if options & 0x01:
+        # Uncompressed UTF-16-LE
+        strg = unicode(data[pos:pos+2*nchars], 'utf_16_le')
+        pos += 2*nchars
+    else:
+        # Note: this is COMPRESSED (not ASCII!) encoding!!!
+        strg = unicode(data[pos:pos+nchars], "latin_1")
+        pos += nchars
+    if richtext:
+        pos += 4 * rt
+    if phonetic:
+        pos += sz
+    return (strg, pos)
+
+def unpack_cell_range_address_list_update_pos(
+    output_list, data, pos, biff_version, addr_size=6):
+    # output_list is updated in situ
+    if biff_version < 80:
+        assert addr_size == 6
+    else:
+        assert addr_size in (6, 8)
+    n, = unpack("<H", data[pos:pos+2])
+    pos += 2
+    if n:
+        if addr_size == 6:
+            fmt = "<HHBB"
+        else:
+            fmt = "<HHHH"
+        for _unused in xrange(n):
+            ra, rb, ca, cb = unpack(fmt, data[pos:pos+addr_size])
+            output_list.append((ra, rb+1, ca, cb+1))
+            pos += addr_size
+    return pos
+
+_brecstrg = """\
 0000 DIMENSIONS
 0001 BLANK
 0002 INTEGER
@@ -288,6 +439,7 @@ brecstrg = """\
 01AE SUPBOOK
 01AF PROTECTIONREV4
 01B0 CONDFMT
+01B1 CF
 01B2 DVAL
 01B6 TXO
 01B7 REFRESHALL
@@ -310,7 +462,7 @@ brecstrg = """\
 0221 ARRAY
 0223 EXTERNNAME
 0225 DEFAULTROWHEIGHT
-0231 FONT
+0231 FONT_B3B4
 0236 TABLEOP
 023E WINDOW2
 0243 XF_B3
@@ -329,10 +481,10 @@ brecstrg = """\
 """
 
 biff_rec_name_dict = {}
-lines = brecstrg.splitlines()
-for buff in lines:
-    numh, name = buff.split()
-    biff_rec_name_dict[int(numh, 16)] = name
+for _buff in _brecstrg.splitlines():
+    _numh, _name = _buff.split()
+    biff_rec_name_dict[int(_numh, 16)] = _name
+del _buff, _name, _brecstrg
 
 def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout):
     endpos = min(ofs + dlen, len(strg))
@@ -355,7 +507,6 @@ def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout):
             chard += c
         print >> fout, "%5d:      %-48s %s" % (base+pos-ofs, hexd, chard)
         pos = endsub
-
 
 def biff_dump(mem, stream_offset, stream_len, base=0, fout=sys.stdout):
     pos = stream_offset
@@ -392,6 +543,30 @@ def biff_dump(mem, stream_offset, stream_len, base=0, fout=sys.stdout):
         hex_char_dump(mem, pos, stream_end-pos, adj + pos, fout)
     elif pos > stream_end:
         print >> fout, "Last dumped record has length (%d) that is too large" % length
+
+def biff_count_records(mem, stream_offset, stream_len, fout=sys.stdout):
+    pos = stream_offset
+    stream_end = stream_offset + stream_len
+    tally = {}
+    while stream_end - pos >= 4:
+        rc, length = unpack('<HH', mem[pos:pos+4])
+        if rc == 0 and length == 0:
+            if mem[pos:] == '\0' * (stream_end - pos):
+                break
+            recname = "<Dummy (zero)>"
+        else:
+            recname = biff_rec_name_dict.get(rc, None)
+            if recname is None:
+                recname = "Unknown_0x%04X" % rc
+        if tally.has_key(recname):
+            tally[recname] += 1
+        else:
+            tally[recname] = 1
+        pos += length + 4
+    slist = tally.items()
+    slist.sort()
+    for recname, count in slist:
+        print >> fout, "%8d %s" % (count, recname)
 
 encoding_from_codepage = {
     1200 : 'utf_16_le',
