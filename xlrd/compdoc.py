@@ -99,7 +99,7 @@ class CompDoc(object):
         if left_over:
             #### raise CompDocError("Not a whole number of sectors")
             print >> logfile, \
-                "*** WARNING: file size (%d) not 512 + multiple of sector size (%d)" \
+                "WARNING *** file size (%d) not 512 + multiple of sector size (%d)" \
                 % (len(mem), sec_size)
         if DEBUG:
             print >> logfile, 'sec sizes', ssz, sssz, sec_size, self.short_sec_size
@@ -136,8 +136,10 @@ class CompDoc(object):
             if msid == FREESID: continue
             if msid >= mem_data_secs:
                 if not trunc_warned:
-                    print >> logfile, "*** WARNING: file is truncated, or OLE2 MSAT is corrupt!!"
-                    print >> logfile, "*** Trying to access sector %d but only %d available" % (msid, mem_data_secs)
+                    print >> logfile, "WARNING *** File is truncated, or OLE2 MSAT is corrupt!!"
+                    print >> logfile, \
+                        "INFO: Trying to access sector %d but only %d available" \
+                        % (msid, mem_data_secs)
                     trunc_warned = 1
                 continue
             offset = 512 + sec_size * msid
@@ -153,7 +155,9 @@ class CompDoc(object):
 
         # === build the directory ===
         #
-        dbytes = self._get_stream(self.mem, 512, self.SAT, self.sec_size, self.dir_first_sec_sid)
+        dbytes = self._get_stream(
+            self.mem, 512, self.SAT, self.sec_size, self.dir_first_sec_sid,
+            name="directory")
         dirlist = []
         did = -1
         for pos in xrange(0, len(dbytes), 128):
@@ -170,14 +174,16 @@ class CompDoc(object):
         sscs_dir = self.dirlist[0]
         assert sscs_dir.etype == 5 # root entry
         self.SSCS = self._get_stream(
-            self.mem, 512, self.SAT, sec_size, sscs_dir.first_SID, sscs_dir.tot_size)
+            self.mem, 512, self.SAT, sec_size, sscs_dir.first_SID,
+            sscs_dir.tot_size, name="SSCS")
         # if DEBUG: print >> logfile, "SSCS", repr(self.SSCS)
         #
         # === build the SSAT ===
         #
         self.SSAT = []
         if SSAT_tot_secs > 0 and sscs_dir.tot_size == 0:
-            print >> logfile, "*** WARNING: OLE2 inconsistency: SSCS size is 0 but SSAT size is non-zero ***"
+            print >> logfile, \
+                "WARNING *** OLE2 inconsistency: SSCS size is 0 but SSAT size is non-zero"
         if sscs_dir.tot_size > 0:
             sid = SSAT_first_sec_sid
             nsecs = SSAT_tot_secs
@@ -192,7 +198,7 @@ class CompDoc(object):
             assert nsecs == 0 and sid == EOCSID
         if DEBUG: print >> logfile, "SSAT", self.SSAT
 
-    def _get_stream(self, mem, base, sat, sec_size, start_sid, size=None):
+    def _get_stream(self, mem, base, sat, sec_size, start_sid, size=None, name=''):
         # print >> self.logfile, "_get_stream", base, sec_size, start_sid, size
         sectors = []
         s = start_sid
@@ -214,7 +220,10 @@ class CompDoc(object):
                 sectors.append(mem[start_pos:start_pos+grab])
                 s = sat[s]
             assert s == EOCSID
-            assert todo == 0
+            if todo != 0:
+                print >> self.logfile, \
+                    "WARNING *** OLE2 stream %r: expected size %d, actual size %d" \
+                    % (name, size, size - todo)
         return ''.join(sectors)
 
     def _dir_search(self, path, storage_DID=0):
@@ -245,9 +254,13 @@ class CompDoc(object):
         if d is None:
             return None
         if d.tot_size >= self.min_size_std_stream:
-            return self._get_stream(self.mem, 512, self.SAT, self.sec_size, d.first_SID, d.tot_size)
+            return self._get_stream(
+                self.mem, 512, self.SAT, self.sec_size, d.first_SID,
+                d.tot_size, name=qname)
         else:
-            return self._get_stream(self.SSCS, 0, self.SSAT, self.short_sec_size, d.first_SID, d.tot_size)
+            return self._get_stream(
+                self.SSCS, 0, self.SSAT, self.short_sec_size, d.first_SID,
+                d.tot_size, name=qname + " (from SSCS)")
 
     ##
     # Interrogate the compound document's directory.
@@ -266,7 +279,9 @@ class CompDoc(object):
             return self._locate_stream(self.mem, 512, self.SAT, self.sec_size, d.first_SID, d.tot_size)
         else:
             return (
-                self._get_stream(self.SSCS, 0, self.SSAT, self.short_sec_size, d.first_SID, d.tot_size),
+                self._get_stream(
+                    self.SSCS, 0, self.SSAT, self.short_sec_size, d.first_SID,
+                    d.tot_size, qname + " (from SSCS)"),
                 0,
                 d.tot_size
                 )

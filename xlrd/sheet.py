@@ -677,10 +677,14 @@ class Sheet(BaseObject):
         global rc_stats
         DEBUG = 0
         blah = DEBUG or self.verbosity >= 2
+        blah_rows = DEBUG or self.verbosity >= 4
         blah_formulas = 0 and blah
         oldpos = bk._position
         bk.position(self._position)
-        XL_SHRFMLA_ETC_ETC = (XL_SHRFMLA, XL_ARRAY, XL_TABLEOP, XL_TABLEOP2, XL_TABLEOP_B2)
+        XL_SHRFMLA_ETC_ETC = (
+            XL_SHRFMLA, XL_ARRAY, XL_TABLEOP, XL_TABLEOP2,
+            XL_ARRAY2, XL_TABLEOP_B2,
+            )
         self_put_number_cell = self.put_number_cell
         self_put_cell = self.put_cell
         self_put_blank_cell = self.put_blank_cell
@@ -698,10 +702,10 @@ class Sheet(BaseObject):
             #     rc_stats[rc] = 1
             # if DEBUG: print "SHEET.READ: op 0x%04x, %d bytes %r" % (rc, data_len, data)
             if rc == XL_NUMBER:
-                # rowx, colx, xf_index, d = local_unpack(unpack_number_fmt, data)
                 rowx, colx, xf_index, d = local_unpack('<HHHd', data)
-                # if rowx < 5:
-                #     fprintf(self.logfile, "NUMBER: %d %d %d %f %d\n", rowx, colx, xf_index, d, fty)
+                # if xf_index == 0:
+                #     fprintf(self.logfile,
+                #         "NUMBER: r=%d c=%d xfx=%d %f\n", rowx, colx, xf_index, d)
                 self_put_number_cell(rowx, colx, d, xf_index)
             elif rc == XL_LABELSST:
                 rowx, colx, xf_index, sstindex = local_unpack('<HHHi', data)
@@ -774,7 +778,7 @@ class Sheet(BaseObject):
                     fprintf(self.logfile,
                         "**ROW %d %d %d\n",
                         self.number, rowx, r.xf_index)
-                if blah:
+                if blah_rows:
                     print >> self.logfile, 'ROW', rowx, bits1, bits2
                     r.dump(self.logfile,
                         header="--- sh #%d, rowx=%d ---" % (self.number, rowx))
@@ -936,6 +940,9 @@ class Sheet(BaseObject):
                     dim_tuple = local_unpack('<ixxH', data[4:12])
                 self.nrows, self.ncols = 0, 0
                 self._dimnrows, self._dimncols = dim_tuple
+                if not self.book._xf_epilogue_done:
+                    # Needed for bv <= 40
+                    self.book.xf_epilogue()
                 if blah:
                     fprintf(self.logfile,
                         "sheet %d(%r) DIMENSIONS: ncols=%d nrows=%d\n",

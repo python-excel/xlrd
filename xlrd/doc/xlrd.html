@@ -313,6 +313,11 @@ An open file, to which the dump is written.</dd>
 <p>There is one and only one instance of an empty cell -- it's a singleton. This is it.
 You may use a test like &quot;acell is empty_cell&quot;.</p>
 </dd>
+<dt><b>EqNeAttrs</b> (class)  [<a href='#xlrd.EqNeAttrs-class'>#</a>]</dt>
+<dd>
+<p>This mixin class exists solely so that Format, Font, and XF....</p>
+<p>For more information about this class, see <a href='#xlrd.EqNeAttrs-class'><i>The EqNeAttrs Class</i></a>.</p>
+</dd>
 <dt><a id='xlrd.error_text_from_code-variable' name='xlrd.error_text_from_code-variable'><b>error_text_from_code</b></a> (variable) [<a href='#xlrd.error_text_from_code-variable'>#</a>]</dt>
 <dd>
 <p /><p>This dictionary can be used to produce a text version of the internal codes
@@ -625,15 +630,6 @@ Colour indexes into the palette map into (red, green, blue) tuples.
 file. If you are writing an output XLS file, use <i>palette_record</i>.
 <br /> -- New in version 0.6.1
 </p></dd>
-<dt><a id='xlrd.Book.computed_xf_list-attribute' name='xlrd.Book.computed_xf_list-attribute'><b>computed_xf_list</b></a> [<a href='#xlrd.Book.computed_xf_list-attribute'>#</a>]</dt>
-<dd>
-<p>A list of XF class instances, adjusted for inheritance. This means that
-each cell XF has had the relevant components of its "parent" style XF
-applied to it. Use this list (instead of raw_xf_list) when you need
-the information that should be used to render a cell (on the screen,
-in a PDF file, etc).
-<br /> -- New in version 0.6.1
-</p></dd>
 <dt><a id='xlrd.Book.countries-attribute' name='xlrd.Book.countries-attribute'><b>countries</b></a> [<a href='#xlrd.Book.countries-attribute'>#</a>]</dt>
 <dd>
 <p>A tuple containing the (telephone system) country code for:<br />
@@ -713,14 +709,6 @@ writing an output XLS file. If you want to render cells on screen or in a PDF
 file, use colour_map.
 <br /> -- New in version 0.6.1
 </p></dd>
-<dt><a id='xlrd.Book.raw_xf_list-attribute' name='xlrd.Book.raw_xf_list-attribute'><b>raw_xf_list</b></a> [<a href='#xlrd.Book.raw_xf_list-attribute'>#</a>]</dt>
-<dd>
-<p>A list of XF class instances, each corresponding to an XF record.
-Use this list (instead of computed_xf_list) when you need to see
-exactly what is in the file, or you are using (for example) pyExcelerator
-to copy formatting information unchanged to an output file.
-<br /> -- New in version 0.6.1
-</p></dd>
 <dt><a id='xlrd.Book.sheet_by_index-method' name='xlrd.Book.sheet_by_index-method'><b>sheet_by_index(sheetx)</b></a> [<a href='#xlrd.Book.sheet_by_index-method'>#</a>]</dt>
 <dd>
 <dl>
@@ -770,7 +758,7 @@ Normal, RowLevel_1 to RowLevel_7,
 ColLevel_1 to ColLevel_7, Comma, Currency, Percent, "Comma [0]",
 "Currency [0]", Hyperlink, and "Followed Hyperlink".<br />
 <i>built_in</i> 1 = built-in style, 0 = user-defined<br />
-<i>xf_index</i> is an index into Book.computed_xf_list and Book.raw_xf_list.<br />
+<i>xf_index</i> is an index into Book.xf_list.<br />
 References: OOo docs s6.99 (STYLE record); Excel UI Format/Style
 <br /> -- New in version 0.6.1
 </p></dd>
@@ -778,6 +766,11 @@ References: OOo docs s6.99 (STYLE record); Excel UI Format/Style
 <dd>
 <p>What (if anything) is recorded as the name of the last user to save the file.</p>
 </dd>
+<dt><a id='xlrd.Book.xf_list-attribute' name='xlrd.Book.xf_list-attribute'><b>xf_list</b></a> [<a href='#xlrd.Book.xf_list-attribute'>#</a>]</dt>
+<dd>
+<p>A list of XF class instances, each corresponding to an XF record.
+<br /> -- New in version 0.6.1
+</p></dd>
 </dl>
 <h2><a id='xlrd.Cell-class' name='xlrd.Cell-class'>The Cell Class</a></h2>
 <dl>
@@ -905,6 +898,14 @@ using default font (first FONT record in the file).</p>
 <dt><a id='xlrd.Colinfo.xf_index-attribute' name='xlrd.Colinfo.xf_index-attribute'><b>xf_index</b></a> [<a href='#xlrd.Colinfo.xf_index-attribute'>#</a>]</dt>
 <dd>
 <p>XF index to be used for formatting empty cells.</p>
+</dd>
+</dl>
+<h2><a id='xlrd.EqNeAttrs-class' name='xlrd.EqNeAttrs-class'>The EqNeAttrs Class</a></h2>
+<dl>
+<dt><b>EqNeAttrs</b> (class)  [<a href='#xlrd.EqNeAttrs-class'>#</a>]</dt>
+<dd>
+<p>This mixin class exists solely so that Format, Font, and XF.... objects
+can be compared by value of their attributes.</p>
 </dd>
 </dl>
 <h2><a id='xlrd.Font-class' name='xlrd.Font-class'>The Font Class</a></h2>
@@ -1580,8 +1581,8 @@ if the index is less than 164.
 </dd>
 <dt><a id='xlrd.XF.parent_style_index-attribute' name='xlrd.XF.parent_style_index-attribute'><b>parent_style_index</b></a> [<a href='#xlrd.XF.parent_style_index-attribute'>#</a>]</dt>
 <dd>
-<p>cell XF: Index into Book.raw_xf_list
-and Book.computed_xf_list of this XF's style XF<br />
+<p>cell XF: Index into Book.xf_list
+of this XF's style XF<br />
 style XF: 0xFFF
 </p></dd>
 <dt><a id='xlrd.XF.protection-attribute' name='xlrd.XF.protection-attribute'><b>protection</b></a> [<a href='#xlrd.XF.protection-attribute'>#</a>]</dt>
@@ -1590,7 +1591,7 @@ style XF: 0xFFF
 </dd>
 <dt><a id='xlrd.XF.xf_index-attribute' name='xlrd.XF.xf_index-attribute'><b>xf_index</b></a> [<a href='#xlrd.XF.xf_index-attribute'>#</a>]</dt>
 <dd>
-<p>Index into Book.raw_xf_list and Book.computed_xf_list</p>
+<p>Index into Book.xf_list</p>
 </dd>
 </dl>
 <h2><a id='xlrd.XFAlignment-class' name='xlrd.XFAlignment-class'>The XFAlignment Class</a></h2>

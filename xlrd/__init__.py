@@ -1,6 +1,6 @@
 # -*- coding: cp1252 -*-
 
-__VERSION__ = "0.6.1a3"
+__VERSION__ = "0.6.1a4"
 
 # <p>Copyright © 2005-2006 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
@@ -573,20 +573,8 @@ class Book(BaseObject):
 
     ##
     # A list of XF class instances, each corresponding to an XF record.
-    # Use this list (instead of computed_xf_list) when you need to see
-    # exactly what is in the file, or you are using (for example) pyExcelerator
-    # to copy formatting information unchanged to an output file.
     # <br /> -- New in version 0.6.1
-    raw_xf_list = []
-
-    ##
-    # A list of XF class instances, adjusted for inheritance. This means that
-    # each cell XF has had the relevant components of its "parent" style XF
-    # applied to it. Use this list (instead of raw_xf_list) when you need
-    # the information that should be used to render a cell (on the screen,
-    # in a PDF file, etc).
-    # <br /> -- New in version 0.6.1
-    computed_xf_list = []
+    xf_list = []
 
     ##
     # A list of Format objects, each corresponding to a FORMAT record, in
@@ -613,7 +601,7 @@ class Book(BaseObject):
     # ColLevel_1 to ColLevel_7, Comma, Currency, Percent, "Comma [0]",
     # "Currency [0]", Hyperlink, and "Followed Hyperlink".<br />
     # <i>built_in</i> 1 = built-in style, 0 = user-defined<br />
-    # <i>xf_index</i> is an index into Book.computed_xf_list and Book.raw_xf_list.<br />
+    # <i>xf_index</i> is an index into Book.xf_list.<br />
     # References: OOo docs s6.99 (STYLE record); Excel UI Format/Style
     # <br /> -- New in version 0.6.1
     style_name_map = {}
@@ -753,8 +741,7 @@ class Book(BaseObject):
         self.name_obj_list = []
         self.colour_map = {}
         self.palette_record = []
-        self.raw_xf_list = []
-        self.computed_xf_list = []
+        self.xf_list = []
         self.style_name_map = {}
 
         need_close_filestr = 0
@@ -831,8 +818,7 @@ class Book(BaseObject):
         self.xfcount = 0
         self.actualfmtcount = 0 # number of FORMAT records seen so far
         self._xf_index_to_xl_type_map = {}
-        self.raw_xf_list = []
-        self.computed_xf_list = []
+        self.xf_list = []
         self.font_list = []
 
     def release_resources(self):
@@ -1329,6 +1315,7 @@ class Book(BaseObject):
                 print >> self.logfile, "*** Unexpected BOF at posn %d: 0x%04x len=%d data=%r" \
                     % (self._position - length - 4, rc, length, data)
             elif rc ==  XL_EOF:
+                self.xf_epilogue()
                 self.names_epilogue()
                 self.palette_epilogue()
                 if not self.encoding:
