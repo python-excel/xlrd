@@ -10,6 +10,9 @@
 
 # No part of the content of this file was derived from the works of David Giffin.
 
+# 2007-04-22 SJM Missing "<" in a struct.unpack call => can't open files on bigendian platforms.
+# 2007-05-07 SJM Meaningful exception instead of IndexError if a SAT (sector allocation table) is corrupted.
+
 import sys
 from struct import unpack
 from timemachine import *
@@ -40,7 +43,7 @@ class DirNode(object):
         self.root_DID) = \
             unpack('<HBBiii', dent[64:80])
         (self.first_SID, self.tot_size) = \
-            unpack('ii', dent[116:124])
+            unpack('<ii', dent[116:124])
         if cbufsize == 0:
             self.name = u''
         else:
@@ -207,7 +210,13 @@ class CompDoc(object):
             while s >= 0:
                 start_pos = base + s * sec_size
                 sectors.append(mem[start_pos:start_pos+sec_size])
-                s = sat[s]
+                try:
+                    s = sat[s]
+                except IndexError:
+                    raise CompDocError(
+                        "OLE2 stream %r: sector allocation table invalid entry (%d)" %
+                        (name, s)
+                        )
             assert s == EOCSID
         else:
             todo = size
@@ -218,7 +227,13 @@ class CompDoc(object):
                     grab = todo
                 todo -= grab
                 sectors.append(mem[start_pos:start_pos+grab])
-                s = sat[s]
+                try:
+                    s = sat[s]
+                except IndexError:
+                    raise CompDocError(
+                        "OLE2 stream %r: sector allocation table invalid entry (%d)" %
+                        (name, s)
+                        )
             assert s == EOCSID
             if todo != 0:
                 print >> self.logfile, \

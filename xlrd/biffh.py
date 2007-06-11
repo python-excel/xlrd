@@ -7,6 +7,8 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2007-04-22 SJM Remove experimental "trimming" facility.
+
 DEBUG = 0
 
 from struct import unpack
@@ -65,11 +67,6 @@ NUMBERFORMAT = FNU
     XL_CELL_ERROR,
     XL_CELL_BLANK, # for use in debugging, gathering stats, etc
 ) = range(7)
-
-# for open_workbook(..., formatting_info=?????)
-##### FMT_INFO_NONE = 0
-FMT_INFO_TRIMMED = 2 ##### This will vanish RSN
-##### FMT_INFO_ALL = 1
 
 biff_text_from_num = {
     20: "2",

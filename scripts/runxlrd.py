@@ -1,4 +1,35 @@
 # -*- coding: cp1252 -*-
+# <p>Copyright © 2005-2007 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>This script is part of the xlrd package, which is released under a
+# BSD-style licence.</p>
+
+# 2007-06-10 SJM Removed reference to removed "trimming" option-value.
+# 2007-06-10 SJM Added documentation of commands.
+# 2007-06-10 SJM Changed cmds: dump -> biff_dump, count_records -> biff_count.
+
+cmd_doc = """
+Commands:
+
+2rows           Print the contents of first and last row in each sheet
+3rows           Print the contents of first, second and last row in each sheet
+bench           Same as "show", but doesn't print -- for profiling
+biff_count[1]   Print a count of each type of BIFF record in the file
+biff_dump[1]    Print a dump (char and hex) of the BIFF records in the file
+hdr             Mini-overview of file (no per-sheet information)
+hotshot         Do a hotshot profile run e.g. ... -f1 hotshot bench bigfile*.xls
+labels          Dump of sheet.col_label_ranges and ...row... for each sheet
+name_dump       Dump of each object in book.name_obj_list
+names           Print brief information for each NAME record
+ov              Overview of file
+profile         Like "hotshot", but uses cProfile
+show            Print the contents of all rows in each sheet
+version[0]      Print versions of xlrd and Python and exit
+xfc             Print "XF counts" and cell-type counts -- see code for details
+
+[0] means no file arg
+[1] means only one file arg i.e. no glob.glob pattern
+"""
+
 options = None
 if __name__ == "__main__":
 
@@ -53,8 +84,8 @@ if __name__ == "__main__":
             % (xlrd.biff_text_from_num[bk.biff_version], bk.datemode)
         print "codepage: %r (encoding: %s); countries: %r" \
             % (bk.codepage, bk.encoding, bk.countries)
-        print "last saved by: %r" % bk.user_name
-        print "nsheets: %d; sheet names: %r" % (bk.nsheets, bk.sheet_names())
+        print "Last saved by: %r" % bk.user_name
+        print "Number of data sheets: %d" % bk.nsheets
         print "Pickleable: %d; Use mmap: %d; Formatting: %d" \
             % (bk.pickleable, bk.use_mmap, bk.formatting_info)
         print "FORMATs: %d, FONTs: %d, XFs: %d" \
@@ -169,7 +200,7 @@ if __name__ == "__main__":
     def main(cmd_args):
         import optparse
         global options
-        usage = "%prog [options] command [input-file-patterns]"
+        usage = "\n%prog [options] command [input-file-patterns]\n" + cmd_doc
         oparser = optparse.OptionParser(usage)
         oparser.add_option(
             "-l", "--logfilename",
@@ -196,7 +227,6 @@ if __name__ == "__main__":
             type="int", default=0,
             help="0 (default): no fmt info\n"
                  "1: fmt info (all cells)\n"
-                 "2: fmt info (margins trimmed)\n"
             )
         oparser.add_option(
             "-g", "--gc",
@@ -211,13 +241,13 @@ if __name__ == "__main__":
         if len(args) == 1 and args[0] in ("version", ):
             pass
         elif len(args) < 2:
-            oparser.error("Expected al least 2 args, found %d" % len(args))
+            oparser.error("Expected at least 2 args, found %d" % len(args))
         cmd = args[0]
         xlrd_version = getattr(xlrd, "__VERSION__", "unknown; before 0.5")
-        if cmd == 'dump':
+        if cmd == 'biff_dump':
             xlrd.dump(args[1])
             sys.exit(0)
-        if cmd == 'count_records':
+        if cmd == 'biff_count':
             xlrd.count_records(args[1])
             sys.exit(0)
         if cmd == 'version':

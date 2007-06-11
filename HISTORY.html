@@ -1,3 +1,25 @@
+<p>  Version 0.6.1, 2007-06-10
+</p>
+<ul>
+<li> Version number updated to 1.6.1
+</li>
+<li> Documented runxlrd.py commands in its usage message. Changed commands: dump to biff_dump, count_records to biff_count.
+</li>
+</ul>
+
+<p>  Version 0.6.1a5
+</p>
+<ul>
+<li> Bug fixed: Missing "<" in a struct.unpack call means can't open files on bigendian platforms. Discovered by "Mihalis".
+</li>
+<li> Removed antique undocumented Book.get_name_dict method and experimental "trimming" facility.
+</li>
+<li> Meaningful exception instead of IndexError if a SAT (sector allocation table) is corrupted.
+</li>
+<li> If no CODEPAGE record in pre-8.0 file, assume ascii and keep going (instead of raising exception).
+</li>
+</ul>
+
 <p>  Version 0.6.1a4
 </p>
 <ul>

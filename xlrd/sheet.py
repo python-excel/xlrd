@@ -5,6 +5,8 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2007-04-22 SJM Remove experimental "trimming" facility.
+
 from biffh import *
 from timemachine import *
 from struct import unpack
@@ -190,7 +192,6 @@ class Sheet(BaseObject):
         self.number = number
         self.verbosity = book.verbosity
         self.formatting_info = book.formatting_info
-        self._trimming = book.formatting_info == FMT_INFO_TRIMMED
         self._xf_index_to_xl_type_map = book._xf_index_to_xl_type_map
         self.nrows = 0 # actual, including possibly empty cells
         self.ncols = 0
@@ -232,21 +233,6 @@ class Sheet(BaseObject):
             self.utter_max_rows = 65536
         else:
             self.utter_max_rows = 16384
-        if 0:
-            if self._trimming:
-                self.put_cell = self.put_cell_trimming
-                self.put_number_cell = self.put_number_cell_trimming
-            else:
-                self.put_cell = self.put_cell_no_trimming
-                self.put_number_cell = self.put_number_cell_no_trimming
-        else:
-            cls = self.__class__
-            if self._trimming:
-                setattr(cls, "put_cell", self.put_cell_trimming)
-                setattr(cls, "put_number_cell", self.put_number_cell_trimming)
-            else:
-                setattr(cls, "put_cell", self.put_cell_no_trimming)
-                setattr(cls, "put_number_cell", self.put_number_cell_no_trimming)
 
     ##
     # Cell object in the given row and column.
@@ -486,46 +472,6 @@ class Sheet(BaseObject):
                 "sheet %d: avg row len %.1f; max row len %d" \
                 % (self.number, avgrowlen, self.ncols)
 
-    def fix_ragged_rows_trimming(self):
-        t0 = time.time()
-        ncols = self.ncols
-        rqdncols = self._maxdatacolx + 1
-        rqdnrows = self._maxdatarowx + 1
-        print "fix ragged trimming #1", self.nrows, self.ncols, rqdnrows, rqdncols
-        xce = XL_CELL_EMPTY
-        aa = array_array
-        s_cell_types = self._cell_types
-        s_cell_values = self._cell_values
-        s_cell_xf_indexes = self._cell_xf_indexes
-        s_dont_use_array = self.dont_use_array
-        # Get rid of any trailing rows
-        assert rqdnrows <= self.nrows
-        if self.nrows > rqdnrows:
-            del s_cell_types[rqdnrows:]
-            del s_cell_values[rqdnrows:]
-            del s_cell_xf_indexes[rqdnrows:]
-            self.nrows = rqdnrows
-        self.ncols = rqdncols
-        print "fix ragged trimming #2", self.nrows, self.ncols
-        # Adjust the columns
-        for rowx in xrange(self.nrows):
-            trow = s_cell_types[rowx]
-            rlen = len(trow)
-            nextra = rqdncols - rlen
-            if nextra > 0:
-                s_cell_values[rowx][rlen:] = [''] * nextra
-                if s_dont_use_array:
-                    trow[rlen:] = [xce] * nextra
-                    s_cell_xf_indexes[rowx][rlen:] = [-1] * nextra
-                else:
-                    trow.extend(aa('B', [xce]) * nextra)
-                    s_cell_xf_indexes[rowx][rlen:] = aa('h', [-1]) * nextra
-            elif nextra < 0:
-                del trow[rqdncols:]
-                del s_cell_values[rowx][rqdncols:]
-                del s_cell_xf_indexes[rowx][rqdncols:]
-        self._fix_ragged_rows_time = time.time() - t0
-
     def tidy_dimensions(self):
         if self.verbosity >= 3:
             fprintf(self.logfile,
@@ -556,12 +502,10 @@ class Sheet(BaseObject):
                 self.nrows,
                 self.ncols,
                 )
-        if self._trimming:
-            self.fix_ragged_rows_trimming()
-        elif self._need_fix_ragged_rows:
+        if self._need_fix_ragged_rows:
             self.fix_ragged_rows()
 
-    def put_cell_no_trimming(self, rowx, colx, ctype, value, xf_index):
+    def put_cell(self, rowx, colx, ctype, value, xf_index):
         try:
             self._cell_types[rowx][colx] = ctype
             self._cell_values[rowx][colx] = value
@@ -582,31 +526,8 @@ class Sheet(BaseObject):
             print >> self.logfile, "put_cell", rowx, colx
             raise
 
-    def put_cell_trimming(self, rowx, colx, ctype, value, xf_index):
-        # Don't use this for cells from BLANK or MULBLANK records.
-        if rowx > self._maxdatarowx: self._maxdatarowx = rowx
-        if colx > self._maxdatacolx: self._maxdatacolx = colx
-        try:
-            self._cell_types[rowx][colx] = ctype
-            self._cell_values[rowx][colx] = value
-            self._cell_xf_indexes[rowx][colx] = xf_index
-        except IndexError:
-            # print >> self.logfile, "put_cell extending", rowx, colx
-            self.extend_cells(rowx+1, colx+1)
-            try:
-                self._cell_types[rowx][colx] = ctype
-                self._cell_values[rowx][colx] = value
-                self._cell_xf_indexes[rowx][colx] = xf_index
-            except:
-                print >> self.logfile, "put_cell", rowx, colx
-                raise
-        except:
-            print >> self.logfile, "put_cell", rowx, colx
-            raise
-
     def put_blank_cell(self, rowx, colx, xf_index):
         # This is used for cells from BLANK and MULBLANK records
-        # irrespective of whether we are trimming or not.
         ctype = XL_CELL_BLANK
         value = ''
         try:
@@ -627,7 +548,7 @@ class Sheet(BaseObject):
             print >> self.logfile, "put_cell", rowx, colx
             raise
 
-    def put_number_cell_no_trimming(self, rowx, colx, value, xf_index):
+    def put_number_cell(self, rowx, colx, value, xf_index):
         ctype = self._xf_index_to_xl_type_map[xf_index]
         try:
             self._cell_types[rowx][colx] = ctype
@@ -642,28 +563,6 @@ class Sheet(BaseObject):
                 self._cell_values[rowx][colx] = value
                 if self.formatting_info:
                     self._cell_xf_indexes[rowx][colx] = xf_index
-            except:
-                print >> self.logfile, "put_number_cell", rowx, colx
-                raise
-        except:
-            print >> self.logfile, "put_number_cell", rowx, colx
-            raise
-
-    def put_number_cell_trimming(self, rowx, colx, value, xf_index):
-        ctype = self._xf_index_to_xl_type_map[xf_index]
-        if rowx > self._maxdatarowx: self._maxdatarowx = rowx
-        if colx > self._maxdatacolx: self._maxdatacolx = colx
-        try:
-            self._cell_types[rowx][colx] = ctype
-            self._cell_values[rowx][colx] = value
-            self._cell_xf_indexes[rowx][colx] = xf_index
-        except IndexError:
-            # print >> self.logfile, "put_number_cell extending", rowx, colx
-            self.extend_cells(rowx+1, colx+1)
-            try:
-                self._cell_types[rowx][colx] = ctype
-                self._cell_values[rowx][colx] = value
-                self._cell_xf_indexes[rowx][colx] = xf_index
             except:
                 print >> self.logfile, "put_number_cell", rowx, colx
                 raise

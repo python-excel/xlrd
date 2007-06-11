@@ -1,8 +1,8 @@
 # -*- coding: cp1252 -*-
 
-__VERSION__ = "0.6.1a4"
+__VERSION__ = "0.6.1" # 2007-06-10
 
-# <p>Copyright © 2005-2006 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2007 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
@@ -51,8 +51,9 @@ import licences
 # used to translate to Unicode.</p>
 # <small>
 # <p>If the CODEPAGE record is missing (possible if the file was created
-# by third-party software), you will need to determine the encoding yourself,
-# and tell xlrd:
+# by third-party software), xlrd will assume that the encoding is ascii, and keep going.
+# If the actual encoding is not ascii, a UnicodeDecodeError exception will be raised and 
+# you will need to determine the encoding yourself, and tell xlrd:
 # <pre>
 #     book = xlrd.open_workbook(..., encoding_override="cp1252")
 # </pre></p>
@@ -248,6 +249,9 @@ import licences
 #       files, only those who are visually rendering cells.</li>
 # </ul>
 ##
+
+# 2007-04-22 SJM Removed antique undocumented Book.get_name_dict method.
+# 2007-05-21 SJM If no CODEPAGE record in pre-8.0 file, assume ascii and keep going.
 
 from timemachine import *
 from biffh import *
@@ -672,41 +676,6 @@ class Book(BaseObject):
     # <br> -- New in version 0.6.0
     name_map = {}
 
-    # XXXX Undocumented deprecated preliminary 0.6.0a1 API :-)
-    # @return A dictionary of names and what they refer to.
-    # See separate documentation.
-    def get_name_dict(self):
-        if self.biff_version < 50:
-            raise XLRDError("Extracting names not supported for Excel 4.0 or earlier.")
-        rdict = {}
-        for nobj in self.name_obj_list:
-            if nobj.macro or nobj.binary or nobj.any_rel: continue
-            if len(nobj.stack) != 1: continue
-            opnd = nobj.stack[0]
-            if opnd.kind == 0: continue # oUNK
-            # if opnd.value is None: continue
-            if opnd.kind < 0: # an oREF
-                if opnd.value is not None:
-                    if type(opnd.value) is not type([]):
-                        nobj.dump(self.logfile,
-                            header="!!! get_name_dict: operand value is not a list !!!",
-                            footer="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                        continue
-                    dodgy = 0
-                    for coords in opnd.value:
-                        dodgy |= (coords[0] < 0)
-                    if dodgy:
-                        # nobj.dump(self.logfile,
-                        #     header="--- get_name_dict: not a local ref (sheetx is -ve)---")
-                        continue
-            key = nobj.name.lower(), nobj.scope
-            data = nobj.name, opnd
-            if rdict.has_key(key):
-                raise XLRDError('Duplicate entry %r in name dictionary' % (key, ))
-            else:
-                rdict[key] = data
-        return rdict
-
     def __init__(self, filename=None, file_contents=None,
         logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
         encoding_override=None,
@@ -948,16 +917,18 @@ class Book(BaseObject):
     def derive_encoding(self):
         if self.encoding_override:
             self.encoding = self.encoding_override
-        else:
-            if self.codepage is None:
-                if self.biff_version < 80:
-                    raise XLRDError(
-                        "No CODEPAGE record, encoding_override not used: can't determine encoding")
+        elif self.codepage is None:
+            if self.biff_version < 80:
+                fprintf(self.logfile,
+                    "*** No CODEPAGE record, no encoding_override: will use 'ascii'\n")
+                self.encoding = 'ascii'
+            else:
                 self.codepage = 1200 # utf16le
                 if self.verbosity >= 2:
                     fprintf(self.logfile, "*** No CODEPAGE record; assuming 1200 (utf_16_le)\n")
+        else:
             codepage = self.codepage
-            if  encoding_from_codepage.has_key(codepage):
+            if encoding_from_codepage.has_key(codepage):
                 encoding = encoding_from_codepage[codepage]
             elif 300 <= codepage <= 1999:
                 encoding = 'cp' + str(codepage)
