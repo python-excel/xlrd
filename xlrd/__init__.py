@@ -1,6 +1,6 @@
 # -*- coding: cp1252 -*-
 
-__VERSION__ = "0.6.1" # 2007-06-10
+__VERSION__ = "0.7.0a1" # 2007-07-07
 
 # <p>Copyright © 2005-2007 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
@@ -252,6 +252,8 @@ import licences
 
 # 2007-04-22 SJM Removed antique undocumented Book.get_name_dict method.
 # 2007-05-21 SJM If no CODEPAGE record in pre-8.0 file, assume ascii and keep going.
+# 2007-07-07 SJM Version changed to 0.7.0 (alpha 1)
+# 2007-07-07 SJM Logfile arg wasn't being passed from open_workbook to compdoc.CompDoc
 
 from timemachine import *
 from biffh import *
@@ -757,7 +759,7 @@ class Book(BaseObject):
             # got this one at the antique store
             self.mem = filestr
         else:
-            cd = compdoc.CompDoc(filestr)
+            cd = compdoc.CompDoc(filestr, logfile=self.logfile)
             if USE_FANCY_CD:
                 for qname in [u'Workbook', u'Book']:
                     self.mem, self.base, self.stream_len = cd.locate_named_stream(qname)
