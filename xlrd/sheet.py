@@ -1,10 +1,12 @@
 # -*- coding: cp1252 -*-
 
 ##
-# <p> Portions copyright © 2005-2006 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p> Portions copyright © 2005-2007 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2007-10-11 SJM Added missing entry for blank cell type to ctype_text
+# 2007-07-11 SJM Allow for BIFF2/3-style FORMAT record in BIFF4/8 file
 # 2007-04-22 SJM Remove experimental "trimming" facility.
 
 from biffh import *
@@ -1036,10 +1038,12 @@ class Sheet(BaseObject):
             #### all of the following are for BIFF <= 4W
             elif bv <= 45:
                 if rc == XL_FORMAT or rc == XL_FORMAT2:
-                    bk.handle_format(data)
+                    bk.handle_format(data, rc)
                 elif rc == XL_FONT or rc == XL_FONT_B3B4:
                     bk.handle_font(data)
                 elif rc == XL_STYLE:
+                    if not self.book._xf_epilogue_done:
+                        self.book.xf_epilogue()
                     bk.handle_style(data)
                 elif rc == XL_PALETTE:
                     bk.handle_palette(data)
@@ -1142,6 +1146,7 @@ ctype_text = {
     XL_CELL_DATE: 'xldate',
     XL_CELL_BOOLEAN: 'bool',
     XL_CELL_ERROR: 'error',
+    XL_CELL_BLANK: 'blank',
     }
 
 ##

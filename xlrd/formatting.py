@@ -3,19 +3,24 @@
 ##
 # Module for formatting information.
 #
-# <p>Copyright © 2005-2006 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2007 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under
 # a BSD-style licence.</p>
 ##
 
 # No part of the content of this file was derived from the works of David Giffin.
 
+# 2007-10-13 SJM Warning: style XF whose parent XF index != 0xFFF
+# 2007-09-08 SJM Work around corrupt STYLE record
+# 2007-07-11 SJM Allow for BIFF2/3-style FORMAT record in BIFF4/8 file
+
 DEBUG = 0
 import copy
 from timemachine import *
 from biffh import BaseObject, unpack_unicode, unpack_string, \
     upkbits, upkbitsL, fprintf, \
-    FUN, FDT, FNU, FGE, FTX, XL_CELL_NUMBER, XL_CELL_DATE
+    FUN, FDT, FNU, FGE, FTX, XL_CELL_NUMBER, XL_CELL_DATE, \
+    XL_FORMAT, XL_FORMAT2
 from struct import unpack
 
 excel_default_palette_b5 = (
@@ -486,9 +491,11 @@ def is_date_format_string(book, fmt):
             fmt)
     return date_count > num_count
 
-def handle_format(self, data):
+def handle_format(self, data, rectype=XL_FORMAT):
     DEBUG = 0
     bv = self.biff_version
+    if rectype == XL_FORMAT2:
+        bv = min(bv, 30)
     if not self.encoding:
         self.derive_encoding()
     strpos = 2
@@ -592,7 +599,16 @@ def handle_style(book, data):
     blah = DEBUG or book.verbosity >= 2
     bv = book.biff_version
     xf_index, built_in_id, level = unpack('<HBB', data[:4])
-    if xf_index & 0x8000:
+    if (data == "\0\0\0\0"
+    and "Normal" not in book.style_name_map):
+        # Erroneous record (doesn't have built-in bit set).
+        # Example file supplied by Jeff Bell.
+        built_in = 1
+        built_in_id = 0
+        xf_index = 0
+        name = "Normal"
+        level = 255
+    elif xf_index & 0x8000:
         # built-in style
         built_in = 1
         xf_index &= 0x7fff
@@ -605,6 +621,9 @@ def handle_style(book, data):
             name = unpack_unicode(data, 2, lenlen=2)
         else:
             name = unpack_string(data, 2, book.encoding, lenlen=1)
+        if not name:
+            print >> book.logfile, \
+                "WARNING *** A user-defined style has a zero-length name"
         built_in = 0
         built_in_id = 0
         level = 0
@@ -857,8 +876,9 @@ def handle_xf(self, data):
             footer=" ",
         )
     # Now for some assertions ...
-    if xf.is_style:
-        assert xf.parent_style_index == 0x0FFF
+    if xf.is_style and xf.parent_style_index != 0x0FFF:
+        msg = "WARNING *** XF[%d] is a style XF but parent_style_index is 0x%04x, not 0x0fff\n"
+        fprintf(self.logfile, msg, xf.xf_index, xf.parent_style_index)
     check_colour_indexes_in_obj(self, xf, xf.xf_index)
     if not self.format_map.has_key(xf.format_key):
         msg = "WARNING *** XF[%d] unknown (raw) format key (%d, 0x%04x)\n"
@@ -872,6 +892,8 @@ def xf_epilogue(self):
     num_xfs = len(self.xf_list)
     blah = DEBUG or self.verbosity >= 3
     blah1 = DEBUG or self.verbosity >= 1
+    if blah:
+        fprintf(self.logfile, "xf_epilogue called ...")
     
     def check_same(book_arg, xf_arg, parent_arg, attr):
         # the _arg caper is to avoid a Warning msg from Python 2.1 :-(

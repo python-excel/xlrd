@@ -1,9 +1,14 @@
-<p>  Version 0.7.0, not publicly released yet
+<p>  Version 0.7.0a5, not publicly released yet
 </p>
 <ul>
-<li> Logfile arg wasn't being passed from open_workbook to compdoc.CompDoc. Reported by Martijn Faassen.
-</li>
-<li>
+     <li> Logfile arg wasn't being passed from open_workbook to compdoc.CompDoc. Reported by Martijn Faassen.
+</li><li> Allow for BIFF2/3-style FORMAT record in BIFF4/8 file
+</li><li> Avoid crash when zero-length Unicode string missing options byte.
+</li><li> Warning message if sector sizes are extremely large.
+</li><li> Work around corrupt STYLE record
+</li><li> Added missing entry for blank cell type to ctype_text
+</li><li> Added "fonts" command to runxlrd script
+</li><li> Warning: style XF whose parent XF index != 0xFFF
 </li>
 </ul>
 

@@ -3,6 +3,7 @@
 # <p>This script is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
+# 2007-10-13 SJM Added "fonts" command
 # 2007-06-10 SJM Removed reference to removed "trimming" option-value.
 # 2007-06-10 SJM Added documentation of commands.
 # 2007-06-10 SJM Changed cmds: dump -> biff_dump, count_records -> biff_count.
@@ -15,6 +16,7 @@ Commands:
 bench           Same as "show", but doesn't print -- for profiling
 biff_count[1]   Print a count of each type of BIFF record in the file
 biff_dump[1]    Print a dump (char and hex) of the BIFF records in the file
+fonts           hdr + print a dump of all font objects
 hdr             Mini-overview of file (no per-sheet information)
 hotshot         Do a hotshot profile run e.g. ... -f1 hotshot bench bigfile*.xls
 labels          Dump of sheet.col_label_ranges and ...row... for each sheet
@@ -93,6 +95,12 @@ if __name__ == "__main__":
         print "Load time: %.2f seconds (stage 1) %.2f seconds (stage 2)" \
             % (bk.load_time_stage_1, bk.load_time_stage_2)
         print
+
+    def show_fonts(bk):
+        print "Fonts:"
+        for x in xrange(len(bk.font_list)):
+            font = bk.font_list[x]
+            font.dump(header='== Index %d ==' % x, indent=4)
 
     def show_names(bk, dump=0):
         bk_header(bk)
@@ -309,6 +317,9 @@ if __name__ == "__main__":
                     show(bk, 3)
                 elif cmd == 'bench':
                     show(bk, printit=False)
+                elif cmd == 'fonts':
+                    bk_header(bk)
+                    show_fonts(bk)
                 elif cmd == 'names': # named reference list
                     show_names(bk)
                 elif cmd == 'name_dump': # named reference list

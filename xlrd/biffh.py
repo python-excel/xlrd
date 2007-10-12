@@ -3,10 +3,11 @@
 ##
 # Support module for the xlrd package.
 #
-# <p> Portions copyright © 2005-2006 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Portions copyright © 2005-2007 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2007-09-08 SJM Avoid crash when zero-length Unicode string missing options byte.
 # 2007-04-22 SJM Remove experimental "trimming" facility.
 
 DEBUG = 0
@@ -237,6 +238,10 @@ def unpack_string_update_pos(data, pos, encoding, lenlen=1, known_len=None):
 def unpack_unicode(data, pos, lenlen=2):
     "Return unicode_strg"
     nchars = unpack('<' + 'BH'[lenlen-1], data[pos:pos+lenlen])[0]
+    if not nchars:
+        # Ambiguous whether 0-length string should have an "options" byte.
+        # Avoid crash if missing.
+        return u""
     pos += lenlen
     options = ord(data[pos])
     pos += 1
@@ -277,6 +282,9 @@ def unpack_unicode_update_pos(data, pos, lenlen=2, known_len=None):
     else:
         nchars = unpack('<' + 'BH'[lenlen-1], data[pos:pos+lenlen])[0]
         pos += lenlen
+    if not nchars and not data[pos:]:
+        # Zero-length string with no options byte
+        return (u"", pos)
     options = ord(data[pos])
     pos += 1
     phonetic = options & 0x04

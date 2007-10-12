@@ -4,14 +4,16 @@
 # Implements the minimal functionality required
 # to extract a "Workbook" or "Book" stream (as one big string)
 # from an OLE2 Compound Document file.
-# <p>Copyright © 2005-2006 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2007 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
 # No part of the content of this file was derived from the works of David Giffin.
 
-# 2007-04-22 SJM Missing "<" in a struct.unpack call => can't open files on bigendian platforms.
+# 2007-09-08 SJM Warning message if sector sizes are extremely large.
 # 2007-05-07 SJM Meaningful exception instead of IndexError if a SAT (sector allocation table) is corrupted.
+# 2007-04-22 SJM Missing "<" in a struct.unpack call => can't open files on bigendian platforms.
+
 
 import sys
 from struct import unpack
@@ -89,6 +91,16 @@ class CompDoc(object):
             print >> logfile, "\nCompDoc format: version=0x%04x revision=0x%04x" % (version, revision)
         self.mem = mem
         ssz, sssz = unpack('<HH', mem[30:34])
+        if ssz > 20: # allows for 2**20 bytes i.e. 1MB
+            print >> logfile, \
+                "WARNING: sector size (2**%d) is preposterous; assuming 512 and continuing ..." \
+                % ssz
+            ssz = 9
+        if sssz > ssz: 
+            print >> logfile, \
+                "WARNING: short stream sector size (2**%d) is preposterous; assuming 64 and continuing ..." \
+                % sssz
+            sssz = 6
         self.sec_size = sec_size = 1 << ssz
         self.short_sec_size = 1 << sssz
         (
