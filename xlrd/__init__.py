@@ -52,7 +52,7 @@ import licences
 # <small>
 # <p>If the CODEPAGE record is missing (possible if the file was created
 # by third-party software), xlrd will assume that the encoding is ascii, and keep going.
-# If the actual encoding is not ascii, a UnicodeDecodeError exception will be raised and 
+# If the actual encoding is not ascii, a UnicodeDecodeError exception will be raised and
 # you will need to determine the encoding yourself, and tell xlrd:
 # <pre>
 #     book = xlrd.open_workbook(..., encoding_override="cp1252")
@@ -134,7 +134,7 @@ import licences
 # <p>For further information, please refer to the documentation for the xldate_* functions.</p>
 #
 # <h3> Named references, constants, formulas, and macros</h3>
-#  
+#
 # <p>
 # A name is used to refer to a cell, a group of cells, a constant
 # value, a formula, or a macro. Usually the scope of a name is global
@@ -254,6 +254,7 @@ import licences
 # 2007-05-21 SJM If no CODEPAGE record in pre-8.0 file, assume ascii and keep going.
 # 2007-07-07 SJM Version changed to 0.7.0 (alpha 1)
 # 2007-07-07 SJM Logfile arg wasn't being passed from open_workbook to compdoc.CompDoc
+# 2007-11-20 SJM Wasn't handling EXTERNSHEET record that needed CONTINUE record(s)
 
 from timemachine import *
 from biffh import *
@@ -980,16 +981,29 @@ class Book(BaseObject):
 
     def handle_externsheet(self, data):
         self._extnsht_count += 1 # for use as a 1-based index
-        blah = DEBUG or self.verbosity >= 2
+        blah1 = DEBUG or self.verbosity >= 1
+        blah2 = DEBUG or self.verbosity >= 2
         if self.biff_version >= 80:
             num_refs = unpack("<H", data[0:2])[0]
+            bytes_reqd = num_refs * 6 + 2
+            while len(data) < bytes_reqd:
+                if blah1:
+                    fprintf(
+                        self.logfile,
+                        "INFO: EXTERNSHEET needs %d bytes, have %d",
+                        bytes_reqd, len(data),
+                        )
+                code2, length2, data2 = self.get_record_parts()
+                if code2 != XL_CONTINUE:
+                    raise XLRDError("Missing CONTINUE after EXTERNSHEET record")
+                data += data2
             pos = 2
             for k in xrange(num_refs):
                 info = unpack("<HHH", data[pos:pos+6])
                 ref_recordx, ref_first_sheetx, ref_last_sheetx = info
                 self._externsheet_info.append(info)
                 pos += 6
-                if blah:
+                if blah2:
                     fprintf(
                         self.logfile,
                         "EXTERNSHEET(b8): k = %2d, record = %2d, first_sheet = %5d, last sheet = %5d\n",
@@ -997,7 +1011,7 @@ class Book(BaseObject):
                         )
         else:
             nc, ty = unpack("<BB", data[:2])
-            if blah:
+            if blah2:
                 print "EXTERNSHEET(b7-):"
                 hex_char_dump(data, 0, len(data))
                 msg = {
@@ -1010,7 +1024,7 @@ class Book(BaseObject):
             if ty == 3:
                 sheet_name = unicode(data[2:nc+2], self.encoding)
                 self._extnsht_name_from_num[self._extnsht_count] = sheet_name
-                if blah: print self._extnsht_name_from_num
+                if blah2: print self._extnsht_name_from_num
             if not (1 <= ty <= 4):
                 ty = 0
             self._externsheet_type_b57.append(ty)
