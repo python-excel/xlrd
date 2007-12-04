@@ -10,6 +10,7 @@
 
 # No part of the content of this file was derived from the works of David Giffin.
 
+# 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
 # 2007-10-13 SJM Warning: style XF whose parent XF index != 0xFFF
 # 2007-09-08 SJM Work around corrupt STYLE record
 # 2007-07-11 SJM Allow for BIFF2/3-style FORMAT record in BIFF4/8 file
@@ -40,7 +41,7 @@ excel_default_palette_b5 = (
     (153,  51,   0), (153,  51, 102), ( 51,  51, 153), ( 51,  51,  51),
     )
 
-excel_default_palette_b3 = excel_default_palette_b5[:16]
+excel_default_palette_b2 = excel_default_palette_b5[:16]
 
 # Following two tables borrowed from Gnumeric 1.4 source.
 excel_default_palette_b5_gnumeric_14 = (
@@ -81,9 +82,10 @@ default_palette = {
     80: excel_default_palette_b8,
     70: excel_default_palette_b5,
     50: excel_default_palette_b5,
-    45: excel_default_palette_b3,
-    40: excel_default_palette_b3,
-    30: excel_default_palette_b3,
+    45: excel_default_palette_b2,
+    40: excel_default_palette_b2,
+    30: excel_default_palette_b2,
+    20: excel_default_palette_b2,
     }
 
 """
@@ -132,7 +134,7 @@ def initialise_colour_map(book):
         0x7FFF, # 32767, system window text colour for fonts
         ):
         book.colour_map[ci] = None
-        
+
 def nearest_colour_index(colour_map, rgb, debug=0):
     # General purpose function. Uses Euclidean distance.
     # So far used only for pre-BIFF8 WINDOW2 record.
@@ -863,6 +865,22 @@ def handle_xf(self, data):
             ))
         xf.alignment.vert_align = 2 # bottom
         xf.alignment.rotation = 0
+    elif bv == 20:
+        #### Warning: incomplete treatment; formatting_info not fully supported
+        (xf.font_index, format_etc, halign_etc) = unpack('<BxBB', data)
+        xf.format_key = format_etc & 0x3F
+        upkbits(xf.protection, format_etc, (
+            (6, 0x40, 'cell_locked'),
+            (7, 0x80, 'formula_hidden'),
+            ))
+        upkbits(xf.alignment, halign_etc, (
+            (0, 0x07, 'hor_align'),
+            # XXXX FIXME other stuff to go in here
+            ))
+        xf.parent_style_index = 0 # ????
+        xf.alignment.vert_align = 2 # bottom
+        xf.alignment.rotation = 0
+        # XXXX FIXME other stuff to go in here
     else:
         raise XLRDError('programmer stuff-up: bv=%d' % bv)
 
@@ -894,14 +912,14 @@ def xf_epilogue(self):
     blah1 = DEBUG or self.verbosity >= 1
     if blah:
         fprintf(self.logfile, "xf_epilogue called ...")
-    
+
     def check_same(book_arg, xf_arg, parent_arg, attr):
         # the _arg caper is to avoid a Warning msg from Python 2.1 :-(
         if getattr(xf_arg, attr) != getattr(parent_arg, attr):
             fprintf(book_arg.logfile,
                 "NOTE !!! XF[%d] parent[%d] %s different\n",
                 xf_arg.xf_index, parent_arg.xf_index, attr)
-                
+
     for xf in self.xf_list:
         if not self.format_map.has_key(xf.format_key):
             msg = "ERROR *** XF[%d] unknown format key (%d, 0x%04x)\n"
@@ -922,33 +940,34 @@ def xf_epilogue(self):
         if xf.is_style:
             continue
         assert 0 <= xf.parent_style_index < num_xfs
-        assert xf.parent_style_index != xf.xf_index
-        assert self.xf_list[xf.parent_style_index].is_style
-        if blah1 and xf.parent_style_index > xf.xf_index:
-            fprintf(self.logfile,
-                "NOTE !!! XF[%d]: parent_style_index is %d; out of order?\n",
-                xf.xf_index, xf.parent_style_index)
-        parent = self.xf_list[xf.parent_style_index]
-        if not xf._alignment_flag and not parent._alignment_flag:
-            if blah1: check_same(self, xf, parent, 'alignment')
-        if not xf._background_flag and not parent._background_flag:
-            if blah1: check_same(self, xf, parent, 'background')
-        if not xf._border_flag and not parent._border_flag:
-            if blah1: check_same(self, xf, parent, 'border')
-        if not xf._protection_flag and not parent._protection_flag:
-            if blah1: check_same(self, xf, parent, 'protection')
-        if not xf._format_flag and not parent._format_flag:
-            if blah1 and xf.format_key != parent.format_key:
+        if self.biff_version != 20:
+            assert xf.parent_style_index != xf.xf_index
+            assert self.xf_list[xf.parent_style_index].is_style
+            if blah1 and xf.parent_style_index > xf.xf_index:
                 fprintf(self.logfile,
-                    "NOTE !!! XF[%d] fmtk=%d, parent[%d] fmtk=%r\n%r / %r\n",
-                    xf.xf_index, xf.format_key, parent.xf_index, parent.format_key,
-                    self.format_map[xf.format_key].format_str,
-                    self.format_map[parent.format_key].format_str)
-        if not xf._font_flag and not parent._font_flag:
-            if blah1 and xf.font_index != parent.font_index:
-                fprintf(self.logfile,
-                    "NOTE !!! XF[%d] fontx=%d, parent[%d] fontx=%r\n",
-                    xf.xf_index, xf.font_index, parent.xf_index, parent.font_index)
+                    "NOTE !!! XF[%d]: parent_style_index is %d; out of order?\n",
+                    xf.xf_index, xf.parent_style_index)
+            parent = self.xf_list[xf.parent_style_index]
+            if not xf._alignment_flag and not parent._alignment_flag:
+                if blah1: check_same(self, xf, parent, 'alignment')
+            if not xf._background_flag and not parent._background_flag:
+                if blah1: check_same(self, xf, parent, 'background')
+            if not xf._border_flag and not parent._border_flag:
+                if blah1: check_same(self, xf, parent, 'border')
+            if not xf._protection_flag and not parent._protection_flag:
+                if blah1: check_same(self, xf, parent, 'protection')
+            if not xf._format_flag and not parent._format_flag:
+                if blah1 and xf.format_key != parent.format_key:
+                    fprintf(self.logfile,
+                        "NOTE !!! XF[%d] fmtk=%d, parent[%d] fmtk=%r\n%r / %r\n",
+                        xf.xf_index, xf.format_key, parent.xf_index, parent.format_key,
+                        self.format_map[xf.format_key].format_str,
+                        self.format_map[parent.format_key].format_str)
+            if not xf._font_flag and not parent._font_flag:
+                if blah1 and xf.font_index != parent.font_index:
+                    fprintf(self.logfile,
+                        "NOTE !!! XF[%d] fontx=%d, parent[%d] fontx=%r\n",
+                        xf.xf_index, xf.font_index, parent.xf_index, parent.font_index)
     # Following are deprecated, undocumented, and will vanish Real Soon Now.
     self.raw_xf_list = self.xf_list
     self.computed_xf_list = self.xf_list
@@ -975,7 +994,7 @@ def initialise_book(book):
 # <p> An explanations of "colour index" is given in the Formatting
 # section at the start of this document.
 # There are five line style attributes; possible values and the
-# associated meanings are: 
+# associated meanings are:
 # 0&nbsp;=&nbsp;No line,
 # 1&nbsp;=&nbsp;Thin,
 # 2&nbsp;=&nbsp;Medium,

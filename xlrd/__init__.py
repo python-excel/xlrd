@@ -1,6 +1,6 @@
 # -*- coding: cp1252 -*-
 
-__VERSION__ = "0.7.0a5" # 2007-10-13
+__VERSION__ = "0.7.0a6" # 2007-12-04
 
 # <p>Copyright © 2005-2007 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
@@ -255,6 +255,7 @@ import licences
 # 2007-07-07 SJM Version changed to 0.7.0 (alpha 1)
 # 2007-07-07 SJM Logfile arg wasn't being passed from open_workbook to compdoc.CompDoc
 # 2007-11-20 SJM Wasn't handling EXTERNSHEET record that needed CONTINUE record(s)
+# 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
 
 from timemachine import *
 from biffh import *
@@ -289,7 +290,7 @@ USE_MMAP = MMAP_AVAILABLE
 
 MY_EOF = 0xF00BAAA # not a 16-bit number
 
-SUPPORTED_VERSIONS = (80, 70, 50, 45, 40, 30)
+SUPPORTED_VERSIONS = (80, 70, 50, 45, 40, 30, 20)
 
 code_from_builtin_name = {
     u"Consolidate_Area": u"\x00",

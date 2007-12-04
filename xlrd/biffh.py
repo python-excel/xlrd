@@ -7,6 +7,7 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
 # 2007-09-08 SJM Avoid crash when zero-length Unicode string missing options byte.
 # 2007-04-22 SJM Remove experimental "trimming" facility.
 
@@ -119,6 +120,7 @@ XL_ARRAY2 = 0x0021
 XL_BLANK = 0x0201
 XL_BOF = 0x809
 XL_BOOLERR = 0x205
+XL_BOOLERR_B2 = 0x5
 XL_BOUNDSHEET = 0x85
 XL_BUILTINFMTCOUNT = 0x56
 XL_CF = 0x01B1
@@ -145,8 +147,10 @@ XL_FORMULA3 = 0x206
 XL_FORMULA4 = 0x406
 XL_GCW = 0xab
 XL_INDEX = 0x20b
+XL_INTEGER = 0x2 # BIFF2 only
+XL_IXFE = 0x44 # BIFF2 only
 XL_LABEL = 0x204
-XL_LABEL2 = 0x04
+XL_LABEL_B2 = 0x04
 XL_LABELRANGES = 0x15f
 XL_LABELSST = 0xfd
 XL_MERGEDCELLS = 0xE5
@@ -158,6 +162,7 @@ XL_MULBLANK = 0xbe
 XL_NAME = 0x18
 XL_NOTE = 0x1c
 XL_NUMBER = 0x203
+XL_NUMBER_B2 = 0x3
 XL_OBJ = 0x5D
 XL_PALETTE = 0x92
 XL_RK = 0x27e
@@ -169,6 +174,7 @@ XL_SHRFMLA = 0x04bc
 XL_SST = 0xfc
 XL_STANDARDWIDTH = 0x99
 XL_STRING = 0x207
+XL_STRING_B2 = 0x7
 XL_STYLE = 0x293
 XL_SUPBOOK = 0x1AE
 XL_TABLEOP = 0x236

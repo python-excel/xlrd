@@ -5,6 +5,7 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
 # 2007-10-11 SJM Added missing entry for blank cell type to ctype_text
 # 2007-07-11 SJM Allow for BIFF2/3-style FORMAT record in BIFF4/8 file
 # 2007-04-22 SJM Remove experimental "trimming" facility.
@@ -33,7 +34,7 @@ _WINDOW2_options = (
     ("sheet_selected", 0),
     # "sheet_visible" appears to be merely a clone of "sheet_selected".
     # The real thing is the visibility attribute from the BOUNDSHEET record.
-    ("sheet_visible", 0), 
+    ("sheet_visible", 0),
     ("show_in_page_break_preview", 0),
     )
 
@@ -49,7 +50,7 @@ _WINDOW2_options = (
 # <p>WARNING: You don't call this class yourself. You access Sheet objects via the Book object that
 # was returned when you called xlrd.open_workbook("myfile.xls").</p>
 
-    
+
 class Sheet(BaseObject):
     ##
     # Name of sheet.
@@ -170,13 +171,13 @@ class Sheet(BaseObject):
     # no ROW record for that row.
     # From the <i>optional</i> DEFAULTROWHEIGHT record.
     default_additional_space_below = None
-    
+
     ##
     # Visibility of the sheet. 0 = visible, 1 = hidden (can be unhidden
     # by user -- Format/Sheet/Unhide), 2 = "very hidden" (can be unhidden
     # only by VBA macro).
     visibility = 0
-    
+
     ##
     # A 256-element tuple corresponding to the contents of the GCW record for this sheet.
     # If no such record, treat as all bits zero.
@@ -227,10 +228,11 @@ class Sheet(BaseObject):
         self.gridline_colour_rgb = None # pre-BIFF8
         self.cached_page_break_preview_mag_factor = 0
         self.cached_normal_view_mag_factor = 0
-        
+        self.__ixfe = None # BIFF2 only
+
         #### Don't initialise this here, use class attribute initialisation.
-        #### self.gcw = (0, ) * 256 #### 
-        
+        #### self.gcw = (0, ) * 256 ####
+
         if self.biff_version >= 80:
             self.utter_max_rows = 65536
         else:
@@ -686,21 +688,34 @@ class Sheet(BaseObject):
             elif rc & 0xff == XL_FORMULA: # 06, 0206, 0406
                 # DEBUG = 1
                 # if DEBUG: print "FORMULA: rc: 0x%04x data: %r" % (rc, data)
-                rowx, colx, xf_index, flags = local_unpack('<HHHxxxxxxxxH', data[0:16])
+                if bv >= 50:
+                    rowx, colx, xf_index, result_str, flags = local_unpack('<HHH8sH', data[0:16])
+                    lenlen = 2
+                    tkarr_offset = 20
+                elif bv >= 30:
+                    rowx, colx, xf_index, result_str, flags = local_unpack('<HHH8sH', data[0:16])
+                    lenlen = 2
+                    tkarr_offset = 16
+                else: # BIFF2
+                    rowx, colx, xf_index, result_str, flags = local_unpack('<HHBxx8sB', data[0:16])
+                    xf_index =  self.fixed_BIFF2_xfindex(xf_index)
+                    lenlen = 1
+                    tkarr_offset = 16
                 if blah_formulas: # testing formula dumper
+                    #### XXXX FIXME
                     fprintf(self.logfile, "FORMULA: rowx=%d colx=%d\n", rowx, colx)
                     fmlalen = local_unpack("<H", data[20:22])[0]
                     decompile_formula(bk, data[22:], fmlalen,
                         reldelta=0, browx=rowx, bcolx=colx, blah=1)
-                if data[12] == '\xff' and data[13] == '\xff':
-                    if data[6] == '\x00':
+                if result_str[6:8] == "\xFF\xFF":
+                    if result_str[0]  == '\x00':
                         # need to read next record (STRING)
                         gotstring = 0
                         # if flags & 8:
                         if 1: # "flags & 8" applies only to SHRFMLA
                             # actually there's an optional SHRFMLA or ARRAY etc record to skip over
                             rc2, data2_len, data2 = bk.get_record_parts()
-                            if rc2 == XL_STRING:
+                            if rc2 == XL_STRING or rc2 == XL_STRING_B2:
                                 gotstring = 1
                             elif rc2 == XL_ARRAY:
                                 row1x, rownx, col1x, colnx, array_flags, tokslen = \
@@ -723,30 +738,31 @@ class Sheet(BaseObject):
                         # now for the STRING record
                         if not gotstring:
                             rc2, _unused_len, data2 = bk.get_record_parts()
-                            if rc2 != XL_STRING: raise XLRDError("Expected STRING record; found 0x%04x" % rc2)
+                            if rc2 not in (XL_STRING, XL_STRING_B2):
+                                raise XLRDError("Expected STRING record; found 0x%04x" % rc2)
                         # if DEBUG: print "STRING: data=%r BIFF=%d cp=%d" % (data2, self.biff_version, bk.encoding)
                         if self.biff_version < BIFF_FIRST_UNICODE:
-                            strg = unpack_string(data2, 0, bk.encoding, lenlen=2)
+                            strg = unpack_string(data2, 0, bk.encoding, lenlen=1 + int(bv > 20))
                         else:
                             strg = unpack_unicode(data2, 0, lenlen=2)
                         self.put_cell(rowx, colx, XL_CELL_TEXT, strg, xf_index)
                         # if DEBUG: print "FORMULA strg %r" % strg
-                    elif data[6] == '\x01':
+                    elif result_str[0] == '\x01':
                         # boolean formula result
-                        value = ord(data[8])
+                        value = ord(result_str[2])
                         self.put_cell(rowx, colx, XL_CELL_BOOLEAN, value, xf_index)
-                    elif data[6] == '\x02':
+                    elif result_str[0] == '\x02':
                         # Error in cell
-                        value = ord(data[8])
+                        value = ord(result_str[2])
                         self.put_cell(rowx, colx, XL_CELL_ERROR, value, xf_index)
-                    elif data[6] == '\x03':
+                    elif result_str[0] == '\x03':
                         # empty ... i.e. empty (zero-length) string, NOT an empty cell.
                         self.put_cell(rowx, colx, XL_CELL_TEXT, u"", xf_index)
                     else:
-                        raise XLRDError("unexpected special case (0x%02x) in FORMULA" % ord(data[6]))
+                        raise XLRDError("unexpected special case (0x%02x) in FORMULA" % ord(result_str[0]))
                 else:
                     # it is a number
-                    d = local_unpack('<d', data[6:14])[0]
+                    d = local_unpack('<d', result_str)[0]
                     self_put_number_cell(rowx, colx, d, xf_index)
             elif rc == XL_BOOLERR:
                 rowx, colx, xf_index, value, is_err = local_unpack('<HHHBB', data[:8])
@@ -760,8 +776,8 @@ class Sheet(BaseObject):
                 c = Colinfo()
                 first_colx, last_colx, c.width, c.xf_index, flags \
                     = local_unpack("<HHHHH", data[:10])
-                #### Colinfo.width is denominated in 256ths of a character, 
-                #### *not* in characters. 
+                #### Colinfo.width is denominated in 256ths of a character,
+                #### *not* in characters.
                 if not(0 <= first_colx <= last_colx <= 256):
                     # Note: 256 instead of 255 is a common mistake.
                     # We silently ignore the non-existing 257th column in that case.
@@ -1029,7 +1045,7 @@ class Sheet(BaseObject):
                 # 9 0200H 0 = Sheet not selected 1 = Sheet selected (BIFF5-BIFF8)
                 # 10 0400H 0 = Sheet not visible 1 = Sheet visible (BIFF5-BIFF8)
                 # 11 0800H 0 = Show in normal view 1 = Show in page break preview (BIFF8)
-                # The freeze flag specifies, if a following PANE record (6.71) describes unfrozen or frozen panes.                    
+                # The freeze flag specifies, if a following PANE record (6.71) describes unfrozen or frozen panes.
                 for attr, _unused_defval in _WINDOW2_options:
                     setattr(self, attr, options & 1)
                     options >>= 1
@@ -1049,7 +1065,7 @@ class Sheet(BaseObject):
                     bk.handle_palette(data)
                 elif rc == XL_BUILTINFMTCOUNT:
                     bk.handle_builtinfmtcount(data)
-                elif rc == XL_XF4 or rc == XL_XF3: #### N.B. not XL_XF
+                elif rc == XL_XF4 or rc == XL_XF3 or rc == XL_XF2: #### N.B. not XL_XF
                     bk.handle_xf(data)
                 elif rc == XL_DATEMODE:
                     bk.handle_datemode(data)
@@ -1059,6 +1075,26 @@ class Sheet(BaseObject):
                     bk.handle_filepass(data)
                 elif rc == XL_WRITEACCESS:
                     bk.handle_writeaccess(data)
+                elif rc == XL_IXFE:
+                    self.__ixfe = local_unpack('<H', data)[0]
+                elif rc == XL_NUMBER_B2:
+                    rowx, colx, xf_index, d = local_unpack('<HHBxxd', data)
+                    self_put_number_cell(rowx, colx, d, self.fixed_BIFF2_xfindex(xf_index))
+                elif rc == XL_INTEGER:
+                    rowx, colx, xf_index, d = local_unpack('<HHBxxH', data)
+                    self_put_number_cell(rowx, colx, float(d), self.fixed_BIFF2_xfindex(xf_index))
+                elif rc == XL_LABEL_B2:
+                    rowx, colx, xf_index = local_unpack('<HHB', data[0:5])
+                    # Two useless bytes at offsets 5 & 6
+                    strg = unpack_string(data, 7, bk.encoding, lenlen=1)
+                    self_put_cell(rowx, colx, XL_CELL_TEXT, strg, self.fixed_BIFF2_xfindex(xf_index))
+                elif rc == XL_BOOLERR_B2:
+                    rowx, colx, xf_index, value, is_err = local_unpack('<HHBxxBB', data)
+                    cellty = (XL_CELL_BOOLEAN, XL_CELL_ERROR)[is_err]
+                    # if DEBUG: print "XL_BOOLERR_B2", rowx, colx, xf_index, value, is_err
+                    self.put_cell(rowx, colx, cellty, value, self.fixed_BIFF2_xfindex(xf_index))
+
+
             else:
                 # if DEBUG: print "SHEET.READ: Unhandled record type %02x %d bytes %r" % (rc, data_len, data)
                 pass
@@ -1068,6 +1104,15 @@ class Sheet(BaseObject):
         self.tidy_dimensions()
         bk.position(oldpos)
         return 1
+
+    def fixed_BIFF2_xfindex(self, xfx):
+        xfx = xfx & 0x3F
+        if xfx == 0x3F:
+            if self.__ixfe is None:
+                raise XLRDError("BIFF2 cell record has XF index 63 but no preceeding IXFE record.")
+            xfx = self.__ixfe
+            self.__ixfe = None
+        return xfx
 
     def req_fmt_info(self):
         if not self.formatting_info:
@@ -1081,9 +1126,9 @@ class Sheet(BaseObject):
     # Note that it is possible to find out the width that will be used to display
     # columns with no cell information e.g. column IV (colx=255).
     # @return The column width that will be used for displaying
-    # the given column by Excel, in units of 1/256th of the width of a 
+    # the given column by Excel, in units of 1/256th of the width of a
     # standard character (the digit zero in the first font).
-    
+
     def computed_column_width(self, colx):
         self.req_fmt_info()
         if self.biff_version >= 80:
@@ -1108,8 +1153,8 @@ class Sheet(BaseObject):
         if self.defcolwidth is not None:
             return self.defcolwidth * 256
         return 8 * 256 # 8 is what Excel puts in a DEFCOLWIDTH record
-                
-                
+
+
 
 # === helpers ===
 
