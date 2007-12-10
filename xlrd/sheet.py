@@ -228,7 +228,7 @@ class Sheet(BaseObject):
         self.gridline_colour_rgb = None # pre-BIFF8
         self.cached_page_break_preview_mag_factor = 0
         self.cached_normal_view_mag_factor = 0
-        self.__ixfe = None # BIFF2 only
+        self._ixfe = None # BIFF2 only
 
         #### Don't initialise this here, use class attribute initialisation.
         #### self.gcw = (0, ) * 256 ####
@@ -1076,7 +1076,7 @@ class Sheet(BaseObject):
                 elif rc == XL_WRITEACCESS:
                     bk.handle_writeaccess(data)
                 elif rc == XL_IXFE:
-                    self.__ixfe = local_unpack('<H', data)[0]
+                    self._ixfe = local_unpack('<H', data)[0]
                 elif rc == XL_NUMBER_B2:
                     rowx, colx, xf_index, d = local_unpack('<HHBxxd', data)
                     self_put_number_cell(rowx, colx, d, self.fixed_BIFF2_xfindex(xf_index))
@@ -1093,8 +1093,8 @@ class Sheet(BaseObject):
                     cellty = (XL_CELL_BOOLEAN, XL_CELL_ERROR)[is_err]
                     # if DEBUG: print "XL_BOOLERR_B2", rowx, colx, xf_index, value, is_err
                     self.put_cell(rowx, colx, cellty, value, self.fixed_BIFF2_xfindex(xf_index))
-
-
+                elif rc == XL_EFONT:
+                    bk.handle_efont(data)
             else:
                 # if DEBUG: print "SHEET.READ: Unhandled record type %02x %d bytes %r" % (rc, data_len, data)
                 pass
@@ -1108,10 +1108,10 @@ class Sheet(BaseObject):
     def fixed_BIFF2_xfindex(self, xfx):
         xfx = xfx & 0x3F
         if xfx == 0x3F:
-            if self.__ixfe is None:
+            if self._ixfe is None:
                 raise XLRDError("BIFF2 cell record has XF index 63 but no preceeding IXFE record.")
-            xfx = self.__ixfe
-            self.__ixfe = None
+            xfx = self._ixfe
+            self._ixfe = None
         return xfx
 
     def req_fmt_info(self):

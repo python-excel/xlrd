@@ -249,6 +249,9 @@ class Font(BaseObject, EqNeAttrs):
 
     # No methods ...
 
+def handle_efont(book, data): # BIFF2 only
+    book.font_list[-1].colour_index = unpack('<H', data)[0]
+
 def handle_font(book, data):
     if not book.encoding:
         book.derive_encoding()
@@ -280,7 +283,7 @@ def handle_font(book, data):
             f.name = unpack_unicode(data, 14, lenlen=1)
         else:
             f.name = unpack_string(data, 14, book.encoding, lenlen=1)
-    else:
+    elif bv >= 30:
         f.height, option_flags, f.colour_index = unpack('<HHH', data[0:6])
         f.bold = option_flags & 1
         f.italic = (option_flags & 2) >> 1
@@ -289,6 +292,22 @@ def handle_font(book, data):
         f.outline = (option_flags & 16) >> 4
         f.shadow = (option_flags & 32) >> 5
         f.name = unpack_string(data, 6, book.encoding, lenlen=1)
+        # Now cook up the remaining attributes ...
+        f.weight = [400, 700][f.bold]
+        f.escapement_type = 0 # None
+        f.underline_type = f.underlined # None or Single
+        f.family = 0 # Unknown / don't care
+        f.character_set = 1 # System default (0 means "ANSI Latin")
+    else: # BIFF2
+        f.height, option_flags = unpack('<HH', data[0:4])
+        f.colour_index = 0x7FFF # "system window text colour"
+        f.bold = option_flags & 1
+        f.italic = (option_flags & 2) >> 1
+        f.underlined = (option_flags & 4) >> 2
+        f.struck_out = (option_flags & 8) >> 3
+        f.outline = 0
+        f.shadow = 0
+        f.name = unpack_string(data, 4, book.encoding, lenlen=1)
         # Now cook up the remaining attributes ...
         f.weight = [400, 700][f.bold]
         f.escapement_type = 0 # None
@@ -969,14 +988,15 @@ def xf_epilogue(self):
                         "NOTE !!! XF[%d] fontx=%d, parent[%d] fontx=%r\n",
                         xf.xf_index, xf.font_index, parent.xf_index, parent.font_index)
     # Following are deprecated, undocumented, and will vanish Real Soon Now.
-    self.raw_xf_list = self.xf_list
-    self.computed_xf_list = self.xf_list
+    ###### self.raw_xf_list = self.xf_list
+    ###### self.computed_xf_list = self.xf_list
 
 def initialise_book(book):
     initialise_colour_map(book)
     book._xf_epilogue_done = 0
     methods = (
         handle_font,
+        handle_efont,
         handle_format,
         is_date_format_string,
         handle_palette,

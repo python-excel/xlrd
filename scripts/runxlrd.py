@@ -3,6 +3,7 @@
 # <p>This script is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
+# 2007-12-05 SJM Fixed usage of deprecated/removed Book.raw_xf_list
 # 2007-10-13 SJM Added "fonts" command
 # 2007-06-10 SJM Removed reference to removed "trimming" option-value.
 # 2007-06-10 SJM Added documentation of commands.
@@ -91,7 +92,7 @@ if __name__ == "__main__":
         print "Pickleable: %d; Use mmap: %d; Formatting: %d" \
             % (bk.pickleable, bk.use_mmap, bk.formatting_info)
         print "FORMATs: %d, FONTs: %d, XFs: %d" \
-            % (len(bk.format_list), len(bk.font_list), len(bk.raw_xf_list))
+            % (len(bk.format_list), len(bk.font_list), len(bk.xf_list))
         print "Load time: %.2f seconds (stage 1) %.2f seconds (stage 2)" \
             % (bk.load_time_stage_1, bk.load_time_stage_2)
         print
