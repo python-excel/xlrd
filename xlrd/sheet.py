@@ -1095,6 +1095,85 @@ class Sheet(BaseObject):
                     self.put_cell(rowx, colx, cellty, value, self.fixed_BIFF2_xfindex(xf_index))
                 elif rc == XL_EFONT:
                     bk.handle_efont(data)
+                elif rc == XL_ROW_B2:
+                    if not fmt_info: continue
+                    rowx, bits1, has_defaults = local_unpack('<H4xH2xB', data[0:11])
+                    if not(0 <= rowx < self.utter_max_rows):
+                        print >> self.logfile, \
+                            "*** NOTE: ROW_B2 record has row index %d; " \
+                            "should have 0 <= rowx < %d -- record ignored!" \
+                            % (rowx, self.utter_max_rows)
+                        continue
+                    r = Rowinfo()
+                    r.height = bits1 & 0x7fff
+                    r.has_default_height = (bits1 >> 15) & 1
+                    r.outline_level = 0
+                    r.outline_group_starts_ends = 0
+                    r.hidden = 0
+                    r.height_mismatch = 0
+                    r.has_default_xf_index = has_defaults & 1
+                    r.additional_space_above = 0
+                    r.additional_space_below = 0
+                    if r.has_default_xf_index:
+                        r.xf_index = local_unpack('<H', data[16:18])[0]
+                    else:
+                        r.xf_index = -1
+                    self.rowinfo_map[rowx] = r
+                    if 0 and r.xf_index > -1:
+                        fprintf(self.logfile,
+                            "**ROW %d %d %d\n",
+                            self.number, rowx, r.xf_index)
+                    if blah_rows:
+                        print >> self.logfile, 'ROW_B2', rowx, bits1, has_defaults
+                        r.dump(self.logfile,
+                            header="--- sh #%d, rowx=%d ---" % (self.number, rowx))
+                elif rc == XL_COLWIDTH: # BIFF2 only
+                    if not fmt_info: continue
+                    first_colx, last_colx, width\
+                        = local_unpack("<BBH", data[:4])
+                    if not(first_colx <= last_colx):
+                        print >> self.logfile, \
+                            "*** NOTE: COLWIDTH record has first col index %d, last %d; " \
+                            "should have first <= last -- record ignored!" \
+                            % (first_colx, last_colx)
+                        continue
+                    for colx in xrange(first_colx, last_colx+1):
+                        if colx in self.colinfo_map:
+                            c = self.colinfo_map[colx]
+                        else:
+                            c = Colinfo()
+                            self.colinfo_map[colx] = c
+                        c.width = width
+                    if blah:
+                        fprintf(
+                            self.logfile,
+                            "COLWIDTH sheet #%d cols %d-%d: wid=%d\n",
+                            self.number, first_colx, last_colx, width
+                            )
+                elif rc == XL_COLUMNDEFAULT: # BIFF2 only
+                    if not fmt_info: continue
+                    first_colx, last_colx = local_unpack("<HH", data[:4])
+                    if blah:
+                        fprintf(
+                            self.logfile,
+                            "COLUMNDEFAULT sheet #%d cols %d-%d\n",
+                            self.number, first_colx, last_colx
+                            )
+                    if not(0 <= first_colx <= last_colx <= 255):
+                        print >> self.logfile, \
+                            "*** NOTE: COLUMNDEFAULT record has first col index %d, last %d; " \
+                            "should have 0 <= first <= last <= 255" \
+                            % (first_colx, last_colx)
+                        last_colx = min(last_colx, 255)
+                    for colx in xrange(first_colx, last_colx+1):
+                        offset = 4 + 3 * (colx - first_colx)
+                        xf_index = ord(data[offset]) & 0x3F
+                        if colx in self.colinfo_map:
+                            c = self.colinfo_map[colx]
+                        else:
+                            c = Colinfo()
+                            self.colinfo_map[colx] = c
+                        c.xf_index = xf_index
             else:
                 # if DEBUG: print "SHEET.READ: Unhandled record type %02x %d bytes %r" % (rc, data_len, data)
                 pass
@@ -1111,7 +1190,10 @@ class Sheet(BaseObject):
             if self._ixfe is None:
                 raise XLRDError("BIFF2 cell record has XF index 63 but no preceeding IXFE record.")
             xfx = self._ixfe
-            self._ixfe = None
+            #### OOo docs are capable of interpretation that each
+            #### cell record is preceded immediately by its own IXFE record.
+            #### Empirical evidence is that (sensibly) an IXFE record applies to all
+            #### following cell records until another IXFE comes along.
         return xfx
 
     def req_fmt_info(self):

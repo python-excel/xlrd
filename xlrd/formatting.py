@@ -885,7 +885,10 @@ def handle_xf(self, data):
         xf.alignment.vert_align = 2 # bottom
         xf.alignment.rotation = 0
     elif bv == 20:
-        #### Warning: incomplete treatment; formatting_info not fully supported
+        #### Warning: incomplete treatment; formatting_info not fully supported.
+        #### Probably need to offset incoming BIFF2 XF[n] to BIFF8-like XF[n+16],
+        #### and create XF[0:16] like the standard ones in BIFF8
+        #### *AND* add 16 to all XF references in cell records :-(
         (xf.font_index, format_etc, halign_etc) = unpack('<BxBB', data)
         xf.format_key = format_etc & 0x3F
         upkbits(xf.protection, format_etc, (
@@ -894,12 +897,28 @@ def handle_xf(self, data):
             ))
         upkbits(xf.alignment, halign_etc, (
             (0, 0x07, 'hor_align'),
-            # XXXX FIXME other stuff to go in here
             ))
-        xf.parent_style_index = 0 # ????
+        for mask, side in ((0x08, 'left'), (0x10, 'right'), (0x20, 'top'), (0x40, 'bottom')):
+            if halign_etc & mask:
+                colour_index, line_style = 8, 1 # black, thin
+            else:
+                colour_index, line_style = 0, 0 # none, none
+            setattr(xf.border, side + '_colour_index', colour_index)
+            setattr(xf.border, side + '_line_style', line_style)
+        bg = xf.background
+        if halign_etc & 0x80:
+            bg.fill_pattern = 17
+        else:
+            bg.fill_pattern = 0
+        bg.background_colour_index = 9 # white
+        bg.pattern_colour_index = 8 # black
+        xf.parent_style_index = 0 # ???????????
         xf.alignment.vert_align = 2 # bottom
         xf.alignment.rotation = 0
-        # XXXX FIXME other stuff to go in here
+        for attr_stem in \
+            "format font alignment border background protection".split():
+            attr = "_" + attr_stem + "_flag"
+            setattr(xf, attr, 1)
     else:
         raise XLRDError('programmer stuff-up: bv=%d' % bv)
 
