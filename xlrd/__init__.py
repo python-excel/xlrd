@@ -256,6 +256,7 @@ import licences
 # 2007-07-07 SJM Logfile arg wasn't being passed from open_workbook to compdoc.CompDoc
 # 2007-11-20 SJM Wasn't handling EXTERNSHEET record that needed CONTINUE record(s)
 # 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
+# 2007-12-20 SJM Better error message for unsupported file format.
 
 from timemachine import *
 from biffh import *
@@ -1332,23 +1333,25 @@ class Book(BaseObject):
         # DEBUG = 1
         # if DEBUG: print >> self.logfile, "getbof(): position", self._position
         if DEBUG: print >> self.logfile, "reqd: 0x%04x" % rqd_stream
+        def bof_error(msg):
+            raise XLRDError('Unsupported format, or corrupt file: ' + msg)
         savpos = self._position
         opcode = self.get2bytes()
         if opcode == MY_EOF:
-            raise XLRDError('Expected BOF record; met end of file')
+            bof_error('Expected BOF record; met end of file')
         if opcode not in bofcodes:
-            raise XLRDError('Expected BOF record; found 0x%04x' % opcode)
+            bof_error('Expected BOF record; found %r' % self.mem[savpos:savpos+8])
         length = self.get2bytes()
         if length == MY_EOF:
-            raise XLRDError('Incomplete BOF record[1]; met end of file')
+            bof_error('Incomplete BOF record[1]; met end of file')
         if length < boflen[opcode] or length > 20:
-            raise XLRDError(
+            bof_error(
                 'Invalid length (%d) for BOF record type 0x%04x'
                 % (length, opcode))
         data = self.read(self._position, length);
         if DEBUG: print >> self.logfile, "\ngetbof(): data=%r" % data
         if len(data) < length:
-            raise XLRDError('Incomplete BOF record[2]; met end of file')
+            bof_error('Incomplete BOF record[2]; met end of file')
         version1 = opcode >> 8
         version2, streamtype = unpack('<HH', data[0:4])
         if DEBUG:
@@ -1394,8 +1397,8 @@ class Book(BaseObject):
         if version < 50 and streamtype == XL_WORKSHEET:
             return version
         if version >= 50 and streamtype == 0x0100:
-            raise XLRDError("Workspace file -- no spreadsheet data")
-        raise XLRDError(
+            bof_error("Workspace file -- no spreadsheet data")
+        bof_error(
             'BOF not workbook/worksheet: op=0x%04x vers=0x%04x strm=0x%04x build=%d year=%d -> BIFF%d' \
             % (opcode, version2, streamtype, build, year, version)
             )
