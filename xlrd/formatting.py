@@ -3,20 +3,22 @@
 ##
 # Module for formatting information.
 #
-# <p>Copyright © 2005-2007 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2008 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under
 # a BSD-style licence.</p>
 ##
 
 # No part of the content of this file was derived from the works of David Giffin.
 
+# 2008-02-08 SJM Preparation for Excel 2.0 support
+# 2008-02-03 SJM Another tweak to is_date_format_string()
 # 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
 # 2007-10-13 SJM Warning: style XF whose parent XF index != 0xFFF
 # 2007-09-08 SJM Work around corrupt STYLE record
 # 2007-07-11 SJM Allow for BIFF2/3-style FORMAT record in BIFF4/8 file
 
 DEBUG = 0
-import copy
+import copy, re
 from timemachine import *
 from biffh import BaseObject, unpack_unicode, unpack_string, \
     upkbits, upkbitsL, fprintf, \
@@ -85,6 +87,7 @@ default_palette = {
     45: excel_default_palette_b2,
     40: excel_default_palette_b2,
     30: excel_default_palette_b2,
+    21: excel_default_palette_b2,
     20: excel_default_palette_b2,
     }
 
@@ -436,6 +439,8 @@ non_date_formats = {
     u'@'       :1,
     }
 
+fmt_bracketed_sub = re.compile(r'\[[^]]*\]').sub
+
 # Boolean format strings (actual cases)
 # u'"Yes";"Yes";"No"'
 # u'"True";"True";"False"'
@@ -471,8 +476,9 @@ def is_date_format_string(book, fmt):
             # Ignore char after backslash, underscore or asterisk
             state = 0
         assert 0 <= state <= 2
-    # if book.verbosity >= 3:
-        # print "is_date_format_string: reduced format is %r" % s
+    if book.verbosity >= 4:
+        print "is_date_format_string: reduced format is %r" % s
+    s = fmt_bracketed_sub('', s)
     if non_date_formats.has_key(s):
         return False
     state = 0
@@ -480,23 +486,12 @@ def is_date_format_string(book, fmt):
     got_sep = 0
     date_count = num_count = 0
     for c in s:
-        if state == 0:
-            if c == u'[':
-                state = 2
-            elif date_char_dict.has_key(c):
-                date_count += date_char_dict[c]
-            elif num_char_dict.has_key(c):
-                num_count += num_char_dict[c]
-            elif c == separator:
-                got_sep = 1
-        elif state == 2:
-            if c == u']':
-                state = 0
-    if state != 0:
-        fprintf(book.logfile,
-            "WARNING *** is_date_format_string: "
-            "parse failed: fmt=%r s=%r state=%d\n",
-            fmt, s, state)
+        if date_char_dict.has_key(c):
+            date_count += date_char_dict[c]
+        elif num_char_dict.has_key(c):
+            num_count += num_char_dict[c]
+        elif c == separator:
+            got_sep = 1
     # print num_count, date_count, repr(fmt)
     if date_count and not num_count:
         return True
@@ -884,7 +879,7 @@ def handle_xf(self, data):
             ))
         xf.alignment.vert_align = 2 # bottom
         xf.alignment.rotation = 0
-    elif bv == 20:
+    elif bv == 21:
         #### Warning: incomplete treatment; formatting_info not fully supported.
         #### Probably need to offset incoming BIFF2 XF[n] to BIFF8-like XF[n+16],
         #### and create XF[0:16] like the standard ones in BIFF8
@@ -978,7 +973,7 @@ def xf_epilogue(self):
         if xf.is_style:
             continue
         assert 0 <= xf.parent_style_index < num_xfs
-        if self.biff_version != 20:
+        if self.biff_version >= 30:
             assert xf.parent_style_index != xf.xf_index
             assert self.xf_list[xf.parent_style_index].is_style
             if blah1 and xf.parent_style_index > xf.xf_index:
@@ -1221,7 +1216,6 @@ class XF(BaseObject):
     # is the same as the index into format_list, and <i>only</i>
     # if the index is less than 164.
     # </p>
-
     format_key = 0
     ##
     # An instance of an XFProtection object.

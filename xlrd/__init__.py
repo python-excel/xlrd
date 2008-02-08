@@ -2,7 +2,7 @@
 
 __VERSION__ = "0.7.0a6" # 2007-12-04
 
-# <p>Copyright © 2005-2007 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2008 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
@@ -257,6 +257,10 @@ import licences
 # 2007-11-20 SJM Wasn't handling EXTERNSHEET record that needed CONTINUE record(s)
 # 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
 # 2007-12-20 SJM Better error message for unsupported file format.
+# 2007-12-25 SJM Decouple Book initialisation & loading -- to allow for multiple loaders.
+# 2008-02-02 SJM Previous change stopped dump() and count_records() ... fixed
+# 2008-02-03 SJM Minor tweaks for IronPython support
+# 2008-02-08 SJM Preparation for Excel 2.0 support
 
 from timemachine import *
 from biffh import *
@@ -291,7 +295,7 @@ USE_MMAP = MMAP_AVAILABLE
 
 MY_EOF = 0xF00BAAA # not a 16-bit number
 
-SUPPORTED_VERSIONS = (80, 70, 50, 45, 40, 30, 20)
+SUPPORTED_VERSIONS = (80, 70, 50, 45, 40, 30, 21, 20)
 
 code_from_builtin_name = {
     u"Consolidate_Area": u"\x00",
@@ -364,7 +368,8 @@ def open_workbook(filename=None,
         orig_gc_enabled = gc.isenabled()
         if orig_gc_enabled:
             gc.disable()
-    bk = Book(
+    bk = Book()
+    bk.biff2_8_load(
         filename=filename, file_contents=file_contents,
         logfile=logfile, verbosity=verbosity, pickleable=pickleable, use_mmap=use_mmap,
         encoding_override=encoding_override,
@@ -411,7 +416,8 @@ def open_workbook(filename=None,
 # @param outfile An open file, to which the dump is written.
 
 def dump(filename, outfile=sys.stdout):
-    bk = Book(filename)
+    bk = Book()
+    bk.biff2_8_load(filename=filename, logfile=outfile, )
     biff_dump(bk.mem, bk.base, bk.stream_len, 0, outfile)
 
 ##
@@ -421,7 +427,8 @@ def dump(filename, outfile=sys.stdout):
 # @param outfile An open file, to which the summary is written.
 
 def count_records(filename, outfile=sys.stdout):
-    bk = Book(filename)
+    bk = Book()
+    bk.biff2_8_load(filename=filename, logfile=outfile, )
     biff_count_records(bk.mem, bk.base, bk.stream_len, outfile)
 
 ##
@@ -541,7 +548,7 @@ class Book(BaseObject):
     ##
     # Version of BIFF (Binary Interchange File Format) used to create the file.
     # Latest is 8.0 (represented here as 80), introduced with Excel 97.
-    # Earliest supported by this module: 3.0 (represented as 30).
+    # Earliest supported by this module: 2.0 (represented as 20).
     biff_version = 0
 
     ##
@@ -681,18 +688,7 @@ class Book(BaseObject):
     # <br> -- New in version 0.6.0
     name_map = {}
 
-    def __init__(self, filename=None, file_contents=None,
-        logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
-        encoding_override=None,
-        formatting_info=False,
-        ):
-        # DEBUG = 0
-        self.logfile = logfile
-        self.verbosity = verbosity
-        self.pickleable = pickleable
-        self.use_mmap = use_mmap
-        self.encoding_override = encoding_override
-        self.formatting_info = formatting_info
+    def __init__(self):
         self._sheet_list = []
         self._sheet_names = []
         self._sheet_visibility = [] # from BOUNDSHEET record
@@ -717,6 +713,19 @@ class Book(BaseObject):
         self.palette_record = []
         self.xf_list = []
         self.style_name_map = {}
+
+    def biff2_8_load(self, filename=None, file_contents=None,
+        logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
+        encoding_override=None,
+        formatting_info=False,
+        ):
+        # DEBUG = 0
+        self.logfile = logfile
+        self.verbosity = verbosity
+        self.pickleable = pickleable
+        self.use_mmap = use_mmap and MMAP_AVAILABLE
+        self.encoding_override = encoding_override
+        self.formatting_info = formatting_info
 
         need_close_filestr = 0
         if not file_contents:
@@ -1374,14 +1383,14 @@ class Book(BaseObject):
             else:
                 # dodgy one, created by a 3rd-party tool
                 version = {
-                    0x0000: 2,
-                    0x0007: 2,
-                    0x0200: 2,
-                    0x0300: 3,
-                    0x0400: 4,
-                    }.get(version2, 0) * 10
+                    0x0000: 21,
+                    0x0007: 21,
+                    0x0200: 21,
+                    0x0300: 30,
+                    0x0400: 40,
+                    }.get(version2, 0)
         elif version1 in (0x04, 0x02, 0x00):
-            version = {0x04: 40, 0x02: 30, 0x00: 20}[version1]
+            version = {0x04: 40, 0x02: 30, 0x00: 21}[version1]
 
         if version == 40 and streamtype == XL_WORKBOOK_GLOBALS_4W:
             version = 45 # i.e. 4W

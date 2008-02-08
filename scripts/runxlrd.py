@@ -1,8 +1,9 @@
 # -*- coding: cp1252 -*-
-# <p>Copyright © 2005-2007 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2008 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This script is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
+# 2008-02-08 SJM Force formatting_info=1 for xfc command
 # 2007-12-05 SJM Fixed usage of deprecated/removed Book.raw_xf_list
 # 2007-10-13 SJM Added "fonts" command
 # 2007-06-10 SJM Removed reference to removed "trimming" option-value.
@@ -273,7 +274,7 @@ if __name__ == "__main__":
             mmap_arg = mmap_opt
         elif mmap_opt != -1:
             print 'Unexpected value (%r) for mmap option -- assuming default' % mmap_opt
-        fmt_opt = options.formatting
+        fmt_opt = options.formatting | (cmd in ('xfc', ))
         gc_mode = options.gc
         if gc_mode:
             gc.disable()
