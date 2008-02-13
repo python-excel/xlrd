@@ -5,6 +5,7 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2008-02-09 SJM Excel 2.0: build XFs on the fly from cell attributes
 # 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
 # 2007-10-11 SJM Added missing entry for blank cell type to ctype_text
 # 2007-07-11 SJM Allow for BIFF2/3-style FORMAT record in BIFF4/8 file
@@ -229,6 +230,7 @@ class Sheet(BaseObject):
         self.cached_page_break_preview_mag_factor = 0
         self.cached_normal_view_mag_factor = 0
         self._ixfe = None # BIFF2 only
+        self._cell_attr_to_xfx = {} # BIFF2.0 only
 
         #### Don't initialise this here, use class attribute initialisation.
         #### self.gcw = (0, ) * 256 ####
@@ -697,8 +699,8 @@ class Sheet(BaseObject):
                     lenlen = 2
                     tkarr_offset = 16
                 else: # BIFF2
-                    rowx, colx, xf_index, result_str, flags = local_unpack('<HHBxx8sB', data[0:16])
-                    xf_index =  self.fixed_BIFF2_xfindex(xf_index)
+                    rowx, colx, cell_attr,  result_str, flags = local_unpack('<HH3s8sB', data[0:16])
+                    xf_index =  self.fixed_BIFF2_xfindex(cell_attr, rowx, colx)
                     lenlen = 1
                     tkarr_offset = 16
                 if blah_formulas: # testing formula dumper
@@ -1078,21 +1080,24 @@ class Sheet(BaseObject):
                 elif rc == XL_IXFE:
                     self._ixfe = local_unpack('<H', data)[0]
                 elif rc == XL_NUMBER_B2:
-                    rowx, colx, xf_index, d = local_unpack('<HHBxxd', data)
-                    self_put_number_cell(rowx, colx, d, self.fixed_BIFF2_xfindex(xf_index))
+                    rowx, colx, cell_attr, d = local_unpack('<HH3sd', data)
+                    self_put_number_cell(rowx, colx, d, self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
                 elif rc == XL_INTEGER:
-                    rowx, colx, xf_index, d = local_unpack('<HHBxxH', data)
-                    self_put_number_cell(rowx, colx, float(d), self.fixed_BIFF2_xfindex(xf_index))
+                    rowx, colx, cell_attr, d = local_unpack('<HH3sH', data)
+                    self_put_number_cell(rowx, colx, float(d), self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
                 elif rc == XL_LABEL_B2:
-                    rowx, colx, xf_index = local_unpack('<HHB', data[0:5])
-                    # Two useless bytes at offsets 5 & 6
+                    rowx, colx, cell_attr = local_unpack('<HH3s', data[0:7])
                     strg = unpack_string(data, 7, bk.encoding, lenlen=1)
-                    self_put_cell(rowx, colx, XL_CELL_TEXT, strg, self.fixed_BIFF2_xfindex(xf_index))
+                    self_put_cell(rowx, colx, XL_CELL_TEXT, strg, self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
                 elif rc == XL_BOOLERR_B2:
-                    rowx, colx, xf_index, value, is_err = local_unpack('<HHBxxBB', data)
+                    rowx, colx, cell_attr, value, is_err = local_unpack('<HH3sBB', data)
                     cellty = (XL_CELL_BOOLEAN, XL_CELL_ERROR)[is_err]
-                    # if DEBUG: print "XL_BOOLERR_B2", rowx, colx, xf_index, value, is_err
-                    self.put_cell(rowx, colx, cellty, value, self.fixed_BIFF2_xfindex(xf_index))
+                    # if DEBUG: print "XL_BOOLERR_B2", rowx, colx, cell_attr, value, is_err
+                    self.put_cell(rowx, colx, cellty, value, self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
+                elif rc == XL_BLANK_B2:
+                    if not fmt_info: continue
+                    rowx, colx, cell_attr = local_unpack('<HH3s', data[:7])
+                    self_put_blank_cell(rowx, colx, self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
                 elif rc == XL_EFONT:
                     bk.handle_efont(data)
                 elif rc == XL_ROW_B2:
@@ -1114,10 +1119,15 @@ class Sheet(BaseObject):
                     r.has_default_xf_index = has_defaults & 1
                     r.additional_space_above = 0
                     r.additional_space_below = 0
-                    if r.has_default_xf_index:
-                        r.xf_index = local_unpack('<H', data[16:18])[0]
-                    else:
+                    if not r.has_default_xf_index:
                         r.xf_index = -1
+                    elif data_len == 18:
+                        # Seems the XF index in the cell_attr is dodgy
+                         xfx = local_unpack('<H', data[16:18])[0]
+                         r.xf_index = self.fixed_BIFF2_xfindex(cell_attr=None, rowx=rowx, colx=-1, true_xfx=xfx)
+                    else:
+                        cell_attr = data[13:16]
+                        r.xf_index = self.fixed_BIFF2_xfindex(cell_attr, rowx, colx=-1)
                     self.rowinfo_map[rowx] = r
                     if 0 and r.xf_index > -1:
                         fprintf(self.logfile,
@@ -1138,7 +1148,7 @@ class Sheet(BaseObject):
                             % (first_colx, last_colx)
                         continue
                     for colx in xrange(first_colx, last_colx+1):
-                        if colx in self.colinfo_map:
+                        if self.colinfo_map.has_key(colx):
                             c = self.colinfo_map[colx]
                         else:
                             c = Colinfo()
@@ -1153,22 +1163,24 @@ class Sheet(BaseObject):
                 elif rc == XL_COLUMNDEFAULT: # BIFF2 only
                     if not fmt_info: continue
                     first_colx, last_colx = local_unpack("<HH", data[:4])
+                    #### Warning OOo docs wrong; first_colx <= colx < last_colx
                     if blah:
                         fprintf(
                             self.logfile,
-                            "COLUMNDEFAULT sheet #%d cols %d-%d\n",
+                            "COLUMNDEFAULT sheet #%d cols in range(%d, %d)\n",
                             self.number, first_colx, last_colx
                             )
-                    if not(0 <= first_colx <= last_colx <= 255):
+                    if not(0 <= first_colx < last_colx <= 256):
                         print >> self.logfile, \
                             "*** NOTE: COLUMNDEFAULT record has first col index %d, last %d; " \
-                            "should have 0 <= first <= last <= 255" \
+                            "should have 0 <= first < last <= 256" \
                             % (first_colx, last_colx)
-                        last_colx = min(last_colx, 255)
-                    for colx in xrange(first_colx, last_colx+1):
+                        last_colx = min(last_colx, 256)
+                    for colx in xrange(first_colx, last_colx):
                         offset = 4 + 3 * (colx - first_colx)
-                        xf_index = ord(data[offset]) & 0x3F
-                        if colx in self.colinfo_map:
+                        cell_attr = data[offset:offset+3]
+                        xf_index = self.fixed_BIFF2_xfindex(cell_attr, rowx=-1, colx=colx)
+                        if self.colinfo_map.has_key(colx):
                             c = self.colinfo_map[colx]
                         else:
                             c = Colinfo()
@@ -1184,17 +1196,105 @@ class Sheet(BaseObject):
         bk.position(oldpos)
         return 1
 
-    def fixed_BIFF2_xfindex(self, xfx):
-        xfx = xfx & 0x3F
-        if xfx == 0x3F:
-            if self._ixfe is None:
-                raise XLRDError("BIFF2 cell record has XF index 63 but no preceeding IXFE record.")
-            xfx = self._ixfe
-            #### OOo docs are capable of interpretation that each
-            #### cell record is preceded immediately by its own IXFE record.
-            #### Empirical evidence is that (sensibly) an IXFE record applies to all
-            #### following cell records until another IXFE comes along.
+    def fixed_BIFF2_xfindex(self, cell_attr, rowx, colx, true_xfx=None):
+        DEBUG = 0
+        blah = DEBUG or self.verbosity >= 2
+        if self.biff_version == 21:
+            if self._xf_index_to_xl_type_map:
+                if true_xfx is not None:
+                    xfx = true_xfx
+                else:
+                    xfx = ord(cell_attr[0]) & 0x3F
+                if xfx == 0x3F:
+                    if self._ixfe is None:
+                        raise XLRDError("BIFF2 cell record has XF index 63 but no preceding IXFE record.")
+                    xfx = self._ixfe
+                    # OOo docs are capable of interpretation that each
+                    # cell record is preceded immediately by its own IXFE record.
+                    # Empirical evidence is that (sensibly) an IXFE record applies to all
+                    # following cell records until another IXFE comes along.
+                return xfx
+            # Have either Excel 2.0, or broken 2.1 w/o XF records -- same effect.
+            self.biff_version = self.book.biff_version = 20
+        #### check that XF slot in cell_attr is zero
+        xfx_slot = ord(cell_attr[0]) & 0x3F
+        assert xfx_slot == 0
+        xfx = self._cell_attr_to_xfx.get(cell_attr)
+        if xfx is not None:
+            return xfx
+        if blah:
+            fprintf(self.logfile, "New cell_attr %r at (%r, %r)\n", cell_attr, rowx, colx)
+        book = self.book
+        xf = self.fake_XF_from_BIFF20_cell_attr(cell_attr)
+        xfx = len(book.xf_list)
+        xf.xf_index = xfx
+        book.xf_list.append(xf)
+        if blah:
+            xf.dump(self.logfile, header="=== Faked XF %d ===" % xfx, footer="======")
+        if not book.format_map.has_key(xf.format_key):
+            msg = "ERROR *** XF[%d] unknown format key (%d, 0x%04x)\n"
+            fprintf(self.logfile, msg,
+                    xf.xf_index, xf.format_key, xf.format_key)
+            xf.format_key = 0
+        cellty_from_fmtty = {
+            FNU: XL_CELL_NUMBER,
+            FUN: XL_CELL_NUMBER,
+            FGE: XL_CELL_NUMBER,
+            FDT: XL_CELL_DATE,
+            FTX: XL_CELL_NUMBER, # Yes, a number can be formatted as text.
+            }
+        fmt = book.format_map[xf.format_key]
+        cellty = cellty_from_fmtty[fmt.type]
+        self._xf_index_to_xl_type_map[xf.xf_index] = cellty
+        self._cell_attr_to_xfx[cell_attr] = xfx
         return xfx
+
+    def fake_XF_from_BIFF20_cell_attr(self, cell_attr):
+        from formatting import XF, XFAlignment, XFBorder, XFBackground, XFProtection
+        xf = XF()
+        xf.alignment = XFAlignment()
+        xf.alignment.indent_level = 0
+        xf.alignment.shrink_to_fit = 0
+        xf.alignment.text_direction = 0
+        xf.border = XFBorder()
+        xf.border.diag_up = 0
+        xf.border.diag_down = 0
+        xf.border.diag_colour_index = 0
+        xf.border.diag_line_style = 0 # no line
+        xf.background = XFBackground()
+        xf.protection = XFProtection()
+        (prot_bits, font_and_format, halign_etc) = unpack('<BBB', cell_attr)
+        xf.format_key = font_and_format & 0x3F
+        xf.font_index = (font_and_format & 0xC0) >> 6
+        upkbits(xf.protection, prot_bits, (
+            (6, 0x40, 'cell_locked'),
+            (7, 0x80, 'formula_hidden'),
+            ))
+        xf.alignment.hor_align = halign_etc & 0x07
+        for mask, side in ((0x08, 'left'), (0x10, 'right'), (0x20, 'top'), (0x40, 'bottom')):
+            if halign_etc & mask:
+                colour_index, line_style = 8, 1 # black, thin
+            else:
+                colour_index, line_style = 0, 0 # none, none
+            setattr(xf.border, side + '_colour_index', colour_index)
+            setattr(xf.border, side + '_line_style', line_style)
+        bg = xf.background
+        if halign_etc & 0x80:
+            bg.fill_pattern = 17
+        else:
+            bg.fill_pattern = 0
+        bg.background_colour_index = 9 # white
+        bg.pattern_colour_index = 8 # black
+        xf.parent_style_index = 0 # ???????????
+        xf.alignment.vert_align = 2 # bottom
+        xf.alignment.rotation = 0
+        for attr_stem in \
+            "format font alignment border background protection".split():
+            attr = "_" + attr_stem + "_flag"
+            setattr(xf, attr, 1)
+        return xf
+
+
 
     def req_fmt_info(self):
         if not self.formatting_info:

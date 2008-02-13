@@ -7,6 +7,7 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2008-02-10 SJM BIFF2 BLANK record
 # 2008-02-08 SJM Preparation for Excel 2.0 support
 # 2008-02-02 SJM Added suffixes (_B2, _B2_ONLY, etc) on record names for biff_dump & biff_count
 # 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
@@ -121,6 +122,7 @@ XL_BOUNDSHEET_VB_MODULE = 0x06
 XL_ARRAY  = 0x0221
 XL_ARRAY2 = 0x0021
 XL_BLANK = 0x0201
+XL_BLANK_B2 = 0x01
 XL_BOF = 0x809
 XL_BOOLERR = 0x205
 XL_BOOLERR_B2 = 0x5
