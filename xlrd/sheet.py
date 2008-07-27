@@ -19,6 +19,7 @@ from formatting import nearest_colour_index
 import time
 
 DEBUG = 0
+OBJ_MSO_DEBUG = 0
 
 _WINDOW2_options = (
     # Attribute names and initial values to use in case
@@ -239,6 +240,7 @@ class Sheet(BaseObject):
             self.utter_max_rows = 65536
         else:
             self.utter_max_rows = 16384
+        self.utter_max_cols = 256
 
     ##
     # Cell object in the given row and column.
@@ -397,7 +399,7 @@ class Sheet(BaseObject):
 
     def extend_cells(self, nr, nc):
         # print "extend_cells_2", self.nrows, self.ncols, nr, nc
-        assert 1 <= nc <= 256
+        assert 1 <= nc <= self.utter_max_cols
         assert 1 <= nr <= self.utter_max_rows
         if nr <= self.nrows:
             # New cell is in an existing row, so extend that row (if necessary).
@@ -487,10 +489,11 @@ class Sheet(BaseObject):
         if 1 and self.merged_cells:
             nr = nc = 0
             umaxrows = self.utter_max_rows
+            umaxcols = self.utter_max_cols
             for crange in self.merged_cells:
                 rlo, rhi, clo, chi = crange
                 if not (0 <= rlo < rhi <= umaxrows) \
-                or not (0 <= clo < chi <= 256):
+                or not (0 <= clo < chi <= umaxcols):
                     fprintf(self.logfile,
                         "*** WARNING: sheet #%d (%r), MERGEDCELLS bad range %r\n",
                         self.number, self.name, crange)
@@ -583,7 +586,7 @@ class Sheet(BaseObject):
         DEBUG = 0
         blah = DEBUG or self.verbosity >= 2
         blah_rows = DEBUG or self.verbosity >= 4
-        blah_formulas = 0 and blah
+        blah_formulas = 1 and blah
         oldpos = bk._position
         bk.position(self._position)
         XL_SHRFMLA_ETC_ETC = (
@@ -873,7 +876,12 @@ class Sheet(BaseObject):
                 eof_found = 1
                 break
             elif rc == XL_OBJ:
-                bk.handle_obj(data)
+                # handle SHEET-level objects; note there's a separate Book.handle_obj
+                self.handle_obj(data)
+            elif rc == XL_MSO_DRAWING:
+                self.handle_msodrawingetc(rc, data_len, data)
+            elif rc == XL_FEAT11:
+                self.handle_feat11(data)
             elif rc in bofcodes: ##### EMBEDDED BOF #####
                 version, boftype = local_unpack('<HH', data[0:4])
                 if boftype != 0x20: # embedded chart
@@ -1294,8 +1302,6 @@ class Sheet(BaseObject):
             setattr(xf, attr, 1)
         return xf
 
-
-
     def req_fmt_info(self):
         if not self.formatting_info:
             raise XLRDError("Feature requires open_workbook(..., formatting_info=True)")
@@ -1336,7 +1342,142 @@ class Sheet(BaseObject):
             return self.defcolwidth * 256
         return 8 * 256 # 8 is what Excel puts in a DEFCOLWIDTH record
 
+    def handle_msodrawingetc(self, recid, data_len, data):
+        if not OBJ_MSO_DEBUG:
+            return
+        DEBUG = 1
+        if self.biff_version < 80:
+            return
+        o = MSODrawing()
+        pos = 0
+        while pos < data_len:
+            tmp, fbt, cb = unpack('<HHI', data[pos:pos+8])
+            ver = tmp & 0xF
+            inst = (tmp >> 4) & 0xFFF
+            if ver == 0xF:
+                ndb = 0 # container
+            else:
+                ndb = cb
+            if DEBUG:
+                hex_char_dump(data, pos, ndb + 8, base=0, fout=self.logfile)
+                fprintf(self.logfile,
+                    "fbt:0x%04X  inst:%d  ver:0x%X  cb:%d (0x%04X)\n",
+                    fbt, inst, ver, cb, cb)
+            if fbt == 0xF010: # Client Anchor
+                assert ndb == 18
+                (o.anchor_unk,
+                o.anchor_colx_lo, o.anchor_rowx_lo,
+                o.anchor_colx_hi, o.anchor_rowx_hi) = unpack('<Hiiii', data[pos+8:pos+8+ndb])
+            elif fbt == 0xF011: # Client Data
+                # must be followed by an OBJ record
+                assert cb == 0
+                assert pos + 8 == data_len
+            else:
+                pass
+            pos += ndb + 8
+        else:
+            # didn't break out of while loop
+            assert pos == data_len
+        if DEBUG:
+            o.dump(self.logfile, header="=== MSODrawing ===", footer= " ")
 
+
+    def handle_obj(self, data):
+        if not OBJ_MSO_DEBUG:
+            return
+        DEBUG = 1
+        if self.biff_version < 80:
+            return
+        o = MSObj()
+        data_len = len(data)
+        pos = 0
+        while pos < data_len:
+            ft, cb = unpack('<HH', data[pos:pos+4])
+            if DEBUG:
+                hex_char_dump(data, pos, cb, base=0, fout=self.logfile)
+            if ft == 0x15: # ftCmo ... s/b first
+                assert pos == 0
+                o.type, o.id, option_flags = unpack('<HHH', data[pos+4:pos+10])
+                upkbits(o, option_flags, (
+                    ( 0, 0x0001, 'locked'),
+                    ( 4, 0x0010, 'printable'),
+                    ( 8, 0x0100, 'autofilter'), # not documented in Excel 97 dev kit
+                    ( 9, 0x0200, 'scrollbar_flag'), # not documented in Excel 97 dev kit
+                    (13, 0x2000, 'autofill'),
+                    (14, 0x4000, 'autoline'),
+                    ))
+            elif ft == 0x00:
+                assert cb == 0
+                assert pos + 4 == data_len
+            elif ft == 0x0C: # Scrollbar
+                values = unpack('<5H', data[pos+8:pos+18])
+                for value, tag in zip(values, ('value', 'min', 'max', 'inc', 'page')):
+                    setattr(o, 'scrollbar_' + tag, value)
+            elif ft == 0x13: # list box data
+                if o.autofilter:
+                    break
+            else:
+                pass
+            pos += cb + 4
+        else:
+            # didn't break out of while loop
+            assert pos == data_len
+        if DEBUG:
+            o.dump(self.logfile, header="=== MSOBj ===", footer= " ")
+
+    def handle_feat11(self, data):
+        if not OBJ_MSO_DEBUG:
+            return
+        # rt: Record type; this matches the BIFF rt in the first two bytes of the record; =0872h
+        # grbitFrt: FRT cell reference flag (see table below for details)
+        # Ref0: Range reference to a worksheet cell region if grbitFrt=1 (bitFrtRef). Otherwise blank.
+        # isf: Shared feature type index =5 for Table
+        # fHdr: =0 since this is for feat not feat header
+        # reserved0: Reserved for future use =0 for Table
+        # cref: Count of ref ranges this feature is on
+        # cbFeatData: Count of byte for the current feature data.
+        # reserved1: =0 currently not used
+        # Ref1: Repeat of Ref0. UNDOCUMENTED
+        rt, grbitFrt, Ref0, isf, fHdr, reserved0, cref, cbFeatData, reserved1, Ref1 = unpack('<HH8sHBiHiH8s', data[0:35])
+        assert reserved0 == 0
+        assert reserved1 == 0
+        assert isf == 5
+        assert rt == 0x872
+        assert fHdr == 0
+        assert Ref1 == Ref0
+        print "FEAT11: grbitFrt=%d  Ref0=%r cref=%d cbFeatData=%d" % (grbitFrt, Ref0, cref, cbFeatData)
+        # lt: Table data source type:
+        #   =0 for Excel Worksheet Table =1 for read-write SharePoint linked List
+        #   =2 for XML mapper Table =3 for Query Table
+        # idList: The ID of the Table (unique per worksheet)
+        # crwHeader: How many header/title rows the Table has at the top
+        # crwTotals: How many total rows the Table has at the bottom
+        # idFieldNext: Next id to try when assigning a unique id to a new field
+        # cbFSData: The size of the Fixed Data portion of the Table data structure.
+        # rupBuild: the rupBuild that generated the record
+        # unusedShort: UNUSED short that can be used later. The value is reserved during round-tripping.
+        # listFlags: Collection of bit flags: (see listFlags' bit setting table below for detail.)
+        # lPosStmCache: Table data stream position of cached data
+        # cbStmCache: Count of bytes of cached data
+        # cchStmCache: Count of characters of uncompressed cached data in the stream
+        # lem: Table edit mode (see List (Table) Editing Mode (lem) setting table below for details.)
+        # rgbHashParam: Hash value for SharePoint Table
+        # cchName: Count of characters in the Table name string rgbName
+        (lt, idList, crwHeader, crwTotals, idFieldNext, cbFSData,
+        rupBuild, unusedShort, listFlags, lPosStmCache, cbStmCache,
+        cchStmCache, lem, rgbHashParam, cchName) = unpack('<iiiiiiHHiiiii16sH', data[35:35+66])
+        print "lt=%d  idList=%d crwHeader=%d  crwTotals=%d  idFieldNext=%d cbFSData=%d\n"\
+            "rupBuild=%d  unusedShort=%d listFlags=%04X  lPosStmCache=%d  cbStmCache=%d\n"\
+            "cchStmCache=%d  lem=%d  rgbHashParam=%r  cchName=%d" % (
+            lt, idList, crwHeader, crwTotals, idFieldNext, cbFSData,
+            rupBuild, unusedShort,listFlags, lPosStmCache, cbStmCache,
+            cchStmCache, lem, rgbHashParam, cchName)
+
+class MSODrawing(BaseObject):
+    pass
+
+class MSObj(BaseObject):
+    pass
 
 # === helpers ===
 

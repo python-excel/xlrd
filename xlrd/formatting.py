@@ -10,6 +10,7 @@
 
 # No part of the content of this file was derived from the works of David Giffin.
 
+# 2008-05-10 SJM Do some XF checks only when Book.formatting_info is true
 # 2008-02-08 SJM Preparation for Excel 2.0 support
 # 2008-02-03 SJM Another tweak to is_date_format_string()
 # 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
@@ -927,10 +928,11 @@ def handle_xf(self, data):
             footer=" ",
         )
     # Now for some assertions ...
-    if xf.is_style and xf.parent_style_index != 0x0FFF:
-        msg = "WARNING *** XF[%d] is a style XF but parent_style_index is 0x%04x, not 0x0fff\n"
-        fprintf(self.logfile, msg, xf.xf_index, xf.parent_style_index)
-    check_colour_indexes_in_obj(self, xf, xf.xf_index)
+    if self.formatting_info:
+        if xf.is_style and xf.parent_style_index != 0x0FFF:
+            msg = "WARNING *** XF[%d] is a style XF but parent_style_index is 0x%04x, not 0x0fff\n"
+            fprintf(self.logfile, msg, xf.xf_index, xf.parent_style_index)
+        check_colour_indexes_in_obj(self, xf, xf.xf_index)
     if not self.format_map.has_key(xf.format_key):
         msg = "WARNING *** XF[%d] unknown (raw) format key (%d, 0x%04x)\n"
         fprintf(self.logfile, msg,
@@ -944,7 +946,7 @@ def xf_epilogue(self):
     blah = DEBUG or self.verbosity >= 3
     blah1 = DEBUG or self.verbosity >= 1
     if blah:
-        fprintf(self.logfile, "xf_epilogue called ...")
+        fprintf(self.logfile, "xf_epilogue called ...\n")
 
     def check_same(book_arg, xf_arg, parent_arg, attr):
         # the _arg caper is to avoid a Warning msg from Python 2.1 :-(
@@ -953,7 +955,8 @@ def xf_epilogue(self):
                 "NOTE !!! XF[%d] parent[%d] %s different\n",
                 xf_arg.xf_index, parent_arg.xf_index, attr)
 
-    for xf in self.xf_list:
+    for xfx in xrange(num_xfs):
+        xf = self.xf_list[xfx]
         if not self.format_map.has_key(xf.format_key):
             msg = "ERROR *** XF[%d] unknown format key (%d, 0x%04x)\n"
             fprintf(self.logfile, msg,
@@ -970,9 +973,16 @@ def xf_epilogue(self):
         cellty = cellty_from_fmtty[fmt.type]
         self._xf_index_to_xl_type_map[xf.xf_index] = cellty
         # Now for some assertions etc
+        if not self.formatting_info:
+            continue
         if xf.is_style:
             continue
-        assert 0 <= xf.parent_style_index < num_xfs
+        if not(0 <= xf.parent_style_index < num_xfs):
+            fprintf(self.logfile,
+                "WARNING *** XF[%d]: is_style=%d but parent_style_index=%d\n",
+                xf.xf_index, xf.is_style, xf.parent_style_index)
+            # make it conform
+            xf.parent_style_index = 0
         if self.biff_version >= 30:
             assert xf.parent_style_index != xf.xf_index
             assert self.xf_list[xf.parent_style_index].is_style

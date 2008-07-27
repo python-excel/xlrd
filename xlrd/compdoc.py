@@ -96,7 +96,7 @@ class CompDoc(object):
                 "WARNING: sector size (2**%d) is preposterous; assuming 512 and continuing ..." \
                 % ssz
             ssz = 9
-        if sssz > ssz: 
+        if sssz > ssz:
             print >> logfile, \
                 "WARNING: short stream sector size (2**%d) is preposterous; assuming 64 and continuing ..." \
                 % sssz
@@ -161,7 +161,8 @@ class CompDoc(object):
             news = list(unpack(fmt, mem[offset:offset+sec_size]))
             self.SAT.extend(news)
         if DEBUG:
-            print >> logfile, "SAT", self.SAT
+            print >> logfile, "SAT: len =", len(self.SAT)
+            print >> logfile, self.SAT
             # print >> logfile, "SAT ",
             # for i, s in enumerate(self.SAT):
                 # print >> logfile, "entry: %4d offset: %6d, next entry: %4d" % (i, 512 + sec_size * i, s)

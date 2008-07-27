@@ -1,6 +1,6 @@
 # -*- coding: cp1252 -*-
 
-__VERSION__ = "0.7.0a6" # 2007-12-04
+__VERSION__ = "0.7.0a7" # 2008-07-28
 
 # <p>Copyright © 2005-2008 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
@@ -261,6 +261,7 @@ import licences
 # 2008-02-02 SJM Previous change stopped dump() and count_records() ... fixed
 # 2008-02-03 SJM Minor tweaks for IronPython support
 # 2008-02-08 SJM Preparation for Excel 2.0 support
+# 2008-04-24 SJM Recovery code for file with out-of-order/missing/wrong CODEPAGE record needed to be called for EXTERNSHEET/BOUNDSHEET/NAME/SHEETHDR records.
 
 from timemachine import *
 from biffh import *
@@ -527,6 +528,41 @@ class Name(BaseObject):
             footer="======= End of dump =======",
             )
         raise XLRDError("Not a constant absolute reference to a single cell")
+
+    ##
+    # This is a convenience method for the use case where the name
+    # refers to one rectangular area in one worksheet.
+    # @param clipped If true (the default), the returned rectangle is clipped
+    # to fit in (0, sheet.nrows, 0, sheet.ncols) -- it is guaranteed that
+    # 0 <= rowxlo <= rowxhi <= sheet.nrows and that the number of usable rows
+    # in the area (which may be zero) is rowxhi - rowxlo; likewise for columns.
+    # @return a tuple (sheet_object, rowxlo, rowxhi, colxlo, colxhi).
+    # @throws XLRDError The name is not a constant absolute reference
+    # to a single area in a single sheet.
+    def area2d(self, clipped=True):
+        res = self.result
+        if res:
+            # result should be an instance of the Operand class
+            kind = res.kind
+            value = res.value
+            if kind == oREF and len(value) == 1: # only 1 reference
+                ref3d = value[0]
+                if 0 <= ref3d.shtxlo == ref3d.shtxhi - 1: # only 1 usable sheet
+                    sh = self.book.sheet_by_index(ref3d.shtxlo)
+                    if not clipped:
+                        return sh, ref3d.rowxlo, ref3d.rowxhi, ref3d.colxlo, ref3d.colxhi
+                    rowxlo = min(ref3d.rowxlo, sh.nrows)
+                    rowxhi = max(rowxlo, min(ref3d.rowxhi, sh.nrows))
+                    colxlo = min(ref3d.colxlo, sh.ncols)
+                    colxhi = max(colxlo, min(ref3d.colxhi, sh.ncols))
+                    assert 0 <= rowxlo <= rowxhi <= sh.nrows
+                    assert 0 <= colxlo <= colxhi <= sh.ncols
+                    return sh, rowxlo, rowxhi, colxlo, colxhi
+        self.dump(self.book.logfile,
+            header="=== Dump of Name object ===",
+            footer="======= End of dump =======",
+            )
+        raise XLRDError("Not a constant absolute reference to a single area in a single sheet")
 
 ##
 # Contents of a "workbook".
@@ -874,6 +910,7 @@ class Book(BaseObject):
     def handle_boundsheet(self, data):
         # DEBUG = 1
         bv = self.biff_version
+        self.derive_encoding()
         if DEBUG:
             fprintf(self.logfile, "BOUNDSHEET: bv=%d data %r\n", bv, data);
         if bv == 45: # BIFF4W
@@ -948,7 +985,7 @@ class Book(BaseObject):
                 encoding = 'cp' + str(codepage)
             else:
                 encoding = 'unknown_codepage_' + str(codepage)
-            if DEBUG or self.verbosity:
+            if DEBUG or (self.verbosity and encoding != self.encoding) :
                 fprintf(self.logfile, "CODEPAGE: codepage %r -> encoding %r\n", codepage, encoding)
             self.encoding = encoding
         if self.codepage != 1200: # utf_16_le
@@ -991,6 +1028,7 @@ class Book(BaseObject):
         self.datemode = datemode
 
     def handle_externsheet(self, data):
+        self.derive_encoding() # in case CODEPAGE record missing/out of order/wrong
         self._extnsht_count += 1 # for use as a 1-based index
         blah1 = DEBUG or self.verbosity >= 1
         blah2 = DEBUG or self.verbosity >= 2
@@ -1048,6 +1086,7 @@ class Book(BaseObject):
         bv = self.biff_version
         if bv < 50:
             return
+        self.derive_encoding()
         # print
         # hex_char_dump(data, 0, len(data))
         (
@@ -1157,8 +1196,12 @@ class Book(BaseObject):
             name_lcase = nobj.name.lower()
             key = (name_lcase, nobj.scope)
             if name_and_scope_map.has_key(key):
-                raise XLRDError(
-                    'Duplicate entry %r in name_and_scope_map' % (key, ))
+                msg = 'Duplicate entry %r in name_and_scope_map' % (key, )
+                if 0:
+                    raise XLRDError(msg)
+                else:
+                    if self.verbosity:
+                        print >> f, msg
             name_and_scope_map[key] = nobj
             if name_map.has_key(name_lcase):
                 name_map[name_lcase].append((nobj.scope, nobj))
@@ -1211,6 +1254,7 @@ class Book(BaseObject):
         # The SHEETHDR record is followed by a (BOF ... EOF) substream containing
         # a worksheet.
         # DEBUG = 0
+        self.derive_encoding()
         sheet_len = unpack('<i', data[:4])[0]
         sheet_name = unpack_string(data, 4, self.encoding, lenlen=1)
         sheetno = self._sheethdr_count
