@@ -48,8 +48,9 @@ used by xlrd to derive the encoding (for same example: "cp1252") which is
 used to translate to Unicode.</p>
 <small>
 <p>If the CODEPAGE record is missing (possible if the file was created
-by third-party software), you will need to determine the encoding yourself,
-and tell xlrd:
+by third-party software), xlrd will assume that the encoding is ascii, and keep going.
+If the actual encoding is not ascii, a UnicodeDecodeError exception will be raised and
+you will need to determine the encoding yourself, and tell xlrd:
 <pre>
     book = xlrd.open_workbook(..., encoding_override="cp1252")
 </pre></p>
