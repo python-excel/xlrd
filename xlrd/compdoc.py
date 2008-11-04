@@ -10,6 +10,7 @@
 
 # No part of the content of this file was derived from the works of David Giffin.
 
+# 2008-11-04 SJM Avoid assertion error when -1 used instead of -2 for first_SID of empty SCSS [Frank Hoffsuemmer]
 # 2007-09-08 SJM Warning message if sector sizes are extremely large.
 # 2007-05-07 SJM Meaningful exception instead of IndexError if a SAT (sector allocation table) is corrupted.
 # 2007-04-22 SJM Missing "<" in a struct.unpack call => can't open files on bigendian platforms.
@@ -189,9 +190,18 @@ class CompDoc(object):
         #
         sscs_dir = self.dirlist[0]
         assert sscs_dir.etype == 5 # root entry
-        self.SSCS = self._get_stream(
-            self.mem, 512, self.SAT, sec_size, sscs_dir.first_SID,
-            sscs_dir.tot_size, name="SSCS")
+        if sscs_dir.first_SID < 0 and sscs_dir.tot_size == 0:
+            # Problem reported by Frank Hoffsuemmer: some software was
+            # writing -1 instead of -2 (EOCSID) for the first_SID
+            # when the SCCS was empty. Not having EOCSID caused assertion
+            # failure in _get_stream.
+            # Solution: avoid calling _get_stream in any case when the
+            # SCSS appears to be empty.
+            self.SSCS = ""
+        else:
+            self.SSCS = self._get_stream(
+                self.mem, 512, self.SAT, sec_size, sscs_dir.first_SID,
+                sscs_dir.tot_size, name="SSCS")
         # if DEBUG: print >> logfile, "SSCS", repr(self.SSCS)
         #
         # === build the SSAT ===
