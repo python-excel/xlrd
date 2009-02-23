@@ -690,7 +690,7 @@ class Sheet(BaseObject):
                     print >> self.logfile, 'ROW', rowx, bits1, bits2
                     r.dump(self.logfile,
                         header="--- sh #%d, rowx=%d ---" % (self.number, rowx))
-            elif rc & 0xff == XL_FORMULA: # 06, 0206, 0406
+            elif rc in XL_FORMULA_OPCODES: # 06, 0206, 0406
                 # DEBUG = 1
                 # if DEBUG: print "FORMULA: rc: 0x%04x data: %r" % (rc, data)
                 if bv >= 50:
@@ -880,6 +880,10 @@ class Sheet(BaseObject):
                 self.handle_obj(data)
             elif rc == XL_MSO_DRAWING:
                 self.handle_msodrawingetc(rc, data_len, data)
+            elif rc == XL_TXO:
+                self.handle_txo(data)
+            elif rc == XL_NOTE:
+                self.handle_note(data)
             elif rc == XL_FEAT11:
                 self.handle_feat11(data)
             elif rc in bofcodes: ##### EMBEDDED BOF #####
@@ -1391,6 +1395,8 @@ class Sheet(BaseObject):
         o = MSObj()
         data_len = len(data)
         pos = 0
+        if DEBUG:
+            fprintf(self.logfile, "... OBJ record ...\n")
         while pos < data_len:
             ft, cb = unpack('<HH', data[pos:pos+4])
             if DEBUG:
@@ -1413,8 +1419,10 @@ class Sheet(BaseObject):
                 values = unpack('<5H', data[pos+8:pos+18])
                 for value, tag in zip(values, ('value', 'min', 'max', 'inc', 'page')):
                     setattr(o, 'scrollbar_' + tag, value)
+            elif ft == 0x0D: # "Notes structure" [used for cell comments]
+                pass ############## not documented in Excel 97 dev kit
             elif ft == 0x13: # list box data
-                if o.autofilter:
+                if o.autofilter: # non standard exit. NOT documented
                     break
             else:
                 pass
@@ -1424,6 +1432,53 @@ class Sheet(BaseObject):
             assert pos == data_len
         if DEBUG:
             o.dump(self.logfile, header="=== MSOBj ===", footer= " ")
+
+    def handle_note(self, data):
+        if not OBJ_MSO_DEBUG:
+            return
+        DEBUG = 1
+        if self.biff_version < 80:
+            return
+        if DEBUG:
+            fprintf(self.logfile, '... NOTE record ...\n')
+            hex_char_dump(data, 0, len(data), base=0, fout=self.logfile)
+        o = MSNote()
+        data_len = len(data)
+        o.rowx, o.colx, option_flags, o.object_id = unpack('<4H', data[:8])
+        o.show = (option_flags >> 1) & 1
+        # Docs say NULL [sic] bytes padding between string count and string data
+        # to ensure that sring is word-aligned. Appears to be nonsense.
+        # There also seems to be a random(?) byte after the string (not counted in the
+        # string length.
+        o.original_author, endpos = unpack_unicode_update_pos(data, 8, lenlen=2)
+        assert endpos == data_len - 1
+        o.last_byte = data[-1]
+        if DEBUG:
+            o.dump(self.logfile, header="=== MSNote ===", footer= " ")
+
+    def handle_txo(self, data):
+        if not OBJ_MSO_DEBUG:
+            return
+        DEBUG = 1
+        if self.biff_version < 80:
+            return
+        o = MSTxo()
+        data_len = len(data)
+        option_flags, o.rot, cchText, cbRuns = unpack('<HH6xHH4x', data)
+        upkbits(o, option_flags, (
+            (3, 0x000E, 'horz_align'),
+            (6, 0x0070, 'vert_align'),
+            (9, 0x0200, 'lock_text'),
+            ))
+        rc2, data2_len, data2 = self.book.get_record_parts()
+        assert rc2 == XL_CONTINUE
+        o.text, endpos = unpack_unicode_update_pos(data2, 0, known_len=cchText)
+        assert endpos == data2_len
+        rc3, data3_len, data3 = self.book.get_record_parts()
+        assert rc3 == XL_CONTINUE
+        # ignore the formatting runs for the moment
+        if DEBUG:
+            o.dump(self.logfile, header="=== MSTxo ===", footer= " ")
 
     def handle_feat11(self, data):
         if not OBJ_MSO_DEBUG:
@@ -1477,6 +1532,12 @@ class MSODrawing(BaseObject):
     pass
 
 class MSObj(BaseObject):
+    pass
+
+class MSTxo(BaseObject):
+    pass
+
+class MSNote(BaseObject):
     pass
 
 # === helpers ===

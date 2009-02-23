@@ -144,6 +144,7 @@ XL_DIMENSION = 0x200
 XL_DIMENSION2 = 0x0
 XL_EFONT = 0x45
 XL_EOF = 0x0a
+XL_EXTERNNAME = 0x23
 XL_EXTERNSHEET = 0x17
 XL_EXTSST = 0xff
 XL_FEAT11 = 0x872
@@ -203,6 +204,8 @@ XL_XF4 = 0x0443 # BIFF4 version of XF record
 
 boflen = {0x0809: 8, 0x0409: 6, 0x0209: 6, 0x0009: 4}
 bofcodes = (0x0809, 0x0409, 0x0209, 0x0009)
+
+XL_FORMULA_OPCODES = (0x0006, 0x0406, 0x0206)
 
 _cell_opcode_list = [
     XL_BOOLERR,
@@ -487,7 +490,7 @@ _brecstrg = """\
 020B INDEX_B3+
 0218 NAME
 0221 ARRAY
-0223 EXTERNNAME
+0223 EXTERNNAME_B3-4
 0225 DEFAULTROWHEIGHT
 0231 FONT_B3B4
 0236 TABLEOP
@@ -513,16 +516,20 @@ for _buff in _brecstrg.splitlines():
     biff_rec_name_dict[int(_numh, 16)] = _name
 del _buff, _name, _brecstrg
 
-def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout):
+def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout, unnumbered=False):
     endpos = min(ofs + dlen, len(strg))
     pos = ofs
+    numbered = not unnumbered
+    num_prefix = ''
     while pos < endpos:
         endsub = min(pos + 16, endpos)
         substrg = strg[pos:endsub]
         lensub = endsub - pos
         if lensub <= 0 or lensub != len(substrg):
-            print '??? hex_char_dump: ofs=%d dlen=%d base=%d -> endpos=%d pos=%d endsub=%d substrg=%r' \
-                % (ofs, dlen, base, endpos, pos, endsub, substrg)
+            fprintf(
+                sys.stdout,
+                '??? hex_char_dump: ofs=%d dlen=%d base=%d -> endpos=%d pos=%d endsub=%d substrg=%r\n',
+                ofs, dlen, base, endpos, pos, endsub, substrg)
             break
         hexd = ''.join(["%02x " % ord(c) for c in substrg])
         chard = ''
@@ -532,14 +539,18 @@ def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout):
             elif not (' ' <= c <= '~'):
                 c = '?'
             chard += c
-        print >> fout, "%5d:      %-48s %s" % (base+pos-ofs, hexd, chard)
+        if numbered:
+            num_prefix = "%5d: " %  (base+pos-ofs)
+        fprintf(fout, "%s     %-48s %s\n", num_prefix, hexd, chard)
         pos = endsub
 
-def biff_dump(mem, stream_offset, stream_len, base=0, fout=sys.stdout):
+def biff_dump(mem, stream_offset, stream_len, base=0, fout=sys.stdout, unnumbered=False):
     pos = stream_offset
     stream_end = stream_offset + stream_len
     adj = base - stream_offset
     dummies = 0
+    numbered = not unnumbered
+    num_prefix = ''
     while stream_end - pos >= 4:
         rc, length = unpack('<HH', mem[pos:pos+4])
         if rc == 0 and length == 0:
@@ -556,20 +567,28 @@ def biff_dump(mem, stream_offset, stream_len, base=0, fout=sys.stdout):
             pos += 4
         else:
             if dummies:
-                print >> fout, "%5d: ---- %d zero bytes skipped ----" % (adj+savpos, dummies)
+                if numbered:
+                    num_prefix =  "%5d: " % (adj + savpos)
+                fprintf(fout, "%s---- %d zero bytes skipped ----\n", num_prefix, dummies)
                 dummies = 0
             recname = biff_rec_name_dict.get(rc, '<UNKNOWN>')
-            print >> fout, "%5d: %04x %s len = %04x (%d)" % (adj+pos, rc, recname, length, length)
+            if numbered:
+                num_prefix = "%5d: " % (adj + pos)
+            fprintf(fout, "%s%04x %s len = %04x (%d)\n", num_prefix, rc, recname, length, length)
             pos += 4
-            hex_char_dump(mem, pos, length, adj+pos, fout)
+            hex_char_dump(mem, pos, length, adj+pos, fout, unnumbered)
             pos += length
     if dummies:
-        print >> fout, "%5d: ---- %d zero bytes skipped ----" % (adj+savpos, dummies, )
+        if numbered:
+            num_prefix =  "%5d: " % (adj + savpos)
+        fprintf(fout, "%s---- %d zero bytes skipped ----\n", num_prefix, dummies)
     if pos < stream_end:
-        print >> fout, "%5d: ---- Misc bytes at end ----"  % (adj + pos,)
-        hex_char_dump(mem, pos, stream_end-pos, adj + pos, fout)
+        if numbered:
+            num_prefix = "%5d: " % (adj + pos)
+        fprintf(fout, "%s---- Misc bytes at end ----\n", num_prefix)
+        hex_char_dump(mem, pos, stream_end-pos, adj + pos, fout, unnumbered)
     elif pos > stream_end:
-        print >> fout, "Last dumped record has length (%d) that is too large" % length
+        fprintf(fout, "Last dumped record has length (%d) that is too large\n", length)
 
 def biff_count_records(mem, stream_offset, stream_len, fout=sys.stdout):
     pos = stream_offset

@@ -3,6 +3,8 @@
 # <p>This script is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
+
+# 2008-08-03 SJM Omit counts of FORMAT/FONT/XF records when formatting_info is false
 # 2008-02-08 SJM Force formatting_info=1 for xfc command
 # 2007-12-05 SJM Fixed usage of deprecated/removed Book.raw_xf_list
 # 2007-10-13 SJM Added "fonts" command
@@ -92,8 +94,9 @@ if __name__ == "__main__":
         print "Number of data sheets: %d" % bk.nsheets
         print "Pickleable: %d; Use mmap: %d; Formatting: %d" \
             % (bk.pickleable, bk.use_mmap, bk.formatting_info)
-        print "FORMATs: %d, FONTs: %d, XFs: %d" \
-            % (len(bk.format_list), len(bk.font_list), len(bk.xf_list))
+        if bk.formatting_info:
+            print "FORMATs: %d, FONTs: %d, XFs: %d" \
+                % (len(bk.format_list), len(bk.font_list), len(bk.xf_list))
         print "Load time: %.2f seconds (stage 1) %.2f seconds (stage 2)" \
             % (bk.load_time_stage_1, bk.load_time_stage_2)
         print
@@ -246,6 +249,10 @@ if __name__ == "__main__":
             "-s", "--onesheet",
             default="",
             help="restrict output to this sheet (name or index)")
+        oparser.add_option(
+            "-u", "--unnumbered",
+            action="store_true", default=False,
+            help="omit line numbers or offsets in biff_dump")
 
         options, args = oparser.parse_args(cmd_args)
         if len(args) == 1 and args[0] in ("version", ):
@@ -255,7 +262,7 @@ if __name__ == "__main__":
         cmd = args[0]
         xlrd_version = getattr(xlrd, "__VERSION__", "unknown; before 0.5")
         if cmd == 'biff_dump':
-            xlrd.dump(args[1])
+            xlrd.dump(args[1], unnumbered=options.unnumbered)
             sys.exit(0)
         if cmd == 'biff_count':
             xlrd.count_records(args[1])

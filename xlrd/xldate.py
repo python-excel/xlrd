@@ -9,6 +9,8 @@
 # <p>Provides function(s) for dealing with Microsoft Excel ™ dates.</p>
 ##
 
+# 2008-10-18 SJM Fix bug in xldate_from_date_tuple (affected some years after 2099)
+
 # The conversion from days to (year, month, day) starts with
 # an integral "julian day number" aka JDN.
 # FWIW, JDN 0 corresponds to noon on Monday November 24 in Gregorian year -4713.
@@ -70,7 +72,6 @@ def xldate_as_tuple(xldate, datemode):
         minutes, second = divmod(seconds, 60)
         # minute = minutes % 60; hour    = minutes // 60
         hour, minute = divmod(minutes, 60)
-
     if xldays >= _XLDAYS_TOO_LARGE[datemode]:
         raise XLDateTooLarge(xldate)
 
@@ -136,7 +137,7 @@ def xldate_from_date_tuple((year, month, day), datemode):
     else:
         Mp = M - 3
     jdn = ifd(1461 * Yp, 4) + ifd(979 * Mp + 16, 32) + \
-        day - 1364 - (3 * ifd(ifd(Yp + 184, 100), 4))
+        day - 1364 - ifd(ifd(Yp + 184, 100) * 3, 4)
     xldays = jdn - _JDN_delta[datemode]
     if xldays <= 0:
         raise XLDateBadTuple("Invalid (year, month, day): %r" % ((year, month, day),))

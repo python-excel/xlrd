@@ -20,7 +20,7 @@ def mkargs(**kwargs):
 
 args = mkargs(
     name = 'xlrd',
-    version = '0.7.0a5',
+    version = '0.7.0',
     author = 'John Machin',
     author_email = 'sjmachin@lexicon.net',
     url = the_url,
@@ -31,7 +31,7 @@ args = mkargs(
     description = 'Library for developers to extract data from Microsoft Excel (tm) spreadsheet files',
     long_description = \
         "Extract data from new and old Excel spreadsheets on any platform. " \
-        "Pure Python (2.1 or later). Strong support for Excel dates. Unicode-aware.",
+        "Pure Python (2.1 to 2.6). Strong support for Excel dates. Unicode-aware.",
     platforms = ["Any platform -- don't need Windows"],
     license = 'BSD',
     keywords = ['xls', 'excel', 'spreadsheet', 'workbook'],

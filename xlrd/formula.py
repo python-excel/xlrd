@@ -411,6 +411,11 @@ def get_externsheet_local_range(bk, refx, blah=0):
             % (refx, len(bk._externsheet_info))
         return (-101, -101)
     ref_recordx, ref_first_sheetx, ref_last_sheetx = info
+    if ref_recordx == bk._supbook_addins_inx:
+        if blah:
+            print "/// get_externsheet_local_range(refx=%d) -> addins %r" % (refx, info)
+        assert ref_first_sheetx == 0xFFFE == ref_last_sheetx
+        return (-5, -5)
     if ref_recordx != bk._supbook_locals_inx:
         if blah:
             print "/// get_externsheet_local_range(refx=%d) -> external %r" % (refx, info)
@@ -1571,7 +1576,11 @@ def decompile_formula(bk, fmla, fmlalen,
             if blah:
                 print "   FuncID=%d nargs=%d macro=%d prompt=%d" \
                       % (funcx, nargs, macro, prompt)
-            func_attrs = func_defs.get(funcx, None)
+            #### TODO #### if funcx == 255: # call add-in function
+            if funcx == 255:
+                func_attrs = ("CALL_ADDIN", 1, 30)
+            else:
+                func_attrs = func_defs.get(funcx, None)
             if not func_attrs:
                 print >> bk.logfile, "*** formula/tFuncVar unknown FuncID:%d" \
                       % funcx
@@ -1652,11 +1661,11 @@ def decompile_formula(bk, fmla, fmlalen,
             # if blah: print >> bk.logfile, "   ", res
         elif opcode == 0x1A: # tRef3d
             if bv >= 80:
-                res = get_cell_addr(data, pos+3, bv, reldelta)
+                res = get_cell_addr(data, pos+3, bv, reldelta, browx, bcolx)
                 refx = unpack("<H", data[pos+1:pos+3])[0]
                 shx1, shx2 = get_externsheet_local_range(bk, refx, blah)
             else:
-                res = get_cell_addr(data, pos+15, bv, reldelta)
+                res = get_cell_addr(data, pos+15, bv, reldelta, browx, bcolx)
                 raw_extshtx, raw_shx1, raw_shx2 = \
                              unpack("<hxxxxxxxxhh", data[pos+1:pos+15])
                 if blah:
@@ -1749,7 +1758,13 @@ def decompile_formula(bk, fmla, fmlalen,
                         shx1, shx2 = (-1, -1) # internal, any sheet
                     else:
                         shx1, shx2 = (-666, -666)
-            if dodgy or shx1 < -1:
+            okind = oUNK
+            ovalue = None
+            if shx1 == -5: # addin func name
+                okind = oSTRG
+                ovalue = bk.addin_func_names[tgtnamex]
+                otext = '"' + ovalue.replace('"', '""') + '"'
+            elif dodgy or shx1 < -1:
                 otext = "<<Name #%d in external(?) file #%d>>" \
                         % (tgtnamex, origrefx)
             else:
@@ -1761,7 +1776,7 @@ def decompile_formula(bk, fmla, fmlalen,
                             % (bk._sheet_names[tgtobj.scope], tgtobj.name)
                 if blah:
                     print >> bk.logfile, "    tNameX: setting text to", repr(res.text)
-            res = Operand(oUNK, None, LEAF_RANK, otext)
+            res = Operand(okind, ovalue, LEAF_RANK, otext)
             spush(res)
         elif is_error_opcode(opcode):
             any_err = 1

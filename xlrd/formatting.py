@@ -10,6 +10,8 @@
 
 # No part of the content of this file was derived from the works of David Giffin.
 
+# 2008-08-03 SJM Ignore PALETTE record when Book.formatting_info is false
+# 2008-08-03 SJM Tolerate up to 4 bytes trailing junk on PALETTE record
 # 2008-05-10 SJM Do some XF checks only when Book.formatting_info is true
 # 2008-02-08 SJM Preparation for Excel 2.0 support
 # 2008-02-03 SJM Another tweak to is_date_format_string()
@@ -24,7 +26,8 @@ from timemachine import *
 from biffh import BaseObject, unpack_unicode, unpack_string, \
     upkbits, upkbitsL, fprintf, \
     FUN, FDT, FNU, FGE, FTX, XL_CELL_NUMBER, XL_CELL_DATE, \
-    XL_FORMAT, XL_FORMAT2
+    XL_FORMAT, XL_FORMAT2, \
+    XLRDError
 from struct import unpack
 
 excel_default_palette_b5 = (
@@ -120,6 +123,8 @@ built_in_style_names = [
 def initialise_colour_map(book):
     book.colour_map = {}
     book.colour_indexes_used = {}
+    if not book.formatting_info:
+        return
     # Add the 8 invariant colours
     for i in xrange(8):
         book.colour_map[i] = excel_default_palette_b8[i]
@@ -254,9 +259,13 @@ class Font(BaseObject, EqNeAttrs):
     # No methods ...
 
 def handle_efont(book, data): # BIFF2 only
+    if not book.formatting_info:
+        return
     book.font_list[-1].colour_index = unpack('<H', data)[0]
 
 def handle_font(book, data):
+    if not book.formatting_info:
+        return
     if not book.encoding:
         book.derive_encoding()
     blah = DEBUG or book.verbosity >= 2
@@ -561,6 +570,8 @@ def handle_format(self, data, rectype=XL_FORMAT):
 # =============================================================================
 
 def handle_palette(book, data):
+    if not book.formatting_info:
+        return
     blah = DEBUG or book.verbosity >= 2
     n_colours, = unpack('<H', data[:2])
     expected_n_colours = (16, 56)[book.biff_version >= 50]
@@ -573,7 +584,12 @@ def handle_palette(book, data):
         fprintf(book.logfile,
             "PALETTE record with %d colours\n", n_colours)
     fmt = '<xx%di' % n_colours # use i to avoid long integers
-    colours = unpack(fmt, data)
+    expected_size = 4 * n_colours + 2
+    actual_size = len(data)
+    tolerance = 4
+    if not expected_size <= actual_size <= expected_size + tolerance:
+        raise XLRDError('PALETTE record: expected size %d, actual size %d' % (expected_size, actual_size))
+    colours = unpack(fmt, data[:expected_size])
     assert book.palette_record == [] # There should be only 1 PALETTE record
     # a colour will be 0xbbggrr
     # IOW, red is at the little end

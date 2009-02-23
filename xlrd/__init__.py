@@ -1,6 +1,6 @@
 # -*- coding: cp1252 -*-
 
-__VERSION__ = "0.7.0a7" # 2008-07-28
+__VERSION__ = "0.7.0" # 2008-07-28
 
 # <p>Copyright © 2005-2008 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
@@ -262,7 +262,8 @@ import licences
 # 2008-02-03 SJM Minor tweaks for IronPython support
 # 2008-02-08 SJM Preparation for Excel 2.0 support
 # 2008-04-24 SJM Recovery code for file with out-of-order/missing/wrong CODEPAGE record needed to be called for EXTERNSHEET/BOUNDSHEET/NAME/SHEETHDR records.
-
+# 2008-11-23 SJM Support dumping FILEPASS and EXTERNNAME records; extra info from SUPBOOK records
+# 2008-11-23 SJM colname utility function now supports more than 256 columns
 from timemachine import *
 from biffh import *
 from struct import unpack
@@ -295,6 +296,8 @@ except ImportError:
 USE_MMAP = MMAP_AVAILABLE
 
 MY_EOF = 0xF00BAAA # not a 16-bit number
+
+SUPBOOK_UNK, SUPBOOK_INTERNAL, SUPBOOK_EXTERNAL, SUPBOOK_ADDIN, SUPBOOK_DDEOLE = range(5)
 
 SUPPORTED_VERSIONS = (80, 70, 50, 45, 40, 30, 21, 20)
 
@@ -415,11 +418,12 @@ def open_workbook(filename=None,
 # For debugging: dump the file's BIFF records in char & hex.
 # @param filename The path to the file to be dumped.
 # @param outfile An open file, to which the dump is written.
+# @param unnumbered If true, omit offsets (for meaningful diffs).
 
-def dump(filename, outfile=sys.stdout):
+def dump(filename, outfile=sys.stdout, unnumbered=False):
     bk = Book()
     bk.biff2_8_load(filename=filename, logfile=outfile, )
-    biff_dump(bk.mem, bk.base, bk.stream_len, 0, outfile)
+    biff_dump(bk.mem, bk.base, bk.stream_len, 0, outfile, unnumbered)
 
 ##
 # For debugging and analysis: summarise the file's BIFF records.
@@ -738,12 +742,15 @@ class Book(BaseObject):
         self._all_sheets_count = 0 # includes macro & VBA sheets
         self._supbook_count = 0
         self._supbook_locals_inx = None
+        self._supbook_addins_inx = None
         self._all_sheets_map = [] # maps an all_sheets index to a calc-sheets index (or -1)
         self._externsheet_info = []
         self._externsheet_type_b57 = []
         self._extnsht_name_from_num = {}
         self._sheet_num_from_name = {}
         self._extnsht_count = 0
+        self._supbook_types = []
+        self.addin_func_names = []
         self.name_obj_list = []
         self.colour_map = {}
         self.palette_record = []
@@ -1027,6 +1034,20 @@ class Book(BaseObject):
         assert datemode in (0, 1)
         self.datemode = datemode
 
+    def handle_externname(self, data):
+        blah = DEBUG or self.verbosity >= 2
+        if self.biff_version >= 80:
+            option_flags, other_info =unpack("<HI", data[:6])
+            pos = 6
+            name, pos = unpack_unicode_update_pos(data, pos, lenlen=1)
+            extra = data[pos:]
+            if self._supbook_types[-1] == SUPBOOK_ADDIN:
+                self.addin_func_names.append(name)
+            if blah:
+                fprintf(self.logfile,
+                    "EXTERNNAME: sbktype=%d oflags=0x%04x oinfo=0x%08x name=%r extra=%r\n",
+                    self._supbook_types[-1], option_flags, other_info, name, extra)
+
     def handle_externsheet(self, data):
         self.derive_encoding() # in case CODEPAGE record missing/out of order/wrong
         self._extnsht_count += 1 # for use as a 1-based index
@@ -1039,7 +1060,7 @@ class Book(BaseObject):
                 if blah1:
                     fprintf(
                         self.logfile,
-                        "INFO: EXTERNSHEET needs %d bytes, have %d",
+                        "INFO: EXTERNSHEET needs %d bytes, have %d\n",
                         bytes_reqd, len(data),
                         )
                 code2, length2, data2 = self.get_record_parts()
@@ -1078,7 +1099,27 @@ class Book(BaseObject):
                 ty = 0
             self._externsheet_type_b57.append(ty)
 
-    def handle_filepass(self, _unused_data):
+    def handle_filepass(self, data):
+        if self.verbosity >= 2:
+            logf = self.logfile
+            fprintf(logf, "FILEPASS:\n")
+            hex_char_dump(data, 0, len(data), base=0, fout=logf)
+            if self.biff_version >= 80:
+                kind1, = unpack('<H', data[:2])
+                if kind1 == 0: # weak XOR encryption
+                    key, hash_value = unpack('<HH', data[2:])
+                    fprintf(logf,
+                        'weak XOR: key=0x%04x hash=0x%04x\n',
+                        key, hash_value)
+                elif kind1 == 1:
+                    kind2, = unpack('<H', data[4:6])
+                    if kind2 == 1: # BIFF8 standard encryption
+                        caption = "BIFF8 std"
+                    elif kind2 == 2:
+                        caption = "BIFF8 strong"
+                    else:
+                        caption = "** UNKNOWN ENCRYPTION METHOD **"
+                    fprintf(logf, "%s\n", caption)
         raise XLRDError("Workbook is encrypted")
 
     def handle_name(self, data):
@@ -1222,6 +1263,7 @@ class Book(BaseObject):
         # if DEBUG: print "---> handle_obj type=%d id=0x%08x" % (obj_type, obj_id)
 
     def handle_supbook(self, data):
+        self._supbook_types.append(None)
         blah = DEBUG or self.verbosity >= 2
         if 0:
             print "SUPBOOK:"
@@ -1230,18 +1272,23 @@ class Book(BaseObject):
         sbn = self._supbook_count
         self._supbook_count += 1
         if data[2:4] == "\x01\x04":
+            self._supbook_types[-1] = SUPBOOK_INTERNAL
             self._supbook_locals_inx = self._supbook_count - 1
             if blah:
                 print "SUPBOOK[%d]: internal 3D refs; %d sheets" % (sbn, num_sheets)
                 print "    _all_sheets_map", self._all_sheets_map
             return
         if data[0:4] == "\x01\x00\x01\x3A":
+            self._supbook_types[-1] = SUPBOOK_ADDIN
+            self._supbook_addins_inx = self._supbook_count - 1
             if blah: print "SUPBOOK[%d]: add-in functions" % sbn
             return
         url, pos = unpack_unicode_update_pos(data, 2, lenlen=2)
         if num_sheets == 0:
+            self._supbook_types[-1] = SUPBOOK_DDEOLE
             if blah: print "SUPBOOK[%d]: DDE/OLE document = %r" % (sbn, url)
             return
+        self._supbook_types[-1] = SUPBOOK_EXTERNAL
         if blah: print "SUPBOOK[%d]: url = %r" % (sbn, url)
         sheet_names = []
         for x in range(num_sheets):
@@ -1335,6 +1382,8 @@ class Book(BaseObject):
                 self.handle_codepage(data)
             elif rc == XL_COUNTRY:
                 self.handle_country(data)
+            elif rc == XL_EXTERNNAME:
+                self.handle_externname(data)
             elif rc == XL_EXTERNSHEET:
                 self.handle_externsheet(data)
             elif rc == XL_FILEPASS:
@@ -1476,13 +1525,15 @@ def expand_cell_address(inrow, incol):
         relcol = 0
     return outrow, outcol, relrow, relcol
 
-def colname(x, _A2Z="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
-    assert 0 <= x <= 255
-    if x <= 25:
-        return _A2Z[x]
-    else:
-        quot, rem = divmod(x, 26)
-        return _A2Z[quot-1] + _A2Z[rem]
+def colname(colx, _A2Z="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
+    assert colx >= 0
+    name = ''
+    while 1:
+        quot, rem = divmod(colx, 26)
+        name = _A2Z[rem] + name
+        if not quot:
+            return name
+        colx = quot - 1
 
 def display_cell_address(rowx, colx, relrow, relcol):
     if relrow:
