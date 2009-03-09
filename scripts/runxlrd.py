@@ -251,7 +251,7 @@ if __name__ == "__main__":
             help="restrict output to this sheet (name or index)")
         oparser.add_option(
             "-u", "--unnumbered",
-            action="store_true", default=False,
+            action="store_true", default=0,
             help="omit line numbers or offsets in biff_dump")
 
         options, args = oparser.parse_args(cmd_args)
@@ -325,7 +325,7 @@ if __name__ == "__main__":
                 elif cmd == '3rows': # first row, 2nd row and last row
                     show(bk, 3)
                 elif cmd == 'bench':
-                    show(bk, printit=False)
+                    show(bk, printit=0)
                 elif cmd == 'fonts':
                     bk_header(bk)
                     show_fonts(bk)
