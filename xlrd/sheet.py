@@ -1,7 +1,7 @@
 # -*- coding: cp1252 -*-
 
 ##
-# <p> Portions copyright © 2005-2007 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p> Portions copyright © 2005-2008 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
@@ -106,7 +106,7 @@ class Sheet(BaseObject):
     # List of address ranges of cells which have been merged.
     # These are set up in Excel by Format > Cells > Alignment, then ticking
     # the "Merge cells" box.
-    # <br> -- New in version 0.6.1
+    # <br> -- New in version 0.6.1. Extracted only if open_workbook(..., formatting_info=True)
     # <br>How to deconstruct the list:
     # <pre>
     # for crange in thesheet.merged_cells:
@@ -268,7 +268,7 @@ class Sheet(BaseObject):
 
     ##
     # XF index of the cell in the given row and column.
-    # This is an index into Book.raw_xf_list and Book.computed_xf_list.
+    # This is an index into Book.xf_list.
     # <br /> -- New in version 0.6.1
     def cell_xf_index(self, rowx, colx):
         self.req_fmt_info()

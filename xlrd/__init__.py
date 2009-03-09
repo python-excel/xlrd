@@ -1,8 +1,8 @@
 # -*- coding: cp1252 -*-
 
-__VERSION__ = "0.7.0" # 2008-07-28
+__VERSION__ = "0.7.0" # 2009-03-10
 
-# <p>Copyright © 2005-2008 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2009 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
@@ -10,6 +10,8 @@ import licences
 
 ##
 # <p><b>A Python module for extracting data from MS Excel ™ spreadsheet files.
+# <br /><br />
+# Version 0.7.0 -- 2009-03-10
 # </b></p>
 #
 # <h2>General information</h2>
@@ -23,7 +25,7 @@ import licences
 # The latest version is available from OpenOffice.org in
 # <a href=http://sc.openoffice.org/excelfileformat.pdf> PDF format</a>
 # and
-# <a href=http://sc.openoffice.org/excelfileformat.sxw> XML format.</a>
+# <a href=http://sc.openoffice.org/excelfileformat.odt> ODT format.</a>
 # Small portions of the OOo docs are reproduced in this
 # document. A study of the OOo docs is recommended for those who wish a
 # deeper understanding of the Excel file layout than the xlrd docs can provide.
@@ -670,7 +672,7 @@ class Book(BaseObject):
     # "Magic" indexes e.g. 0x7FFF map to None.
     # <i>colour_map</i> is what you need if you want to render cells on screen or in a PDF
     # file. If you are writing an output XLS file, use <i>palette_record</i>.
-    # <br /> -- New in version 0.6.1
+    # <br /> -- New in version 0.6.1. Extracted only if open_workbook(..., formatting_info=True)
     colour_map = {}
 
     ##
@@ -680,7 +682,7 @@ class Book(BaseObject):
     # Otherwise this list will be empty. This is what you need if you are
     # writing an output XLS file. If you want to render cells on screen or in a PDF
     # file, use colour_map.
-    # <br /> -- New in version 0.6.1
+    # <br /> -- New in version 0.6.1. Extracted only if open_workbook(..., formatting_info=True)
     palette_record = []
 
     ##
@@ -1003,7 +1005,7 @@ class Book(BaseObject):
             except:
                 ei = sys.exc_info()[:2]
                 fprintf(self.logfile,
-                    "ERROR *** codepage %d -> encoding %r -> %s: %s\n",
+                    "ERROR *** codepage %r -> encoding %r -> %s: %s\n",
                     self.codepage, self.encoding, ei[0].__name__.split(".")[-1], ei[1])
                 raise
         if self.raw_user_name:

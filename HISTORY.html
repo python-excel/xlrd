@@ -1,16 +1,84 @@
-<p>  Version 0.7.0a5, not publicly released yet
-</p>
-<ul>
-     <li> Logfile arg wasn't being passed from open_workbook to compdoc.CompDoc. Reported by Martijn Faassen.
-</li><li> Allow for BIFF2/3-style FORMAT record in BIFF4/8 file
+<p> Revision : 3782 -- Author: sjmachin -- Date: 2009-02-23 23:00:50
+</p><ul>
+     <li> colname utility function now supports more than 256 columns.
+</li><li> Fix bug where BIFF record type 0x806 was being regarded as a formula opcode.
+</li><li> Ignore PALETTE record when formatting_info is false.
+</li><li> Tolerate up to 4 bytes trailing junk on PALETTE record.
+</li><li> Fixed bug in unused utility function xldate_from_date_tuple which affected some years after 2099.
+</li><li> Added code for inspecting as-yet-unused record types: FILEPASS, TXO, NOTE.
+</li><li> Added inspection code for add_in function calls.
+</li><li> Added support for unnumbered biff_dump (better for doing diffs).
+</li></ul>
+<p> Revision : 3613 -- Author: chris -- Date: 2008-11-22 04:06:36
+</p><ul>
+     <li> ignore distutils cruft
+</li></ul>
+<p> Revision : 3574 -- Author: sjmachin -- Date: 2008-11-04 11:51:20
+</p><ul>
+     <li> Avoid assertion error in compdoc when -1 used instead of -2 for first_SID of empty SCSS
+</li></ul>
+<p> Revision : 3480 -- Author: chris -- Date: 2008-09-19 20:43:00
+</p><ul>
+     <li> Make version numbers match up.
+</li></ul>
+<p> Revision : 3431 -- Author: sjmachin -- Date: 2008-07-28 10:37:35
+</p><ul>
+     <li> Enhanced recovery from out-of-order/missing/wrong CODEPAGE record.
+</li><li> Added Name.area2d convenience method.
+</li><li> Avoided some checking of XF info when formatting_info is false.
+</li><li> Minor changes in preparation for XLSX support.
+</li></ul>
+<p> Revision : 3311 -- Author: chris -- Date: 2008-03-14 22:09:01
+</p><ul>
+     <li> remove duplicate files that were out of date.
+</li></ul>
+<p> Revision : 3287 -- Author: sjmachin -- Date: 2008-02-14 06:33:32
+</p><ul>
+     <li> Basic support for Excel 2.0
+</li></ul>
+<p> Revision : 3284 -- Author: sjmachin -- Date: 2008-02-09 05:37:57
+</p><ul>
+     <li> Decouple Book init & load.
+</li><li> runxlrd: minor fix for xfc.
+</li><li> More Excel 2.x work.
+</li><li> is_date_format() tweak.
+</li><li> Better detection of IronPython.
+</li></ul>
+<p> Revision : 3265 -- Author: sjmachin -- Date: 2007-12-25 19:09:45
+</p><ul>
+     <li> Better error message (including first 8 bytes of file) when file is not in a supported format.
+</li></ul>
+<p> Revision : 3263 -- Author: sjmachin -- Date: 2007-12-20 07:04:55
+</p><ul>
+     <li> More BIFF2 formatting: ROW, COLWIDTH, and COLUMNDEFAULT records;
+</li><li> finished stage 1 of XF records.
+</li></ul>
+<p> Revision : 3262 -- Author: sjmachin -- Date: 2007-12-11 07:40:33
+</p><ul>
+     <li> More work on supporting BIFF2 (Excel 2.x) files.
+</li></ul>
+<p> Revision : 3250 -- Author: sjmachin -- Date: 2007-12-04 20:37:14
+</p><ul>
+     <li> Added support for Excel 2.x (BIFF2) files. Data only, no formatting info. Alpha.
+</li></ul>
+<p> Revision : 3234 -- Author: sjmachin -- Date: 2007-11-21 00:55:56
+</p><ul>
+     <li> Wasn't coping with EXTERNSHEET record followed by CONTINUE record(s).
+</li></ul>
+<p> Revision : 3168 -- Author: sjmachin -- Date: 2007-10-13 09:19:01
+</p><ul>
+     <li> Allow for BIFF2/3-style FORMAT record in BIFF4/8 file
 </li><li> Avoid crash when zero-length Unicode string missing options byte.
 </li><li> Warning message if sector sizes are extremely large.
 </li><li> Work around corrupt STYLE record
 </li><li> Added missing entry for blank cell type to ctype_text
 </li><li> Added "fonts" command to runxlrd script
 </li><li> Warning: style XF whose parent XF index != 0xFFF
-</li>
-</ul>
+</li></ul>
+<p> Revision : 2868 -- Author: sjmachin -- Date: 2007-07-11 11:02:55
+</p><ul>
+     <li> Logfile arg wasn't being passed from open_workbook to compdoc.CompDoc.
+</li></ul>
 
 <p>  Version 0.6.1, 2007-06-10
 </p>

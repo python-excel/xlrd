@@ -1027,9 +1027,6 @@ def xf_epilogue(self):
                     fprintf(self.logfile,
                         "NOTE !!! XF[%d] fontx=%d, parent[%d] fontx=%r\n",
                         xf.xf_index, xf.font_index, parent.xf_index, parent.font_index)
-    # Following are deprecated, undocumented, and will vanish Real Soon Now.
-    ###### self.raw_xf_list = self.xf_list
-    ###### self.computed_xf_list = self.xf_list
 
 def initialise_book(book):
     initialise_colour_map(book)
