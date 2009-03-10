@@ -1,0 +1,17 @@
+setup.py
+README.html
+HISTORY.html
+scripts\runxlrd.py
+xlrd\__init__.py
+xlrd\biffh.py
+xlrd\compdoc.py
+xlrd\formatting.py
+xlrd\formula.py
+xlrd\licences.py
+xlrd\sheet.py
+xlrd\timemachine.py
+xlrd\xldate.py
+xlrd\doc\compdoc.html
+xlrd\doc\xlrd.html
+xlrd\examples\namesdemo.xls
+xlrd\examples\xlrdnameAPIdemo.py
