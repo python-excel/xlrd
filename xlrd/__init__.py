@@ -1,6 +1,6 @@
 # -*- coding: cp1252 -*-
 
-__VERSION__ = "0.7.0" # 2009-03-10
+__VERSION__ = "0.7.1-alpha" # 2009-04-25
 
 # <p>Copyright © 2005-2009 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
@@ -11,7 +11,7 @@ import licences
 ##
 # <p><b>A Python module for extracting data from MS Excel ™ spreadsheet files.
 # <br /><br />
-# Version 0.7.0 -- 2009-03-10
+# Version 0.7.1-alpha -- 2009-04-25
 # </b></p>
 #
 # <h2>General information</h2>
@@ -252,20 +252,22 @@ import licences
 # </ul>
 ##
 
-# 2007-04-22 SJM Removed antique undocumented Book.get_name_dict method.
-# 2007-05-21 SJM If no CODEPAGE record in pre-8.0 file, assume ascii and keep going.
-# 2007-07-07 SJM Version changed to 0.7.0 (alpha 1)
-# 2007-07-07 SJM Logfile arg wasn't being passed from open_workbook to compdoc.CompDoc
-# 2007-11-20 SJM Wasn't handling EXTERNSHEET record that needed CONTINUE record(s)
-# 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
-# 2007-12-20 SJM Better error message for unsupported file format.
-# 2007-12-25 SJM Decouple Book initialisation & loading -- to allow for multiple loaders.
-# 2008-02-02 SJM Previous change stopped dump() and count_records() ... fixed
-# 2008-02-03 SJM Minor tweaks for IronPython support
-# 2008-02-08 SJM Preparation for Excel 2.0 support
-# 2008-04-24 SJM Recovery code for file with out-of-order/missing/wrong CODEPAGE record needed to be called for EXTERNSHEET/BOUNDSHEET/NAME/SHEETHDR records.
+# 2009-04-27 SJM Integrated on_demand patch by Armando Serrano Lombillo
 # 2008-11-23 SJM Support dumping FILEPASS and EXTERNNAME records; extra info from SUPBOOK records
 # 2008-11-23 SJM colname utility function now supports more than 256 columns
+# 2008-04-24 SJM Recovery code for file with out-of-order/missing/wrong CODEPAGE record needed to be called for EXTERNSHEET/BOUNDSHEET/NAME/SHEETHDR records.
+# 2008-02-08 SJM Preparation for Excel 2.0 support
+# 2008-02-03 SJM Minor tweaks for IronPython support
+# 2008-02-02 SJM Previous change stopped dump() and count_records() ... fixed
+# 2007-12-25 SJM Decouple Book initialisation & loading -- to allow for multiple loaders.
+# 2007-12-20 SJM Better error message for unsupported file format.
+# 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
+# 2007-11-20 SJM Wasn't handling EXTERNSHEET record that needed CONTINUE record(s)
+# 2007-07-07 SJM Version changed to 0.7.0 (alpha 1)
+# 2007-07-07 SJM Logfile arg wasn't being passed from open_workbook to compdoc.CompDoc
+# 2007-05-21 SJM If no CODEPAGE record in pre-8.0 file, assume ascii and keep going.
+# 2007-04-22 SJM Removed antique undocumented Book.get_name_dict method.
+
 from timemachine import *
 from biffh import *
 from struct import unpack
@@ -367,7 +369,7 @@ def open_workbook(filename=None,
     logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
     file_contents=None,
     encoding_override=None,
-    formatting_info=False,
+    formatting_info=False, on_demand=False,
     ):
     t0 = time.clock()
     if TOGGLE_GC:
@@ -380,6 +382,7 @@ def open_workbook(filename=None,
         logfile=logfile, verbosity=verbosity, pickleable=pickleable, use_mmap=use_mmap,
         encoding_override=encoding_override,
         formatting_info=formatting_info,
+        on_demand=on_demand,
         )
     t1 = time.clock()
     bk.load_time_stage_1 = t1 - t0
@@ -394,13 +397,24 @@ def open_workbook(filename=None,
     bk.biff_version = biff_version
     if biff_version <= 40:
         # no workbook globals, only 1 worksheet
+        if on_demand:
+            fprintf(bk.logfile,
+                "*** WARNING: on_demand is not supported for this Excel version.\n"
+                "*** Setting on_demand to False.\n")
+            bk.on_demand = on_demand = False
         bk.fake_globals_get_sheet()
     elif biff_version == 45:
         # worksheet(s) embedded in global stream
         bk.parse_globals()
+        if on_demand:
+            fprintf(bk.logfile, "*** WARNING: on_demand is not supported for this Excel version.\n"
+                                "*** Setting on_demand to False.\n")
+            bk.on_demand = on_demand = False
     else:
         bk.parse_globals()
-        bk.get_sheets()
+        bk._sheet_list = [None for sh in bk._sheet_names]
+        if not on_demand:
+            bk.get_sheets()
     bk.nsheets = len(bk._sheet_list)
     if biff_version == 45 and bk.nsheets > 1:
         fprintf(bk.logfile,
@@ -408,7 +422,8 @@ def open_workbook(filename=None,
             "*** Book-level data will be that of the last worksheet.\n",
             bk.nsheets
             )
-    bk.release_resources()
+    if not on_demand:
+        bk.release_resources()
     if TOGGLE_GC:
         if orig_gc_enabled:
             gc.enable()
@@ -578,7 +593,8 @@ class Name(BaseObject):
 class Book(BaseObject):
 
     ##
-    # The number of worksheets in the workbook.
+    # The number of worksheets present in the workbook file.
+    # This information is available even when no sheets have yet been loaded.
     nsheets = 0
 
     ##
@@ -695,13 +711,18 @@ class Book(BaseObject):
 
     ##
     # @return A list of all sheets in the book.
+    # All sheets not already loaded will be loaded.
     def sheets(self):
-        return self._sheet_list
+        for sheetx in xrange(self.nsheets):
+            if not self._sheet_list[sheetx]:
+                self.get_sheet(sheetx)
+        return self._sheet_list[:]
+
     ##
     # @param sheetx Sheet index in range(nsheets)
     # @return An object of the Sheet class
     def sheet_by_index(self, sheetx):
-        return self._sheet_list[sheetx]
+        return self._sheet_list[sheetx] or self.get_sheet(sheetx)
 
     ##
     # @param sheet_name Name of sheet required
@@ -711,12 +732,44 @@ class Book(BaseObject):
             sheetx = self._sheet_names.index(sheet_name)
         except ValueError:
             raise XLRDError('No sheet named <%r>' % sheet_name)
-        return self._sheet_list[sheetx]
+        return self.sheet_by_index(sheetx)
 
     ##
-    # @return A list of the names of the sheets in the book.
+    # @return A list of the names of all the worksheets in the workbook file.
+    # This information is available even when no sheets have yet been loaded.
     def sheet_names(self):
         return self._sheet_names[:]
+
+    ##
+    # @param sheet_name_or_index Name or index of sheet enquired upon
+    # @return true if sheet is loaded, false otherwise
+    def sheet_loaded(self, sheet_name_or_index):
+        # using type(1) because int won't work with Python 2.1
+        if isinstance(sheet_name_or_index, type(1)):
+            sheetx = sheet_name_or_index
+        else:
+            try:
+                sheetx = self._sheet_names.index(sheet_name_or_index)
+            except ValueError:
+                raise XLRDError('No sheet named <%r>' % sheet_name_or_index)
+        return self._sheet_list[sheetx] and True or False # Python 2.1 again
+
+    ##
+    # @param sheet_name_or_index Name or index of sheet to be unloaded
+    def unload_sheet(self, sheet_name_or_index):
+        # using type(1) because int won't work with Python 2.1
+        if isinstance(sheet_name_or_index, type(1)):
+            sheetx = sheet_name_or_index
+        else:
+            try:
+                sheetx = self._sheet_names.index(sheet_name_or_index)
+            except ValueError:
+                raise XLRDError('No sheet named <%r>' % sheet_name_or_index)
+        sh = self._sheet_list[sheetx]
+        if sh is None:
+            return
+        self._sheet_list[sheetx] = None
+        sh._clear()
 
     ##
     # A mapping from (lower_case_name, scope) to a single Name object.
@@ -752,6 +805,7 @@ class Book(BaseObject):
         self._sheet_num_from_name = {}
         self._extnsht_count = 0
         self._supbook_types = []
+        self._resources_released = 0
         self.addin_func_names = []
         self.name_obj_list = []
         self.colour_map = {}
@@ -763,6 +817,7 @@ class Book(BaseObject):
         logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
         encoding_override=None,
         formatting_info=False,
+        on_demand=False,
         ):
         # DEBUG = 0
         self.logfile = logfile
@@ -771,6 +826,7 @@ class Book(BaseObject):
         self.use_mmap = use_mmap and MMAP_AVAILABLE
         self.encoding_override = encoding_override
         self.formatting_info = formatting_info
+        self.on_demand = on_demand
 
         need_close_filestr = 0
         if not file_contents:
@@ -846,10 +902,12 @@ class Book(BaseObject):
         self.xfcount = 0
         self.actualfmtcount = 0 # number of FORMAT records seen so far
         self._xf_index_to_xl_type_map = {}
+        self._xf_epilogue_done = 0
         self.xf_list = []
         self.font_list = []
 
     def release_resources(self):
+        self._resources_released = 1
         del self.mem
         del self._sharedstrings
 
@@ -883,7 +941,11 @@ class Book(BaseObject):
         self._position = pos + length
         return (code, length, data)
 
-    def get_sheet(self, sh_number):
+    def get_sheet(self, sh_number, update_pos=True):
+        if self._resources_released:
+            raise XLRDError("Can't load sheets after releasing resources.")
+        if update_pos:
+            self._position = self._sh_abs_posn[sh_number]
         _unused_biff_version = self.getbof(XL_WORKSHEET)
         # assert biff_version == self.biff_version ### FAILS
         # Have an example where book is v7 but sheet reports v8!!!
@@ -896,6 +958,7 @@ class Book(BaseObject):
                 sh_number,
                 )
         sh.read(self)
+        self._sheet_list[sh_number] = sh
         return sh
 
     def get_sheets(self):
@@ -903,10 +966,7 @@ class Book(BaseObject):
         if DEBUG: print >> self.logfile, "GET_SHEETS:", self._sheet_names, self._sh_abs_posn
         for sheetno in xrange(len(self._sheet_names)):
             if DEBUG: print >> self.logfile, "GET_SHEETS: sheetno =", sheetno, self._sheet_names, self._sh_abs_posn
-            newposn = self._sh_abs_posn[sheetno]
-            self.position(newposn)
-            sht = self.get_sheet(sheetno)
-            self._sheet_list.append(sht)
+            self.get_sheet(sheetno)
 
     def fake_globals_get_sheet(self): # for BIFF 4.0 and earlier
         formatting.initialise_book(self)
@@ -914,6 +974,7 @@ class Book(BaseObject):
         self._sheet_names = [fake_sheet_name]
         self._sh_abs_posn = [0]
         self._sheet_visibility = [0] # one sheet, visible
+        self._sheet_list.append(None) # get_sheet updates _sheet_list but needs a None beforehand
         self.get_sheets()
 
     def handle_boundsheet(self, data):
@@ -1005,7 +1066,7 @@ class Book(BaseObject):
             except:
                 ei = sys.exc_info()[:2]
                 fprintf(self.logfile,
-                    "ERROR *** codepage %r -> encoding %r -> %s: %s\n",
+                    "ERROR *** codepage %d -> encoding %r -> %s: %s\n",
                     self.codepage, self.encoding, ei[0].__name__.split(".")[-1], ei[1])
                 raise
         if self.raw_user_name:
@@ -1302,7 +1363,7 @@ class Book(BaseObject):
         # This a BIFF 4W special.
         # The SHEETHDR record is followed by a (BOF ... EOF) substream containing
         # a worksheet.
-        # DEBUG = 0
+        # DEBUG = 1
         self.derive_encoding()
         sheet_len = unpack('<i', data[:4])[0]
         sheet_name = unpack_string(data, 4, self.encoding, lenlen=1)
@@ -1313,10 +1374,11 @@ class Book(BaseObject):
         posn = BOF_posn - 4 - len(data)
         if DEBUG: print >> self.logfile, 'SHEETHDR %d at posn %d: len=%d name=%r' % (sheetno, posn, sheet_len, sheet_name)
         self.initialise_format_info()
-        sht = self.get_sheet(sheetno)
+        if DEBUG: print >> self.logfile, 'SHEETHDR: xf epilogue flag is %d' % self._xf_epilogue_done
+        self._sheet_list.append(None) # get_sheet updates _sheet_list but needs a None beforehand
+        self.get_sheet(sheetno, update_pos=False)
         if DEBUG: print >> self.logfile, 'SHEETHDR: posn after get_sheet() =', self._position
-        self.position(BOF_posn + sheet_len)
-        self._sheet_list.append(sht)
+        self._position = BOF_posn + sheet_len
 
     def handle_sheetsoffset(self, data):
         # DEBUG = 0
@@ -1363,7 +1425,7 @@ class Book(BaseObject):
 
     def parse_globals(self):
         # DEBUG = 0
-        # self.position(self._own_bof) # no need to position, just start reading (after the BOF)
+        # no need to position, just start reading (after the BOF)
         formatting.initialise_book(self)
         while 1:
             rc, length, data = self.get_record_parts()
@@ -1424,9 +1486,6 @@ class Book(BaseObject):
                 # if DEBUG:
                 #     print "parse_globals: ignoring record code 0x%04x" % rc
                 pass
-
-    def position(self, pos):
-        self._position = pos
 
     def read(self, pos, length):
         data = self.mem[pos:pos+length]

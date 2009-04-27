@@ -1,10 +1,11 @@
 # -*- coding: cp1252 -*-
 
 ##
-# <p> Portions copyright © 2005-2008 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p> Portions copyright © 2005-2009 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2009-04-27 SJM Integrated on_demand patch by Armando Serrano Lombillo
 # 2008-02-09 SJM Excel 2.0: build XFs on the fly from cell attributes
 # 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
 # 2007-10-11 SJM Added missing entry for blank cell type to ctype_text
@@ -52,6 +53,8 @@ _WINDOW2_options = (
 # <p>WARNING: You don't call this class yourself. You access Sheet objects via the Book object that
 # was returned when you called xlrd.open_workbook("myfile.xls").</p>
 
+class AttemptToAccessUnloadedSheet(object):
+    pass
 
 class Sheet(BaseObject):
     ##
@@ -397,6 +400,18 @@ class Sheet(BaseObject):
     # === Following methods are used in building the worksheet.
     # === They are not part of the API.
 
+    def _clear(self):
+        # For use by Book.unload_sheet().
+        # In case the caller retains a reference to this sheet object,
+        # explicitly destroy attributes that may use a lot of memory.
+        zapped = AttemptToAccessUnloadedSheet()
+        self._cell_values = zapped
+        self._cell_types = zapped
+        self._cell_xf_indexes = zapped
+        self.rowinfo_map = zapped
+        self.colinfo_map = zapped
+        self.merged_cells = zapped
+
     def extend_cells(self, nr, nc):
         # print "extend_cells_2", self.nrows, self.ncols, nr, nc
         assert 1 <= nc <= self.utter_max_cols
@@ -588,7 +603,7 @@ class Sheet(BaseObject):
         blah_rows = DEBUG or self.verbosity >= 4
         blah_formulas = 1 and blah
         oldpos = bk._position
-        bk.position(self._position)
+        bk._position = self._position
         XL_SHRFMLA_ETC_ETC = (
             XL_SHRFMLA, XL_ARRAY, XL_TABLEOP, XL_TABLEOP2,
             XL_ARRAY2, XL_TABLEOP_B2,
@@ -1205,7 +1220,7 @@ class Sheet(BaseObject):
             raise XLRDError("Sheet %d (%r) missing EOF record" \
                 % (self.number, self.name))
         self.tidy_dimensions()
-        bk.position(oldpos)
+        bk._position = oldpos
         return 1
 
     def fixed_BIFF2_xfindex(self, cell_attr, rowx, colx, true_xfx=None):
