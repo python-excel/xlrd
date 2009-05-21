@@ -654,7 +654,7 @@ def handle_style(book, data):
             name = unpack_unicode(data, 2, lenlen=2)
         else:
             name = unpack_string(data, 2, book.encoding, lenlen=1)
-        if not name:
+        if blah and not name:
             print >> book.logfile, \
                 "WARNING *** A user-defined style has a zero-length name"
         built_in = 0
