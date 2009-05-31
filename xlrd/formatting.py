@@ -4,12 +4,14 @@
 # Module for formatting information.
 #
 # <p>Copyright © 2005-2008 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2009 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under
 # a BSD-style licence.</p>
 ##
 
 # No part of the content of this file was derived from the works of David Giffin.
 
+# 2009-05-31 SJM Fixed problem with non-zero reserved bits in some STYLE records in Mac Excel files
 # 2008-08-03 SJM Ignore PALETTE record when Book.formatting_info is false
 # 2008-08-03 SJM Tolerate up to 4 bytes trailing junk on PALETTE record
 # 2008-05-10 SJM Do some XF checks only when Book.formatting_info is true
@@ -631,7 +633,8 @@ def palette_epilogue(book):
 def handle_style(book, data):
     blah = DEBUG or book.verbosity >= 2
     bv = book.biff_version
-    xf_index, built_in_id, level = unpack('<HBB', data[:4])
+    flag_and_xfx, built_in_id, level = unpack('<HBB', data[:4])
+    xf_index = flag_and_xfx & 0x0fff
     if (data == "\0\0\0\0"
     and "Normal" not in book.style_name_map):
         # Erroneous record (doesn't have built-in bit set).
@@ -641,10 +644,9 @@ def handle_style(book, data):
         xf_index = 0
         name = "Normal"
         level = 255
-    elif xf_index & 0x8000:
+    elif flag_and_xfx & 0x8000:
         # built-in style
         built_in = 1
-        xf_index &= 0x7fff
         name = built_in_style_names[built_in_id]
         if 1 <= built_in_id <= 2:
             name += str(level + 1)

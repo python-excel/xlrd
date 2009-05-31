@@ -5,6 +5,7 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2009-05-31 SJM Fixed problem with no CODEPAGE record on extremely minimal BIFF2.x 3rd-party file
 # 2009-04-27 SJM Integrated on_demand patch by Armando Serrano Lombillo
 # 2008-02-09 SJM Excel 2.0: build XFs on the fly from cell attributes
 # 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
@@ -16,7 +17,7 @@ from biffh import *
 from timemachine import *
 from struct import unpack
 from formula import dump_formula, decompile_formula, rangename2d
-from formatting import nearest_colour_index
+from formatting import nearest_colour_index, Format
 import time
 
 DEBUG = 0
@@ -53,8 +54,6 @@ _WINDOW2_options = (
 # <p>WARNING: You don't call this class yourself. You access Sheet objects via the Book object that
 # was returned when you called xlrd.open_workbook("myfile.xls").</p>
 
-class AttemptToAccessUnloadedSheet(object):
-    pass
 
 class Sheet(BaseObject):
     ##
@@ -400,18 +399,6 @@ class Sheet(BaseObject):
     # === Following methods are used in building the worksheet.
     # === They are not part of the API.
 
-    def _clear(self):
-        # For use by Book.unload_sheet().
-        # In case the caller retains a reference to this sheet object,
-        # explicitly destroy attributes that may use a lot of memory.
-        zapped = AttemptToAccessUnloadedSheet()
-        self._cell_values = zapped
-        self._cell_types = zapped
-        self._cell_xf_indexes = zapped
-        self.rowinfo_map = zapped
-        self.colinfo_map = zapped
-        self.merged_cells = zapped
-
     def extend_cells(self, nr, nc):
         # print "extend_cells_2", self.nrows, self.ncols, nr, nc
         assert 1 <= nc <= self.utter_max_cols
@@ -638,7 +625,7 @@ class Sheet(BaseObject):
                 # RSTRING has extra richtext info at the end, but we ignore it.
                 rowx, colx, xf_index = local_unpack('<HHH', data[0:6])
                 if bv < BIFF_FIRST_UNICODE:
-                    strg = unpack_string(data, 6, bk.encoding, lenlen=2)
+                    strg = unpack_string(data, 6, bk.encoding or bk.derive_encoding, lenlen=2)
                 else:
                     strg = unpack_unicode(data, 6, lenlen=2)
                 self_put_cell(rowx, colx, XL_CELL_TEXT, strg, xf_index)
@@ -762,7 +749,7 @@ class Sheet(BaseObject):
                                 raise XLRDError("Expected STRING record; found 0x%04x" % rc2)
                         # if DEBUG: print "STRING: data=%r BIFF=%d cp=%d" % (data2, self.biff_version, bk.encoding)
                         if self.biff_version < BIFF_FIRST_UNICODE:
-                            strg = unpack_string(data2, 0, bk.encoding, lenlen=1 + int(bv > 20))
+                            strg = unpack_string(data2, 0, bk.encoding or bk.derive_encoding, lenlen=1 + int(bv > 20))
                         else:
                             strg = unpack_unicode(data2, 0, lenlen=2)
                         self.put_cell(rowx, colx, XL_CELL_TEXT, strg, xf_index)
@@ -1114,7 +1101,7 @@ class Sheet(BaseObject):
                     self_put_number_cell(rowx, colx, float(d), self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
                 elif rc == XL_LABEL_B2:
                     rowx, colx, cell_attr = local_unpack('<HH3s', data[0:7])
-                    strg = unpack_string(data, 7, bk.encoding, lenlen=1)
+                    strg = unpack_string(data, 7, bk.encoding or bk.derive_encoding(), lenlen=1)
                     self_put_cell(rowx, colx, XL_CELL_TEXT, strg, self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
                 elif rc == XL_BOOLERR_B2:
                     rowx, colx, cell_attr, value, is_err = local_unpack('<HH3sBB', data)
@@ -1262,7 +1249,10 @@ class Sheet(BaseObject):
             msg = "ERROR *** XF[%d] unknown format key (%d, 0x%04x)\n"
             fprintf(self.logfile, msg,
                     xf.xf_index, xf.format_key, xf.format_key)
-            xf.format_key = 0
+            fmt = Format(xf.format_key, FUN, u"General")
+            book.format_map[xf.format_key] = fmt
+            while len(book.format_list) <= xf.format_key:
+                book.format_list.append(fmt)
         cellty_from_fmtty = {
             FNU: XL_CELL_NUMBER,
             FUN: XL_CELL_NUMBER,
@@ -1462,7 +1452,7 @@ class Sheet(BaseObject):
         o.rowx, o.colx, option_flags, o.object_id = unpack('<4H', data[:8])
         o.show = (option_flags >> 1) & 1
         # Docs say NULL [sic] bytes padding between string count and string data
-        # to ensure that sring is word-aligned. Appears to be nonsense.
+        # to ensure that string is word-aligned. Appears to be nonsense.
         # There also seems to be a random(?) byte after the string (not counted in the
         # string length.
         o.original_author, endpos = unpack_unicode_update_pos(data, 8, lenlen=2)

@@ -1,6 +1,6 @@
 # -*- coding: cp1252 -*-
 
-__VERSION__ = "0.7.1-alpha" # 2009-04-25
+__VERSION__ = "0.7.1" # 2009-05-31
 
 # <p>Copyright © 2005-2009 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
@@ -11,7 +11,7 @@ import licences
 ##
 # <p><b>A Python module for extracting data from MS Excel ™ spreadsheet files.
 # <br /><br />
-# Version 0.7.1-alpha -- 2009-04-25
+# Version 0.7.1 -- 2009-05-31
 # </b></p>
 #
 # <h2>General information</h2>
@@ -250,6 +250,42 @@ import licences
 #       are inappropriate. Note that this does not affect users who are copying XLS
 #       files, only those who are visually rendering cells.</li>
 # </ul>
+#
+# <h3>Loading worksheets on demand</h3>
+#
+# <p>This feature, new in version 0.7.1, is governed by the on_demand argument
+# to the open_workbook() function and allows saving memory and time by loading
+# only those sheets that the caller is interested in, and releasing sheets
+# when no longer required.</p>
+#
+# <p>on_demand=False (default): No change. open_workbook() loads global data
+# and all sheets, releases resources no longer required (principally the
+# str or mmap object containing the Workbook stream), and returns.</p>
+#
+# <p>on_demand=True and BIFF version < 5.0: A warning message is emitted,
+# on_demand is recorded as False, and the old process is followed.</p>
+#
+# <p>on_demand=True and BIFF version >= 5.0: open_workbook() loads global
+# data and returns without releasing resources. At this stage, the only
+# information available about sheets is Book.nsheets and Book.sheet_names().</p>
+#
+# <p>Book.sheet_by_name() and Book.sheet_by_index() will load the requested
+# sheet if it is not already loaded.</p>
+#
+# <p>Book.sheets() will load all/any unloaded sheets.</p>
+#
+# <p>The caller may save memory by calling
+# Book.unload_sheet(sheet_name_or_index) when finished with the sheet.
+# This applies irrespective of the state of on_demand.</p>
+#
+# <p>The caller may re-load an unloaded sheet by calling Book.sheet_by_xxxx()
+#  -- except if those required resources have been released (which will
+# have happened automatically when on_demand is false). This is the only
+# case where an exception will be raised.</p>
+#
+# <p>The caller may query the state of a sheet:
+# Book.sheet_loaded(sheet_name_or_index) -> a bool</p>
+#
 ##
 
 # 2009-04-27 SJM Integrated on_demand patch by Armando Serrano Lombillo
@@ -363,6 +399,10 @@ del _bin, _bic
 # XF information is available for each cell.
 # <br /> -- New in version 0.6.1
 #
+# @param on_demand Governs whether sheets are all loaded initially or when demanded
+# by the caller. Please refer back to the section "Loading worksheets on demand" for details.
+# -- New in version 0.7.1
+#
 # @return An instance of the Book class.
 
 def open_workbook(filename=None,
@@ -455,8 +495,8 @@ def count_records(filename, outfile=sys.stdout):
 
 ##
 # Information relating to a named reference, formula, macro, etc.
-# <br> -- New in version 0.6.0
-# <br> -- <i>Name information is <b>not</b> extracted from files older than
+# <br />  -- New in version 0.6.0
+# <br />  -- <i>Name information is <b>not</b> extracted from files older than
 # Excel 5.0 (Book.biff_version < 50)</i>
 
 class Name(BaseObject):
@@ -481,7 +521,7 @@ class Name(BaseObject):
     macro = 0
 
     ##
-    # 0 = Simple formula; 1 = Complex formula (array formula or user defined)<br>
+    # 0 = Simple formula; 1 = Complex formula (array formula or user defined)<br />
     # <i>No examples have been sighted.</i>
     complex = 0
 
@@ -495,7 +535,7 @@ class Name(BaseObject):
     funcgroup = 0
 
     ##
-    # 0 = Formula definition; 1 = Binary data<br> <i>No examples have been sighted.</i>
+    # 0 = Formula definition; 1 = Binary data<br />  <i>No examples have been sighted.</i>
     binary = 0
 
     ##
@@ -511,9 +551,9 @@ class Name(BaseObject):
     raw_formula = ""
 
     ##
-    # -1: The name is global (visible in all calculation sheets).<br>
-    # -2: The name belongs to a macro sheet or VBA sheet.<br>
-    # -3: The name is invalid.<br>
+    # -1: The name is global (visible in all calculation sheets).<br />
+    # -2: The name belongs to a macro sheet or VBA sheet.<br />
+    # -3: The name is invalid.<br />
     # 0 <= scope < book.nsheets: The name is local to the sheet whose index is scope.
     scope = -1
 
@@ -598,9 +638,9 @@ class Book(BaseObject):
     nsheets = 0
 
     ##
-    # Which date system was in force when this file was last saved.<br>
-    #    0 => 1900 system (the Excel for Windows default).<br>
-    #    1 => 1904 system (the Excel for Macintosh default).<br>
+    # Which date system was in force when this file was last saved.<br />
+    #    0 => 1900 system (the Excel for Windows default).<br />
+    #    1 => 1904 system (the Excel for Macintosh default).<br />
     datemode = 0 # In case it's not specified in the file.
 
     ##
@@ -611,7 +651,7 @@ class Book(BaseObject):
 
     ##
     # List containing a Name object for each NAME record in the workbook.
-    # <br> -- New in version 0.6.0
+    # <br />  -- New in version 0.6.0
     name_obj_list = []
 
     ##
@@ -627,9 +667,9 @@ class Book(BaseObject):
     encoding = None
 
     ##
-    # A tuple containing the (telephone system) country code for:<br>
-    #    [0]: the user-interface setting when the file was created.<br>
-    #    [1]: the regional settings.<br>
+    # A tuple containing the (telephone system) country code for:<br />
+    #    [0]: the user-interface setting when the file was created.<br />
+    #    [1]: the regional settings.<br />
     # Example: (1, 61) meaning (USA, Australia).
     # This information may give a clue to the correct encoding for an unknown codepage.
     # For a long list of observed values, refer to the OpenOffice.org documentation for
@@ -743,6 +783,7 @@ class Book(BaseObject):
     ##
     # @param sheet_name_or_index Name or index of sheet enquired upon
     # @return true if sheet is loaded, false otherwise
+    # <br />  -- New in version 0.7.1
     def sheet_loaded(self, sheet_name_or_index):
         # using type(1) because int won't work with Python 2.1
         if isinstance(sheet_name_or_index, type(1)):
@@ -755,7 +796,8 @@ class Book(BaseObject):
         return self._sheet_list[sheetx] and True or False # Python 2.1 again
 
     ##
-    # @param sheet_name_or_index Name or index of sheet to be unloaded
+    # @param sheet_name_or_index Name or index of sheet to be unloaded.
+    # <br />  -- New in version 0.7.1
     def unload_sheet(self, sheet_name_or_index):
         # using type(1) because int won't work with Python 2.1
         if isinstance(sheet_name_or_index, type(1)):
@@ -765,22 +807,18 @@ class Book(BaseObject):
                 sheetx = self._sheet_names.index(sheet_name_or_index)
             except ValueError:
                 raise XLRDError('No sheet named <%r>' % sheet_name_or_index)
-        sh = self._sheet_list[sheetx]
-        if sh is None:
-            return
         self._sheet_list[sheetx] = None
-        sh._clear()
 
     ##
     # A mapping from (lower_case_name, scope) to a single Name object.
-    # <br> -- New in version 0.6.0
+    # <br />  -- New in version 0.6.0
     name_and_scope_map = {}
 
     ##
     # A mapping from lower_case_name to a list of Name objects. The list is
     # sorted in scope order. Typically there will be one item (of global scope)
     # in the list.
-    # <br> -- New in version 0.6.0
+    # <br />  -- New in version 0.6.0
     name_map = {}
 
     def __init__(self):
@@ -1066,7 +1104,7 @@ class Book(BaseObject):
             except:
                 ei = sys.exc_info()[:2]
                 fprintf(self.logfile,
-                    "ERROR *** codepage %d -> encoding %r -> %s: %s\n",
+                    "ERROR *** codepage %r -> encoding %r -> %s: %s\n",
                     self.codepage, self.encoding, ei[0].__name__.split(".")[-1], ei[1])
                 raise
         if self.raw_user_name:
@@ -1076,6 +1114,7 @@ class Book(BaseObject):
             #     print "CODEPAGE: user name decoded from %r to %r" % (self.user_name, strg)
             self.user_name = strg
             self.raw_user_name = False
+        return self.encoding
 
     def handle_codepage(self, data):
         # DEBUG = 0

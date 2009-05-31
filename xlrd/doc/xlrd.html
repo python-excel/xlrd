@@ -8,7 +8,7 @@
 <h1>The xlrd Module</h1>
 <p /><p><b>A Python module for extracting data from MS Excel &#8482; spreadsheet files.
 <br /><br />
-Version 0.7.0 -- 2009-03-10
+Version 0.7.1 -- 2009-05-31
 </b></p>
 
 <h2>General information</h2>
@@ -247,7 +247,43 @@ worksheet/workbook default cell style, described by the very first XF record (in
       are inappropriate. Note that this does not affect users who are copying XLS
       files, only those who are visually rendering cells.</li>
 </ul>
-</p><h2>Module Contents</h2>
+
+<h3>Loading worksheets on demand</h3>
+
+</p><p>This feature, new in version 0.7.1, is governed by the on_demand argument
+to the open_workbook() function and allows saving memory and time by loading
+only those sheets that the caller is interested in, and releasing sheets
+when no longer required.</p>
+
+<p>on_demand=False (default): No change. open_workbook() loads global data
+and all sheets, releases resources no longer required (principally the
+str or mmap object containing the Workbook stream), and returns.</p>
+
+<p>on_demand=True and BIFF version &lt; 5.0: A warning message is emitted,
+on_demand is recorded as False, and the old process is followed.</p>
+
+<p>on_demand=True and BIFF version &gt;= 5.0: open_workbook() loads global
+data and returns without releasing resources. At this stage, the only
+information available about sheets is Book.nsheets and Book.sheet_names().</p>
+
+<p>Book.sheet_by_name() and Book.sheet_by_index() will load the requested
+sheet if it is not already loaded.</p>
+
+<p>Book.sheets() will load all/any unloaded sheets.</p>
+
+<p>The caller may save memory by calling
+Book.unload_sheet(sheet_name_or_index) when finished with the sheet.
+This applies irrespective of the state of on_demand.</p>
+
+<p>The caller may re-load an unloaded sheet by calling Book.sheet_by_xxxx()
+ -- except if those required resources have been released (which will
+have happened automatically when on_demand is false). This is the only
+case where an exception will be raised.</p>
+
+<p>The caller may query the state of a sheet:
+Book.sheet_loaded(sheet_name_or_index) -&gt; a bool</p>
+
+<h2>Module Contents</h2>
 <dl>
 <dt><b>BaseObject</b> (class)  [<a href='#biffh.BaseObject-class'>#</a>]</dt>
 <dd>
@@ -354,7 +390,7 @@ considered a font, but also several other display attributes.</p>
 logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP, 
 file_contents=None, 
 encoding_override=None, 
-formatting_info=False, 
+formatting_info=False, on_demand=False, 
 )</b></a> [<a href='#__init__.open_workbook-function'>#</a>]</dt>
 <dd>
 <p>Open a spreadsheet file for data extraction.</p>
@@ -405,6 +441,11 @@ XF information is available for each cell.
 <br /> -- New in version 0.6.1
 
 </dd>
+<dt><i>on_demand</i></dt>
+<dd>
+Governs whether sheets are all loaded initially or when demanded
+by the caller. Please refer back to the section &quot;Loading worksheets on demand&quot; for details.
+-- New in version 0.7.1</dd>
 <dt>Returns:</dt>
 <dd>
 An instance of the Book class.</dd>
@@ -679,23 +720,24 @@ The collection to be used for all visual rendering purposes is format_map.
 <dt><a id='__init__.Book.name_and_scope_map-attribute' name='__init__.Book.name_and_scope_map-attribute'><b>name_and_scope_map</b></a> [<a href='#__init__.Book.name_and_scope_map-attribute'>#</a>]</dt>
 <dd>
 <p>A mapping from (lower_case_name, scope) to a single Name object.
-<br /> -- New in version 0.6.0
+<br />  -- New in version 0.6.0
 </p></dd>
 <dt><a id='__init__.Book.name_map-attribute' name='__init__.Book.name_map-attribute'><b>name_map</b></a> [<a href='#__init__.Book.name_map-attribute'>#</a>]</dt>
 <dd>
 <p>A mapping from lower_case_name to a list of Name objects. The list is
 sorted in scope order. Typically there will be one item (of global scope)
 in the list.
-<br /> -- New in version 0.6.0
+<br />  -- New in version 0.6.0
 </p></dd>
 <dt><a id='__init__.Book.name_obj_list-attribute' name='__init__.Book.name_obj_list-attribute'><b>name_obj_list</b></a> [<a href='#__init__.Book.name_obj_list-attribute'>#</a>]</dt>
 <dd>
 <p>List containing a Name object for each NAME record in the workbook.
-<br /> -- New in version 0.6.0
+<br />  -- New in version 0.6.0
 </p></dd>
 <dt><a id='__init__.Book.nsheets-attribute' name='__init__.Book.nsheets-attribute'><b>nsheets</b></a> [<a href='#__init__.Book.nsheets-attribute'>#</a>]</dt>
 <dd>
-<p>The number of worksheets in the workbook.</p>
+<p>The number of worksheets present in the workbook file.
+This information is available even when no sheets have yet been loaded.</p>
 </dd>
 <dt><a id='__init__.Book.palette_record-attribute' name='__init__.Book.palette_record-attribute'><b>palette_record</b></a> [<a href='#__init__.Book.palette_record-attribute'>#</a>]</dt>
 <dd>
@@ -729,12 +771,26 @@ Name of sheet required</dd>
 An object of the Sheet class</dd>
 </dl><br />
 </dd>
+<dt><a id='__init__.Book.sheet_loaded-method' name='__init__.Book.sheet_loaded-method'><b>sheet_loaded(sheet_name_or_index)</b></a> [<a href='#__init__.Book.sheet_loaded-method'>#</a>]</dt>
+<dd>
+<dl>
+<dt><i>sheet_name_or_index</i></dt>
+<dd>
+Name or index of sheet enquired upon</dd>
+<dt>Returns:</dt>
+<dd>
+true if sheet is loaded, false otherwise
+<br />  -- New in version 0.7.1
+</dd>
+</dl><br />
+</dd>
 <dt><a id='__init__.Book.sheet_names-method' name='__init__.Book.sheet_names-method'><b>sheet_names()</b></a> [<a href='#__init__.Book.sheet_names-method'>#</a>]</dt>
 <dd>
 <dl>
 <dt>Returns:</dt>
 <dd>
-A list of the names of the sheets in the book.</dd>
+A list of the names of all the worksheets in the workbook file.
+This information is available even when no sheets have yet been loaded.</dd>
 </dl><br />
 </dd>
 <dt><a id='__init__.Book.sheets-method' name='__init__.Book.sheets-method'><b>sheets()</b></a> [<a href='#__init__.Book.sheets-method'>#</a>]</dt>
@@ -742,7 +798,8 @@ A list of the names of the sheets in the book.</dd>
 <dl>
 <dt>Returns:</dt>
 <dd>
-A list of all sheets in the book.</dd>
+A list of all sheets in the book.
+All sheets not already loaded will be loaded.</dd>
 </dl><br />
 </dd>
 <dt><a id='__init__.Book.style_name_map-attribute' name='__init__.Book.style_name_map-attribute'><b>style_name_map</b></a> [<a href='#__init__.Book.style_name_map-attribute'>#</a>]</dt>
@@ -760,6 +817,16 @@ ColLevel_1 to ColLevel_7, Comma, Currency, Percent, "Comma [0]",
 References: OOo docs s6.99 (STYLE record); Excel UI Format/Style
 <br /> -- New in version 0.6.1
 </p></dd>
+<dt><a id='__init__.Book.unload_sheet-method' name='__init__.Book.unload_sheet-method'><b>unload_sheet(sheet_name_or_index)</b></a> [<a href='#__init__.Book.unload_sheet-method'>#</a>]</dt>
+<dd>
+<dl>
+<dt><i>sheet_name_or_index</i></dt>
+<dd>
+Name or index of sheet to be unloaded.
+<br />  -- New in version 0.7.1
+</dd>
+</dl><br />
+</dd>
 <dt><a id='__init__.Book.user_name-attribute' name='__init__.Book.user_name-attribute'><b>user_name</b></a> [<a href='#__init__.Book.user_name-attribute'>#</a>]</dt>
 <dd>
 <p>What (if anything) is recorded as the name of the last user to save the file.</p>
@@ -1034,8 +1101,8 @@ Currently, this is used only to distinguish between numbers and dates.
 <dt><b>Name</b> (class)  [<a href='#__init__.Name-class'>#</a>]</dt>
 <dd>
 <p>Information relating to a named reference, formula, macro, etc.
-<br /> -- New in version 0.6.0
-<br /> -- <i>Name information is <b>not</b> extracted from files older than
+<br />  -- New in version 0.6.0
+<br />  -- <i>Name information is <b>not</b> extracted from files older than
 Excel 5.0 (Book.biff_version &lt; 50)</i>
 </p></dd>
 <dt><a id='__init__.Name.area2d-method' name='__init__.Name.area2d-method'><b>area2d(clipped=True)</b></a> [<a href='#__init__.Name.area2d-method'>#</a>]</dt>
@@ -1060,7 +1127,7 @@ to a single area in a single sheet.</dd>
 </dd>
 <dt><a id='__init__.Name.binary-attribute' name='__init__.Name.binary-attribute'><b>binary</b></a> [<a href='#__init__.Name.binary-attribute'>#</a>]</dt>
 <dd>
-<p>0 = Formula definition; 1 = Binary data<br /> <i>No examples have been sighted.</i>
+<p>0 = Formula definition; 1 = Binary data<br />  <i>No examples have been sighted.</i>
 </p></dd>
 <dt><a id='__init__.Name.builtin-attribute' name='__init__.Name.builtin-attribute'><b>builtin</b></a> [<a href='#__init__.Name.builtin-attribute'>#</a>]</dt>
 <dd>
@@ -1338,7 +1405,7 @@ Refer to the documentation of the Cell class.</p>
 <dt><a id='sheet.Sheet.cell_xf_index-method' name='sheet.Sheet.cell_xf_index-method'><b>cell_xf_index(rowx, colx)</b></a> [<a href='#sheet.Sheet.cell_xf_index-method'>#</a>]</dt>
 <dd>
 <p>XF index of the cell in the given row and column.
-This is an index into Book.xf_list and Book.xf_list.
+This is an index into Book.xf_list.
 <br /> -- New in version 0.6.1
 </p></dd>
 <dt><a id='sheet.Sheet.col-method' name='sheet.Sheet.col-method'><b>col(colx)</b></a> [<a href='#sheet.Sheet.col-method'>#</a>]</dt>

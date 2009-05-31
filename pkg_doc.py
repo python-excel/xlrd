@@ -1,7 +1,8 @@
 from pythondoc import ET, parse, CompactHTML
+import sys
 
 MODULE_NAME = "xlrd"
-PATH_TO_FILES = "C:/xlrd/svnco/trunk/xlrd"
+PATH_TO_FILES = sys.argv[1]
 
 
 module = ET.Element("module", name=MODULE_NAME)
