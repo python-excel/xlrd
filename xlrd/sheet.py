@@ -35,8 +35,15 @@ _WINDOW2_options = (
     ("columns_from_right_to_left", 0),
     ("show_outline_symbols", 1),
     ("remove_splits_if_pane_freeze_is_removed", 0),
+    # Multiple sheets can be selected, but only one can be active
+    # (hold down Ctrl and click multiple tabs in the file in OOo)
     ("sheet_selected", 0),
-    # "sheet_visible" appears to be merely a clone of "sheet_selected".
+    # "sheet_visible" should really be called "sheet_active"
+    # and is 1 when this sheet is the sheet displayed when the file
+    # is open. More than likely only one sheet should ever be set as
+    # visible.
+    # This would correspond to the Book's sheet_active attribute, but
+    # that doesn't exist as WINDOW1 records aren't currently processed.
     # The real thing is the visibility attribute from the BOUNDSHEET record.
     ("sheet_visible", 0),
     ("show_in_page_break_preview", 0),
