@@ -40,7 +40,12 @@ class BaseObject(object):
     def dump(self, f=None, header=None, footer=None, indent=0):
         if f is None:
             f = sys.stderr
-        alist = self.__dict__.items()
+        if hasattr(self, "__slots__"):
+            alist = []
+            for attr in self.__slots__:
+                alist.append((attr, getattr(self, attr)))
+        else:
+            alist = self.__dict__.items()
         alist.sort()
         pad = " " * indent
         if header is not None: print >> f, header

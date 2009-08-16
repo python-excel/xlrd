@@ -610,6 +610,7 @@ class Sheet(BaseObject):
         bk_get_record_parts = bk.get_record_parts
         bv = self.biff_version
         fmt_info = self.formatting_info
+        rowinfo_intern_dict = {}
         eof_found = 0
         while 1:
             # if DEBUG: print "SHEET.READ: about to read from position %d" % bk._position
@@ -661,36 +662,40 @@ class Sheet(BaseObject):
                         "should have 0 <= rowx < %d -- record ignored!" \
                         % (rowx, self.utter_max_rows)
                     continue
-                r = Rowinfo()
-                # Using upkbits() is far too slow on a file
-                # with 30 sheets each with 10K rows :-(
-                #    upkbits(r, bits1, (
-                #        ( 0, 0x7FFF, 'height'),
-                #        (15, 0x8000, 'has_default_height'),
-                #        ))
-                #    upkbits(r, bits2, (
-                #        ( 0, 0x00000007, 'outline_level'),
-                #        ( 4, 0x00000010, 'outline_group_starts_ends'),
-                #        ( 5, 0x00000020, 'hidden'),
-                #        ( 6, 0x00000040, 'height_mismatch'),
-                #        ( 7, 0x00000080, 'has_default_xf_index'),
-                #        (16, 0x0FFF0000, 'xf_index'),
-                #        (28, 0x10000000, 'additional_space_above'),
-                #        (29, 0x20000000, 'additional_space_below'),
-                #        ))
-                # So:
-                r.height = bits1 & 0x7fff
-                r.has_default_height = (bits1 >> 15) & 1
-                r.outline_level = bits2 & 7
-                r.outline_group_starts_ends = (bits2 >> 4) & 1
-                r.hidden = (bits2 >> 5) & 1
-                r.height_mismatch = (bits2 >> 6) & 1
-                r.has_default_xf_index = (bits2 >> 7) & 1
-                r.xf_index = (bits2 >> 16) & 0xfff
-                r.additional_space_above = (bits2 >> 28) & 1
-                r.additional_space_below = (bits2 >> 29) & 1
-                if not r.has_default_xf_index:
-                    r.xf_index = -1
+                key = (bits1, bits2)
+                r = rowinfo_intern_dict.get(key)
+                if r is None:
+                    r = Rowinfo()
+                    rowinfo_intern_dict[key] = r
+                    # Using upkbits() is far too slow on a file
+                    # with 30 sheets each with 10K rows :-(
+                    #    upkbits(r, bits1, (
+                    #        ( 0, 0x7FFF, 'height'),
+                    #        (15, 0x8000, 'has_default_height'),
+                    #        ))
+                    #    upkbits(r, bits2, (
+                    #        ( 0, 0x00000007, 'outline_level'),
+                    #        ( 4, 0x00000010, 'outline_group_starts_ends'),
+                    #        ( 5, 0x00000020, 'hidden'),
+                    #        ( 6, 0x00000040, 'height_mismatch'),
+                    #        ( 7, 0x00000080, 'has_default_xf_index'),
+                    #        (16, 0x0FFF0000, 'xf_index'),
+                    #        (28, 0x10000000, 'additional_space_above'),
+                    #        (29, 0x20000000, 'additional_space_below'),
+                    #        ))
+                    # So:
+                    r.height = bits1 & 0x7fff
+                    r.has_default_height = (bits1 >> 15) & 1
+                    r.outline_level = bits2 & 7
+                    r.outline_group_starts_ends = (bits2 >> 4) & 1
+                    r.hidden = (bits2 >> 5) & 1
+                    r.height_mismatch = (bits2 >> 6) & 1
+                    r.has_default_xf_index = (bits2 >> 7) & 1
+                    r.xf_index = (bits2 >> 16) & 0xfff
+                    r.additional_space_above = (bits2 >> 28) & 1
+                    r.additional_space_below = (bits2 >> 29) & 1
+                    if not r.has_default_xf_index:
+                        r.xf_index = -1
                 self.rowinfo_map[rowx] = r
                 if 0 and r.xf_index > -1:
                     fprintf(self.logfile,
@@ -1126,32 +1131,36 @@ class Sheet(BaseObject):
                     bk.handle_efont(data)
                 elif rc == XL_ROW_B2:
                     if not fmt_info: continue
-                    rowx, bits1, has_defaults = local_unpack('<H4xH2xB', data[0:11])
+                    rowx, bits1, bits2 = local_unpack('<H4xH2xB', data[0:11])
                     if not(0 <= rowx < self.utter_max_rows):
                         print >> self.logfile, \
                             "*** NOTE: ROW_B2 record has row index %d; " \
                             "should have 0 <= rowx < %d -- record ignored!" \
                             % (rowx, self.utter_max_rows)
                         continue
-                    r = Rowinfo()
-                    r.height = bits1 & 0x7fff
-                    r.has_default_height = (bits1 >> 15) & 1
-                    r.outline_level = 0
-                    r.outline_group_starts_ends = 0
-                    r.hidden = 0
-                    r.height_mismatch = 0
-                    r.has_default_xf_index = has_defaults & 1
-                    r.additional_space_above = 0
-                    r.additional_space_below = 0
-                    if not r.has_default_xf_index:
-                        r.xf_index = -1
+                    if not (bits2 & 1):  # has_default_xf_index is false
+                        xf_index = -1
                     elif data_len == 18:
                         # Seems the XF index in the cell_attr is dodgy
                          xfx = local_unpack('<H', data[16:18])[0]
-                         r.xf_index = self.fixed_BIFF2_xfindex(cell_attr=None, rowx=rowx, colx=-1, true_xfx=xfx)
+                         xf_index = self.fixed_BIFF2_xfindex(cell_attr=None, rowx=rowx, colx=-1, true_xfx=xfx)
                     else:
                         cell_attr = data[13:16]
-                        r.xf_index = self.fixed_BIFF2_xfindex(cell_attr, rowx, colx=-1)
+                        xf_index = self.fixed_BIFF2_xfindex(cell_attr, rowx, colx=-1)
+                    key = (bits1, bits2, xf_index)
+                    r = rowinfo_intern_dict.get(key)
+                    if r is None:
+                        r = Rowinfo()
+                        r.height = bits1 & 0x7fff
+                        r.has_default_height = (bits1 >> 15) & 1
+                        r.has_default_xf_index = bits2 & 1
+                        r.xf_index = xf_index
+                        # r.outline_level = 0             # set in __init__
+                        # r.outline_group_starts_ends = 0 # set in __init__
+                        # r.hidden = 0                    # set in __init__
+                        # r.height_mismatch = 0           # set in __init__
+                        # r.additional_space_above = 0    # set in __init__
+                        # r.additional_space_below = 0    # set in __init__
                     self.rowinfo_map[rowx] = r
                     if 0 and r.xf_index > -1:
                         fprintf(self.logfile,
@@ -1731,48 +1740,94 @@ class Colinfo(BaseObject):
     # 1 = column is collapsed
     collapsed = 0
 
+_USE_SLOTS = 1
+
 ##
 # Height and default formatting information that applies to a row in a sheet.
 # Derived from ROW records.
 # <br /> -- New in version 0.6.1
+#
+# height: Height of the row, in twips. One twip == 1/20 of a point. <br />
+#
+# has_default_height: 0 = Row has custom height; 1 = Row has default height. <br />
+#
+# outline_level: Outline level of the row (0 to 7) <br />
+#
+# outline_group_starts_ends: 1 = Outline group starts or ends here (depending on where the
+# outline buttons are located, see WSBOOL record [TODO ??]),
+# <i>and</i> is collapsed <br />
+#
+# hidden: 1 = Row is hidden (manually, or by a filter or outline group) <br />
+#
+# height_mismatch: 1 = Row height and default font height do not match <br />
+#
+# has_default_xf_index: 1 = the xf_index attribute is usable; 0 = ignore it <br />
+#
+# xf_index: Index to default XF record for empty cells in this row.
+# Don't use this if has_default_xf_index == 0. <br />
+#
+# additional_space_above: This flag is set, if the upper border of at least one cell in this row
+# or if the lower border of at least one cell in the row above is
+# formatted with a thick line style. Thin and medium line styles are not
+# taken into account. <br />
+#
+# additional_space_below: This flag is set, if the lower border of at least one cell in this row
+# or if the upper border of at least one cell in the row below is
+# formatted with a medium or thick line style. Thin line styles are not
+# taken into account. <br />
 
 class Rowinfo(BaseObject):
-    ##
-    # Height of the row, in twips. One twip == 1/20 of a point
-    height = 0
-    ##
-    # 0 = Row has custom height; 1 = Row has default height
-    has_default_height = 0
-    ##
-    # Outline level of the row
-    outline_level = 0
-    ##
-    # 1 = Outline group starts or ends here (depending on where the
-    # outline buttons are located, see WSBOOL record [TODO ??]),
-    # <i>and</i> is collapsed
-    outline_group_starts_ends = 0
-    ##
-    # 1 = Row is hidden (manually, or by a filter or outline group)
-    hidden = 0
-    ##
-    # 1 = Row height and default font height do not match
-    height_mismatch = 0
-    ##
-    # 1 = the xf_index attribute is usable; 0 = ignore it
-    has_default_xf_index = 0
-    ##
-    # Index to default XF record for empty cells in this row.
-    # Don't use this if has_default_xf_index == 0.
-    xf_index = -9999
-    ##
-    # This flag is set, if the upper border of at least one cell in this row
-    # or if the lower border of at least one cell in the row above is
-    # formatted with a thick line style. Thin and medium line styles are not
-    # taken into account.
-    additional_space_above = 0
-    ##
-    # This flag is set, if the lower border of at least one cell in this row
-    # or if the upper border of at least one cell in the row below is
-    # formatted with a medium or thick line style. Thin line styles are not
-    # taken into account.
-    additional_space_below = 0
+
+    if _USE_SLOTS:
+        __slots__ = (
+            "height",
+            "has_default_height",
+            "outline_level",
+            "outline_group_starts_ends",
+            "hidden",
+            "height_mismatch",
+            "has_default_xf_index",
+            "xf_index",
+            "additional_space_above",
+            "additional_space_below",
+            )
+
+    def __init__(self):
+        self.height = None
+        self.has_default_height = None
+        self.outline_level = None
+        self.outline_group_starts_ends = None
+        self.hidden = None
+        self.height_mismatch = None
+        self.has_default_xf_index = None
+        self.xf_index = None
+        self.additional_space_above = None
+        self.additional_space_below = None
+
+    def __getstate__(self):
+        return (
+            self.height,
+            self.has_default_height,
+            self.outline_level,
+            self.outline_group_starts_ends,
+            self.hidden,
+            self.height_mismatch,
+            self.has_default_xf_index,
+            self.xf_index,
+            self.additional_space_above,
+            self.additional_space_below,
+            )
+
+    def __setstate__(self, state):
+        (
+            self.height,
+            self.has_default_height,
+            self.outline_level,
+            self.outline_group_starts_ends,
+            self.hidden,
+            self.height_mismatch,
+            self.has_default_xf_index,
+            self.xf_index,
+            self.additional_space_above,
+            self.additional_space_below,
+            ) = state

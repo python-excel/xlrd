@@ -10,6 +10,7 @@
 
 # No part of the content of this file was derived from the works of David Giffin.
 
+from __future__ import nested_scopes
 import copy
 from struct import unpack
 from timemachine import *
