@@ -1,7 +1,7 @@
 # -*- coding: cp1252 -*-
 
 ##
-# <p>Copyright © 2006-2008 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2006-2009 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
@@ -9,7 +9,7 @@
 # usage: from timemachine import *
 
 # 2008-02-08 SJM Generalised method of detecting IronPython
-
+from __future__ import nested_scopes
 import sys
 
 python_version = sys.version_info[:2] # e.g. version 2.4 -> (2, 4)

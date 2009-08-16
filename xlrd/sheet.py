@@ -16,7 +16,7 @@
 from biffh import *
 from timemachine import *
 from struct import unpack
-from formula import dump_formula, decompile_formula, rangename2d
+from formula import dump_formula, decompile_formula, rangename2d, FMLA_TYPE_CELL, FMLA_TYPE_SHARED
 from formatting import nearest_colour_index, Format
 import time
 
@@ -596,6 +596,7 @@ class Sheet(BaseObject):
         blah = DEBUG or self.verbosity >= 2
         blah_rows = DEBUG or self.verbosity >= 4
         blah_formulas = 1 and blah
+        r1c1 = 0
         oldpos = bk._position
         bk._position = self._position
         XL_SHRFMLA_ETC_ETC = (
@@ -719,8 +720,8 @@ class Sheet(BaseObject):
                     #### XXXX FIXME
                     fprintf(self.logfile, "FORMULA: rowx=%d colx=%d\n", rowx, colx)
                     fmlalen = local_unpack("<H", data[20:22])[0]
-                    decompile_formula(bk, data[22:], fmlalen,
-                        reldelta=0, browx=rowx, bcolx=colx, blah=1)
+                    decompile_formula(bk, data[22:], fmlalen, FMLA_TYPE_CELL,
+                        browx=rowx, bcolx=colx, blah=1, r1c1=r1c1)
                 if result_str[6:8] == "\xFF\xFF":
                     if result_str[0]  == '\x00':
                         # need to read next record (STRING)
@@ -744,7 +745,8 @@ class Sheet(BaseObject):
                                 if blah_formulas:
                                     fprintf(self.logfile, "SHRFMLA (sub): %d %d %d %d %d\n",
                                         row1x, rownx, col1x, colnx, nfmlas)
-                                    decompile_formula(bk, data2[10:], tokslen, reldelta=1, blah=1)
+                                    decompile_formula(bk, data2[10:], tokslen, FMLA_TYPE_SHARED,
+                                        blah=1, browx=rowx, bcolx=colx, r1c1=r1c1)
                             elif rc2 not in XL_SHRFMLA_ETC_ETC:
                                 raise XLRDError(
                                     "Expected SHRFMLA, ARRAY, TABLEOP* or STRING record; found 0x%04x" % rc2)
@@ -928,7 +930,8 @@ class Sheet(BaseObject):
                     local_unpack("<HHBBxBH", data[:10])
                 if blah_formulas:
                     print "SHRFMLA (main):", row1x, rownx, col1x, colnx, nfmlas
-                    decompile_formula(bk, data[10:], tokslen, reldelta=0, blah=1)
+                    decompile_formula(bk, data[10:], tokslen, FMLA_TYPE_SHARED,
+                        blah=1, browx=rowx, bcolx=colx, r1c1=r1c1)
             elif rc == XL_CONDFMT:
                 if not fmt_info: continue
                 assert bv >= 80

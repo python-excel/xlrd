@@ -96,7 +96,7 @@ biff_text_from_num = {
 # 0x17: '#REF!',   # Illegal or deleted cell reference
 # 0x1D: '#NAME?',  # Wrong function or range name
 # 0x24: '#NUM!',   # Value range overflow
-# 0x2A: '#N/A!',   # Argument or function not available
+# 0x2A: '#N/A',    # Argument or function not available
 # </pre></p>
 
 error_text_from_code = {
@@ -106,7 +106,7 @@ error_text_from_code = {
     0x17: '#REF!',   # Illegal or deleted cell reference
     0x1D: '#NAME?',  # Wrong function or range name
     0x24: '#NUM!',   # Value range overflow
-    0x2A: '#N/A!',   # Argument or function not available
+    0x2A: '#N/A',    # Argument or function not available
 }
 
 BIFF_FIRST_UNICODE = 80
