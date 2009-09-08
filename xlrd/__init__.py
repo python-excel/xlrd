@@ -1,6 +1,6 @@
 # -*- coding: cp1252 -*-
 
-__VERSION__ = "0.7.1" # 2009-05-31
+__VERSION__ = "0.7.2a1" # 2009-08-21
 
 # <p>Copyright © 2005-2009 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
@@ -11,7 +11,7 @@ import licences
 ##
 # <p><b>A Python module for extracting data from MS Excel ™ spreadsheet files.
 # <br /><br />
-# Version 0.7.1 -- 2009-05-31
+# Version 0.7.2a1 -- 2009-08-21
 # </b></p>
 #
 # <h2>General information</h2>

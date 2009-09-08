@@ -5,6 +5,8 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2009-08-23 SJM Reduced CPU time taken by parsing MULBLANK records.
+# 2009-08-18 SJM Used __slots__ and sharing to reduce memory consumed by Rowinfo instances
 # 2009-05-31 SJM Fixed problem with no CODEPAGE record on extremely minimal BIFF2.x 3rd-party file
 # 2009-04-27 SJM Integrated on_demand patch by Armando Serrano Lombillo
 # 2008-02-09 SJM Excel 2.0: build XFs on the fly from cell attributes
@@ -610,7 +612,7 @@ class Sheet(BaseObject):
         bk_get_record_parts = bk.get_record_parts
         bv = self.biff_version
         fmt_info = self.formatting_info
-        rowinfo_intern_dict = {}
+        rowinfo_sharing_dict = {}
         eof_found = 0
         while 1:
             # if DEBUG: print "SHEET.READ: about to read from position %d" % bk._position
@@ -663,10 +665,9 @@ class Sheet(BaseObject):
                         % (rowx, self.utter_max_rows)
                     continue
                 key = (bits1, bits2)
-                r = rowinfo_intern_dict.get(key)
+                r = rowinfo_sharing_dict.get(key)
                 if r is None:
-                    r = Rowinfo()
-                    rowinfo_intern_dict[key] = r
+                    rowinfo_sharing_dict[key] = r = Rowinfo()
                     # Using upkbits() is far too slow on a file
                     # with 30 sheets each with 10K rows :-(
                     #    upkbits(r, bits1, (
@@ -855,19 +856,20 @@ class Sheet(BaseObject):
             elif rc == XL_BLANK:
                 if not fmt_info: continue
                 rowx, colx, xf_index = local_unpack('<HHH', data[:6])
-                if 0: print >> self.logfile, "BLANK", rowx, colx, xf_index
+                # if 0: print >> self.logfile, "BLANK", rowx, colx, xf_index
                 self_put_blank_cell(rowx, colx, xf_index)
             elif rc == XL_MULBLANK: # 00BE
                 if not fmt_info: continue
-                mul_row, mul_first = local_unpack('<HH', data[0:4])
-                mul_last, = local_unpack('<H', data[-2:])
-                if 0:
-                    print >> self.logfile, "MULBLANK", mul_row, mul_first, mul_last
-                pos = 4
-                for colx in xrange(mul_first, mul_last+1):
-                    xf_index, = local_unpack('<H', data[pos:pos+2])
-                    pos += 2
-                    self_put_blank_cell(mul_row, colx, xf_index)
+                nitems = data_len >> 1
+                result = local_unpack("<%dH" % nitems, data)
+                rowx, mul_first = result[:2]
+                mul_last = result[-1]
+                # print >> self.logfile, "MULBLANK", rowx, mul_first, mul_last, data_len, nitems, mul_last + 4 - mul_first
+                assert nitems == mul_last + 4 - mul_first
+                pos = 2
+                for colx in xrange(mul_first, mul_last + 1):
+                    self_put_blank_cell(rowx, colx, result[pos])
+                    pos += 1
             elif rc == XL_DIMENSION or rc == XL_DIMENSION2:
                 # if data_len == 10:
                 # Was crashing on BIFF 4.0 file w/o the two trailing unused bytes.
@@ -1148,9 +1150,9 @@ class Sheet(BaseObject):
                         cell_attr = data[13:16]
                         xf_index = self.fixed_BIFF2_xfindex(cell_attr, rowx, colx=-1)
                     key = (bits1, bits2, xf_index)
-                    r = rowinfo_intern_dict.get(key)
+                    r = rowinfo_sharing_dict.get(key)
                     if r is None:
-                        r = Rowinfo()
+                        rowinfo_sharing_dict[key] = r = Rowinfo()
                         r.height = bits1 & 0x7fff
                         r.has_default_height = (bits1 >> 15) & 1
                         r.has_default_xf_index = bits2 & 1

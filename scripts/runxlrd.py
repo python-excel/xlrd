@@ -146,6 +146,7 @@ if __name__ == "__main__":
                     (shx, sh.name, sh.nrows, sh.ncols)
                 print_labels(sh, clabs, 'Col')
                 print_labels(sh, rlabs, 'Row')
+            if bk.on_demand: bk.unload_sheet(shx)
 
     def show(bk, nshow=65535, printit=1):
         bk_header(bk)
@@ -184,6 +185,7 @@ if __name__ == "__main__":
             if anshow and nrows:
                 show_row(bk, sh, nrows-1, colrange, printit)
             print
+            if bk.on_demand: bk.unload_sheet(shx)
 
     def count_xfs(bk):
         bk_header(bk)
@@ -209,6 +211,7 @@ if __name__ == "__main__":
             print "XF stats", sh._xf_index_stats
             print "type stats", type_stats
             print
+            if bk.on_demand: bk.unload_sheet(shx)
 
     def main(cmd_args):
         import optparse
