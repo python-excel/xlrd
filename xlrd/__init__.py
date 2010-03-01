@@ -1,8 +1,8 @@
 # -*- coding: cp1252 -*-
 
-__VERSION__ = "0.7.2a1" # 2009-08-21
+__VERSION__ = "0.7.2a2" # 2010-03-01
 
-# <p>Copyright © 2005-2009 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2010 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
@@ -11,7 +11,7 @@ import licences
 ##
 # <p><b>A Python module for extracting data from MS Excel ™ spreadsheet files.
 # <br /><br />
-# Version 0.7.2a1 -- 2009-08-21
+# Version 0.7.2a2 -- 2010-03-01
 # </b></p>
 #
 # <h2>General information</h2>
@@ -288,6 +288,7 @@ import licences
 #
 ##
 
+# 2010-03-01 SJM Added ragged_row functionality.
 # 2009-04-27 SJM Integrated on_demand patch by Armando Serrano Lombillo
 # 2008-11-23 SJM Support dumping FILEPASS and EXTERNNAME records; extra info from SUPBOOK records
 # 2008-11-23 SJM colname utility function now supports more than 256 columns
@@ -409,7 +410,7 @@ def open_workbook(filename=None,
     logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
     file_contents=None,
     encoding_override=None,
-    formatting_info=False, on_demand=False,
+    formatting_info=False, on_demand=False, ragged_rows=False,
     ):
     t0 = time.clock()
     if TOGGLE_GC:
@@ -423,6 +424,7 @@ def open_workbook(filename=None,
         encoding_override=encoding_override,
         formatting_info=formatting_info,
         on_demand=on_demand,
+        ragged_rows=ragged_rows,
         )
     t1 = time.clock()
     bk.load_time_stage_1 = t1 - t0
@@ -856,6 +858,7 @@ class Book(BaseObject):
         encoding_override=None,
         formatting_info=False,
         on_demand=False,
+        ragged_rows=False,
         ):
         # DEBUG = 0
         self.logfile = logfile
@@ -865,6 +868,7 @@ class Book(BaseObject):
         self.encoding_override = encoding_override
         self.formatting_info = formatting_info
         self.on_demand = on_demand
+        self.ragged_rows = ragged_rows
 
         need_close_filestr = 0
         if not file_contents:

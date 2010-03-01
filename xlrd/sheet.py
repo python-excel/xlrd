@@ -1,10 +1,11 @@
 # -*- coding: cp1252 -*-
 
 ##
-# <p> Portions copyright © 2005-2009 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p> Portions copyright © 2005-2010 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2010-03-01 SJM Added ragged_rows functionality
 # 2009-08-23 SJM Reduced CPU time taken by parsing MULBLANK records.
 # 2009-08-18 SJM Used __slots__ and sharing to reduce memory consumed by Rowinfo instances
 # 2009-05-31 SJM Fixed problem with no CODEPAGE record on extremely minimal BIFF2.x 3rd-party file
@@ -208,6 +209,7 @@ class Sheet(BaseObject):
         self.number = number
         self.verbosity = book.verbosity
         self.formatting_info = book.formatting_info
+        self.ragged_rows = book.ragged_rows
         self._xf_index_to_xl_type_map = book._xf_index_to_xl_type_map
         self.nrows = 0 # actual, including possibly empty cells
         self.ncols = 0
@@ -307,11 +309,16 @@ class Sheet(BaseObject):
             return 15
 
     ##
+    # Returns the effective number of cells in the given row.
+    def row_len(self, rowx):
+        return len(self._cell_values[rowx])
+
+    ##
     # Returns a sequence of the Cell objects in the given row.
     def row(self, rowx):
         return [
             self.cell(rowx, colx)
-            for colx in xrange(self.ncols)
+            for colx in xrange(len(self._cell_values[rowx]))
             ]
 
     ##
@@ -333,7 +340,7 @@ class Sheet(BaseObject):
     ##
     # Returns a slice of the Cell objects in the given row.
     def row_slice(self, rowx, start_colx=0, end_colx=None):
-        nc = self.ncols
+        nc = len(self._cell_values[rowx])
         if start_colx < 0:
             start_colx += nc
             if start_colx < 0:
@@ -522,7 +529,7 @@ class Sheet(BaseObject):
                 self.nrows,
                 self.ncols,
                 )
-        if self._need_fix_ragged_rows:
+        if (not self.ragged_rows) and self._need_fix_ragged_rows:
             self.fix_ragged_rows()
 
     def put_cell(self, rowx, colx, ctype, value, xf_index):

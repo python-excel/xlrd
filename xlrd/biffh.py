@@ -3,10 +3,11 @@
 ##
 # Support module for the xlrd package.
 #
-# <p>Portions copyright © 2005-2008 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Portions copyright © 2005-2010 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2010-03-01 SJM Added more record IDs for biff_dump & biff_count
 # 2008-02-10 SJM BIFF2 BLANK record
 # 2008-02-08 SJM Preparation for Excel 2.0 support
 # 2008-02-02 SJM Added suffixes (_B2, _B2_ONLY, etc) on record names for biff_dump & biff_count
@@ -169,6 +170,14 @@ XL_LABEL = 0x204
 XL_LABEL_B2 = 0x04
 XL_LABELRANGES = 0x15f
 XL_LABELSST = 0xfd
+XL_LEFTMARGIN = 0x26
+XL_TOPMARGIN = 0x28
+XL_RIGHTMARGIN = 0x27
+XL_BOTTOMMARGIN = 0x29
+XL_HEADER = 0x14
+XL_FOOTER = 0x15
+XL_HCENTER = 0x83
+XL_VCENTER = 0x84
 XL_MERGEDCELLS = 0xE5
 XL_MSO_DRAWING = 0x00EC
 XL_MSO_DRAWING_GROUP = 0x00EB
@@ -180,12 +189,16 @@ XL_NOTE = 0x1c
 XL_NUMBER = 0x203
 XL_NUMBER_B2 = 0x3
 XL_OBJ = 0x5D
+XL_PAGESETUP = 0xA1
 XL_PALETTE = 0x92
+XL_PRINTGRIDLINES = 0x2B
+XL_PRINTHEADERS = 0x2A
 XL_RK = 0x27e
 XL_ROW = 0x208
 XL_ROW_B2 = 0x08
 XL_RSTRING = 0xd6
 XL_SHEETHDR = 0x8F # BIFF4W only
+XL_SHEETPR = 0x81
 XL_SHEETSOFFSET = 0x8E # BIFF4W only
 XL_SHRFMLA = 0x04bc
 XL_SST = 0xfc
@@ -202,6 +215,7 @@ XL_UNCALCED = 0x5e
 XL_UNKNOWN = 0xffff
 XL_WINDOW2 = 0x023E
 XL_WRITEACCESS = 0x5C
+XL_WSBOOL = XL_SHEETPR
 XL_XF = 0xe0
 XL_XF2 = 0x0043 # BIFF2 version of XF record
 XL_XF3 = 0x0243 # BIFF3 version of XF record

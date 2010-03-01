@@ -1,8 +1,9 @@
 # -*- coding: cp1252 -*-
-# <p>Copyright © 2005-2008 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2010 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This script is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
+# 2010-03-01 SJM Changes for ragged_rows functionality
 # 2009-04-27 SJM Integrated on_demand patch by Armando Serrano Lombillo
 # 2008-08-03 SJM Omit counts of FORMAT/FONT/XF records when formatting_info is false
 # 2008-02-08 SJM Force formatting_info=1 for xfc command
@@ -173,11 +174,13 @@ if __name__ == "__main__":
             print "sheet %d: name = %r; nrows = %d; ncols = %d" % \
                 (shx, sh.name, sh.nrows, sh.ncols)
             if nrows and ncols:
-                # Attempt to access the RHS corners
-                sh.row_types(0)[ncols-1]
-                sh.row_values(0)[ncols-1]
-                sh.row_types(nrows-1)[ncols-1]
-                sh.row_values(nrows-1)[ncols-1]
+                # Beat the bounds
+                for rowx in xrange(nrows):
+                    nc = sh.row_len(rowx)
+                    if nc:
+                        _junk = sh.row_types(rowx)[nc-1]
+                        _junk = sh.row_values(rowx)[nc-1]
+                        _junk = sh.cell(rowx, nc-1)
             for rowx in xrange(anshow-1):
                 if not printit and rowx % 10000 == 1 and rowx > 1:
                     print "done %d rows" % (rowx-1,)
@@ -215,7 +218,7 @@ if __name__ == "__main__":
 
     def main(cmd_args):
         import optparse
-        global options
+        global options, PSYCO
         usage = "\n%prog [options] command [input-file-patterns]\n" + cmd_doc
         oparser = optparse.OptionParser(usage)
         oparser.add_option(
@@ -260,6 +263,10 @@ if __name__ == "__main__":
             "-d", "--on-demand",
             action="store_true", default=0,
             help="load sheets on demand instead of all at once")
+        oparser.add_option(
+            "-r", "--ragged-rows",
+            action="store_true", default=0,
+            help="open_workbook(..., ragged_rows=True)")
 
         options, args = oparser.parse_args(cmd_args)
         if len(args) == 1 and args[0] in ("version", ):
@@ -299,6 +306,10 @@ if __name__ == "__main__":
                     n_unreachable = gc.collect()
                     if n_unreachable:
                         print >> logfile, "GC before open:", n_unreachable, "unreachable objects"
+                if PSYCO:
+                    import psyco
+                    psyco.full()
+                    PSYCO = 0
                 try:
                     t0 = time.time()
                     bk = xlrd.open_workbook(fname,
@@ -307,6 +318,7 @@ if __name__ == "__main__":
                         encoding_override=options.encoding,
                         formatting_info=fmt_opt,
                         on_demand=options.on_demand,
+                        ragged_rows=options.ragged_rows,
                         )
                     t1 = time.time()
                     print >> logfile, "Open took %.2f seconds" % (t1-t0,)
@@ -382,6 +394,8 @@ if __name__ == "__main__":
         import pstats
         p = pstats.Stats('YYYY.prof')
         p.strip_dirs().sort_stats('cumulative').print_stats(30)
-
+    elif firstarg == "psyco":
+        PSYCO = 1
+        main(av[1:])
     else:
         main(av)
