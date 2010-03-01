@@ -5,6 +5,7 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2010-03-01 SJM Reading SCL record
 # 2010-03-01 SJM Added ragged_rows functionality
 # 2009-08-23 SJM Reduced CPU time taken by parsing MULBLANK records.
 # 2009-08-18 SJM Used __slots__ and sharing to reduce memory consumed by Rowinfo instances
@@ -243,6 +244,7 @@ class Sheet(BaseObject):
         self.gridline_colour_rgb = None # pre-BIFF8
         self.cached_page_break_preview_mag_factor = 0
         self.cached_normal_view_mag_factor = 0
+        self.scl_mag_factor = None
         self._ixfe = None # BIFF2 only
         self._cell_attr_to_xfx = {} # BIFF2.0 only
 
@@ -1091,6 +1093,14 @@ class Sheet(BaseObject):
                     options >>= 1
                 # print "WINDOW2: visible=%d selected=%d" \
                 #     % (self.sheet_visible, self.sheet_selected)
+            elif rc == XL_SCL:
+                num, den = unpack("<HH", data)
+                if den == 0:
+                    assert num == 0
+                else:
+                    num = int_floor_div(num * 100, den)
+                    assert num == 0 or 10 <= num <= 400
+                self.scl_mag_factor = num
             #### all of the following are for BIFF <= 4W
             elif bv <= 45:
                 if rc == XL_FORMAT or rc == XL_FORMAT2:

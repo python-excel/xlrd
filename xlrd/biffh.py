@@ -7,6 +7,7 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2010-03-01 SJM Reading SCL record
 # 2010-03-01 SJM Added more record IDs for biff_dump & biff_count
 # 2008-02-10 SJM BIFF2 BLANK record
 # 2008-02-08 SJM Preparation for Excel 2.0 support
@@ -197,6 +198,7 @@ XL_RK = 0x27e
 XL_ROW = 0x208
 XL_ROW_B2 = 0x08
 XL_RSTRING = 0xd6
+XL_SCL = 0x00A0
 XL_SHEETHDR = 0x8F # BIFF4W only
 XL_SHEETPR = 0x81
 XL_SHEETSOFFSET = 0x8E # BIFF4W only
