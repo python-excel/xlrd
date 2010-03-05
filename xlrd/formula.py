@@ -794,10 +794,9 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
         resop.value = result
         stk.append(resop)
 
-    def do_unaryop(opcode, arglist, result_kind, stk):
+    def do_unaryop(opcode, result_kind, stk):
         assert len(stk) >= 1
         aop = stk.pop()
-        assert aop.kind in arglist
         val = aop.value
         func, rank, sym1, sym2 = unop_rules[opcode]
         otext = ''.join([
@@ -968,7 +967,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                 spush(res)
                 if blah: print >> bk.logfile, "tRange post", stack
             elif 0x12 <= opcode <= 0x14: # tUplus, tUminus, tPercent
-                do_unaryop(opcode, (oUNK, oNUM,), oNUM, stack)
+                do_unaryop(opcode, oNUM, stack)
             elif opcode == 0x15: # tParen
                 # source cosmetics
                 pass
@@ -1391,10 +1390,9 @@ def decompile_formula(bk, fmla, fmlalen,
         resop = Operand(result_kind, None, rank, otext)
         stk.append(resop)
 
-    def do_unaryop(opcode, arglist, result_kind, stk):
+    def do_unaryop(opcode, result_kind, stk):
         assert len(stk) >= 1
         aop = stk.pop()
-        #### assert aop.kind in arglist ????
         func, rank, sym1, sym2 = unop_rules[opcode]
         otext = ''.join([
             sym1,
@@ -1540,7 +1538,7 @@ def decompile_formula(bk, fmla, fmlalen,
                 spush(res)
                 if blah: print >> bk.logfile, "tRange post", stack
             elif 0x12 <= opcode <= 0x14: # tUplus, tUminus, tPercent
-                do_unaryop(opcode, (oUNK, oNUM,), oNUM, stack)
+                do_unaryop(opcode, oNUM, stack)
             elif opcode == 0x15: # tParen
                 # source cosmetics
                 pass
