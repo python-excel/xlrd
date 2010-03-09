@@ -242,9 +242,22 @@ class Sheet(BaseObject):
         self.first_visible_colx = 0
         self.gridline_colour_index = 0x40
         self.gridline_colour_rgb = None # pre-BIFF8
-        self.cached_page_break_preview_mag_factor = 0
-        self.cached_normal_view_mag_factor = 0
-        self.scl_mag_factor = None
+
+        # Values calculated by xlrd to predict the mag factors that
+        # will actually be used by Excel to display your worksheet.
+        # Pass these values to xlwt when writing XLS files.
+        # Warning 1: Behaviour of OOo Calc and Gnumeric has been observed to differ from Excel's.
+        # Warning 2: A value of zero means almost exactly what it says. Your sheet will be
+        # displayed as a very tiny speck on the screen. xlwt will reject attempts to set
+        # a mag_factor that is not (10 <= mag_factor <= 400).
+        self.cooked_page_break_preview_mag_factor = 60
+        self.cooked_normal_view_mag_factor = 100
+
+        # Values (if any) actually stored on  the XLS file
+        self.cached_page_break_preview_mag_factor = None # from WINDOW2 record
+        self.cached_normal_view_mag_factor = None # from WINDOW2 record
+        self.scl_mag_factor = None # from SCL record
+
         self._ixfe = None # BIFF2 only
         self._cell_attr_to_xfx = {} # BIFF2.0 only
 
@@ -1093,6 +1106,7 @@ class Sheet(BaseObject):
                     options >>= 1
                 # print "WINDOW2: visible=%d selected=%d" \
                 #     % (self.sheet_visible, self.sheet_selected)
+                self.update_cooked_mag_factors()
             elif rc == XL_SCL:
                 num, den = unpack("<HH", data)
                 if den == 0:
@@ -1101,6 +1115,7 @@ class Sheet(BaseObject):
                     num = int_floor_div(num * 100, den)
                     assert num == 0 or 10 <= num <= 400
                 self.scl_mag_factor = num
+                self.update_cooked_mag_factors()
             #### all of the following are for BIFF <= 4W
             elif bv <= 45:
                 if rc == XL_FORMAT or rc == XL_FORMAT2:
@@ -1247,6 +1262,22 @@ class Sheet(BaseObject):
         self.tidy_dimensions()
         bk._position = oldpos
         return 1
+
+    def update_cooked_mag_factors(self):
+        if self.show_in_page_break_preview:
+            if self.scl_mag_factor is None: # no SCL record
+                self.cooked_page_break_preview_mag_factor = 60
+                self.cooked_normal_view_mag_factor = 100 # or cached???
+            else:
+                self.cooked_page_break_preview_mag_factor = self.scl_mag_factor
+                self.cooked_normal_view_mag_factor = 100 # or cached???
+        else:
+            if self.scl_mag_factor is None: # no SCL record
+                self.cooked_page_break_preview_mag_factor = 60 # or cached???
+                self.cooked_normal_view_mag_factor = 100
+            else:
+                self.cooked_page_break_preview_mag_factor = 60 # or cached???
+                self.cooked_normal_view_mag_factor = self.scl_mag_factor
 
     def fixed_BIFF2_xfindex(self, cell_attr, rowx, colx, true_xfx=None):
         DEBUG = 0
