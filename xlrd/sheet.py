@@ -199,6 +199,26 @@ class Sheet(BaseObject):
     # Applies to BIFF4-7 only. See docs of Colinfo class for discussion.
     gcw = (0, ) * 256
 
+    ##
+    # Number of columns in left pane (frozen panes; for split panes, see comments below in code)
+    vert_split_pos = 0
+
+    ##
+    # Number of rows in top pane (frozen panes; for split panes, see comments below in code)
+    horz_split_pos = 0
+
+    ##
+    # Index of first visible row in bottom frozen/split pane
+    horz_split_first_visible = 0
+
+    ##
+    # Index of first visible column in right frozen/split pane
+    vert_split_first_visible = 0
+
+    ##
+    # Frozen panes: ignore it. Split panes: explanation and diagrams in OOo docs.
+    split_active_pane = 0
+
     def __init__(self, book, position, name, number):
         self.book = book
         self.biff_version = book.biff_version
@@ -253,7 +273,7 @@ class Sheet(BaseObject):
         self.cooked_page_break_preview_mag_factor = 60
         self.cooked_normal_view_mag_factor = 100
 
-        # Values (if any) actually stored on  the XLS file
+        # Values (if any) actually stored on the XLS file
         self.cached_page_break_preview_mag_factor = None # from WINDOW2 record
         self.cached_normal_view_mag_factor = None # from WINDOW2 record
         self.scl_mag_factor = None # from SCL record
@@ -1116,6 +1136,14 @@ class Sheet(BaseObject):
                     assert num == 0 or 10 <= num <= 400
                 self.scl_mag_factor = num
                 self.update_cooked_mag_factors()
+            elif rc == XL_PANE:
+                (
+                self.vert_split_pos,
+                self.horz_split_pos,
+                self.horz_split_first_visible,
+                self.vert_split_first_visible,
+                self.split_active_pane,
+                ) = unpack("<HHHHB", data[:9])
             #### all of the following are for BIFF <= 4W
             elif bv <= 45:
                 if rc == XL_FORMAT or rc == XL_FORMAT2:
