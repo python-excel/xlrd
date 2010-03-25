@@ -241,7 +241,6 @@ class Sheet(BaseObject):
         self._cell_values = []
         self._cell_types = []
         self._cell_xf_indexes = []
-        self._need_fix_ragged_rows = 0
         self.defcolwidth = None
         self.standardwidth = None
         self.default_row_height = None
@@ -450,48 +449,6 @@ class Sheet(BaseObject):
     # === Following methods are used in building the worksheet.
     # === They are not part of the API.
 
-    def extend_cells(self, nr, nc):
-        # print "extend_cells_2", self.nrows, self.ncols, nr, nc
-        assert 1 <= nc <= self.utter_max_cols
-        assert 1 <= nr <= self.utter_max_rows
-        if self.dont_use_array:
-            bn = [XL_CELL_EMPTY]
-            bf = [-1]
-        else:
-            bn = array_array('B', [XL_CELL_EMPTY])
-            bf = array_array('h', [-1])
-            
-        if nr <= self.nrows:
-            # New cell is in an existing row, so extend that row (if necessary).
-            # Note that nr < self.nrows means that the cell data
-            # is not in ascending row order!!
-            self._need_fix_ragged_rows = 1
-            nrx = nr - 1
-            trow = self._cell_types[nrx]
-            tlen = len(trow)
-            nextra = max(nc, self.ncols) - tlen
-            if nextra > 0:
-                trow.extend(bn * nextra)
-                if self.formatting_info:
-                    self._cell_xf_indexes[nrx].extend(bf * nextra)
-                self._cell_values[nrx].extend([''] * nextra)
-                
-        if nc > self.ncols:
-            self.ncols = nc
-            self._need_fix_ragged_rows = 1
-        if nr > self.nrows:
-            scta = self._cell_types.append
-            scva = self._cell_values.append
-            scxa = self._cell_xf_indexes.append
-            fmt_info = self.formatting_info
-            nc = self.ncols
-            for _unused in xrange(self.nrows, nr):
-                scta(bn * nc)
-                scva([''] * nc)
-                if fmt_info:
-                    scxa(bf * nc)
-            self.nrows = nr
-
     def fix_ragged_rows(self):
         # t0 = time.time()
         ncols = self.ncols
@@ -528,8 +485,8 @@ class Sheet(BaseObject):
     def tidy_dimensions(self):
         if self.verbosity >= 3:
             fprintf(self.logfile,
-                "tidy_dimensions: nrows=%d ncols=%d _need_fix_ragged_rows=%d\n",
-                self.nrows, self.ncols, self._need_fix_ragged_rows,
+                "tidy_dimensions: nrows=%d ncols=%d \n",
+                self.nrows, self.ncols,
                 )
         if 1 and self.merged_cells:
             nr = nc = 0
@@ -544,7 +501,13 @@ class Sheet(BaseObject):
                         self.number, self.name, crange)
                 if rhi > nr: nr = rhi
                 if chi > nc: nc = chi
-            self.extend_cells(nr, nc)
+            if nc > self.ncols:
+                self.ncols = nc
+            if nr > self.nrows:
+                # we put one empty cell at (nr-1,0) to make sure
+                # we have the right number of rows. The ragged rows
+                # will sort out the rest if needed.
+                self.put_cell(nr-1,0,XL_CELL_EMPTY,-1)
         if self.verbosity >= 1 \
         and (self.nrows != self._dimnrows or self.ncols != self._dimncols):
             fprintf(self.logfile,
@@ -556,29 +519,50 @@ class Sheet(BaseObject):
                 self.nrows,
                 self.ncols,
                 )
-        if (not self.ragged_rows) and self._need_fix_ragged_rows:
+        if not self.ragged_rows:
             self.fix_ragged_rows()
 
     def put_cell(self, rowx, colx, ctype, value, xf_index):
         if ctype is None:
             # we have a number, so look up the cell type
             ctype = self._xf_index_to_xl_type_map[xf_index]
+        assert 0 <= colx <= self.utter_max_cols-1
+        assert 0 <= rowx <= self.utter_max_rows-1
+        if self.dont_use_array:
+            bt = [XL_CELL_EMPTY]
+            bf = [-1]
+        else:
+            bt = array_array('B', [XL_CELL_EMPTY])
+            bf = array_array('h', [-1])
+        fmt_info = self.formatting_info
+            
         try:
-            self._cell_types[rowx][colx] = ctype
-            self._cell_values[rowx][colx] = value
-            if self.formatting_info:
-                self._cell_xf_indexes[rowx][colx] = xf_index
-        except IndexError:
-            # print >> self.logfile, "put_cell extending", rowx, colx
-            self.extend_cells(rowx+1, colx+1)
-            try:
-                self._cell_types[rowx][colx] = ctype
-                self._cell_values[rowx][colx] = value
-                if self.formatting_info:
-                    self._cell_xf_indexes[rowx][colx] = xf_index
-            except:
-                print >> self.logfile, "put_cell", rowx, colx
-                raise
+            nr = rowx+1
+            if self.nrows < nr:
+                to_add = nr - self.nrows
+                self._cell_types.extend([bt*0]*to_add)
+                self._cell_values.extend([[]]*to_add)
+                if fmt_info:
+                    self._cell_xf_indexes.extend([bf*0]*to_add)
+                self.nrows = nr
+            types_row = self._cell_types[rowx]
+            values_row = self._cell_values[rowx]
+            if fmt_info:
+                fmt_row = self._cell_xf_indexes[rowx]
+            nc = colx+1
+            ltr = len(types_row)
+            if ltr < nc:
+                to_add = nc - ltr
+                types_row.extend(bt*to_add)
+                values_row.extend(['']*to_add)
+                if fmt_info:
+                    fmt_row.extend(bf*to_add)
+            if nc > self.ncols:
+                self.ncols = nc
+            types_row[colx] = ctype
+            values_row[colx] = value
+            if fmt_info:
+                fmt_row[colx] = xf_index
         except:
             print >> self.logfile, "put_cell", rowx, colx
             raise
