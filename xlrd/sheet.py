@@ -225,7 +225,14 @@ class Sheet(BaseObject):
         self._position = position
         self.logfile = book.logfile
         self.pickleable = book.pickleable
-        self.dont_use_array = not(array_array and (CAN_PICKLE_ARRAY or not book.pickleable))
+        if array_array and (CAN_PICKLE_ARRAY or not book.pickleable):
+            # use array
+            self.bt = array_array('B', [XL_CELL_EMPTY])
+            self.bf = array_array('h', [-1])
+        else:
+            # don't use array
+            self.bt = [XL_CELL_EMPTY]
+            self.bf = [-1]
         self.name = name
         self.number = number
         self.verbosity = book.verbosity
@@ -449,39 +456,6 @@ class Sheet(BaseObject):
     # === Following methods are used in building the worksheet.
     # === They are not part of the API.
 
-    def fix_ragged_rows(self):
-        # t0 = time.time()
-        ncols = self.ncols
-        xce = XL_CELL_EMPTY
-        aa = array_array
-        s_cell_types = self._cell_types
-        s_cell_values = self._cell_values
-        s_cell_xf_indexes = self._cell_xf_indexes
-        s_dont_use_array = self.dont_use_array
-        s_fmt_info = self.formatting_info
-        totrowlen = 0
-        for rowx in xrange(self.nrows):
-            trow = s_cell_types[rowx]
-            rlen = len(trow)
-            totrowlen += rlen
-            nextra = ncols - rlen
-            if nextra > 0:
-                s_cell_values[rowx][rlen:] = [''] * nextra
-                if s_dont_use_array:
-                    trow[rlen:] = [xce] * nextra
-                    if s_fmt_info:
-                        s_cell_xf_indexes[rowx][rlen:] = [-1] * nextra
-                else:
-                    trow.extend(aa('B', [xce]) * nextra)
-                    if s_fmt_info:
-                        s_cell_xf_indexes[rowx][rlen:] = aa('h', [-1]) * nextra
-        # self._fix_ragged_rows_time = time.time() - t0
-        if 0 and self.nrows:
-            avgrowlen = float(totrowlen) / self.nrows
-            print >> self.logfile, \
-                "sheet %d: avg row len %.1f; max row len %d" \
-                % (self.number, avgrowlen, self.ncols)
-
     def tidy_dimensions(self):
         if self.verbosity >= 3:
             fprintf(self.logfile,
@@ -520,7 +494,21 @@ class Sheet(BaseObject):
                 self.ncols,
                 )
         if not self.ragged_rows:
-            self.fix_ragged_rows()
+            # fix ragged rows
+            ncols = self.ncols
+            s_cell_types = self._cell_types
+            s_cell_values = self._cell_values
+            s_cell_xf_indexes = self._cell_xf_indexes
+            s_fmt_info = self.formatting_info
+            for rowx in xrange(self.nrows):
+                trow = s_cell_types[rowx]
+                rlen = len(trow)
+                nextra = ncols - rlen
+                if nextra > 0:
+                    s_cell_values[rowx][rlen:] = [''] * nextra
+                    trow.extend(self.bt * nextra)
+                    if s_fmt_info:
+                        s_cell_xf_indexes[rowx][rlen:] = self.bf * nextra
 
     def put_cell(self, rowx, colx, ctype, value, xf_index):
         if ctype is None:
@@ -528,22 +516,16 @@ class Sheet(BaseObject):
             ctype = self._xf_index_to_xl_type_map[xf_index]
         assert 0 <= colx <= self.utter_max_cols-1
         assert 0 <= rowx <= self.utter_max_rows-1
-        if self.dont_use_array:
-            bt = [XL_CELL_EMPTY]
-            bf = [-1]
-        else:
-            bt = array_array('B', [XL_CELL_EMPTY])
-            bf = array_array('h', [-1])
         fmt_info = self.formatting_info
             
         try:
             nr = rowx+1
             if self.nrows < nr:
                 to_add = nr - self.nrows
-                self._cell_types.extend([bt*0]*to_add)
+                self._cell_types.extend([self.bt*0]*to_add)
                 self._cell_values.extend([[]]*to_add)
                 if fmt_info:
-                    self._cell_xf_indexes.extend([bf*0]*to_add)
+                    self._cell_xf_indexes.extend([self.bf*0]*to_add)
                 self.nrows = nr
             types_row = self._cell_types[rowx]
             values_row = self._cell_values[rowx]
@@ -553,10 +535,10 @@ class Sheet(BaseObject):
             ltr = len(types_row)
             if ltr < nc:
                 to_add = nc - ltr
-                types_row.extend(bt*to_add)
+                types_row.extend(self.bt*to_add)
                 values_row.extend(['']*to_add)
                 if fmt_info:
-                    fmt_row.extend(bf*to_add)
+                    fmt_row.extend(self.bf*to_add)
             if nc > self.ncols:
                 self.ncols = nc
             types_row[colx] = ctype
