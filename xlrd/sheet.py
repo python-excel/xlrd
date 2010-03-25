@@ -454,6 +454,13 @@ class Sheet(BaseObject):
         # print "extend_cells_2", self.nrows, self.ncols, nr, nc
         assert 1 <= nc <= self.utter_max_cols
         assert 1 <= nr <= self.utter_max_rows
+        if self.dont_use_array:
+            bn = [XL_CELL_EMPTY]
+            bf = [-1]
+        else:
+            bn = array_array('B', [XL_CELL_EMPTY])
+            bf = array_array('h', [-1])
+            
         if nr <= self.nrows:
             # New cell is in an existing row, so extend that row (if necessary).
             # Note that nr < self.nrows means that the cell data
@@ -464,17 +471,11 @@ class Sheet(BaseObject):
             tlen = len(trow)
             nextra = max(nc, self.ncols) - tlen
             if nextra > 0:
-                xce = XL_CELL_EMPTY
-                if self.dont_use_array:
-                    trow.extend([xce] * nextra)
-                    if self.formatting_info:
-                        self._cell_xf_indexes[nrx].extend([-1] * nextra)
-                else:
-                    aa = array_array
-                    trow.extend(aa('B', [xce]) * nextra)
-                    if self.formatting_info:
-                        self._cell_xf_indexes[nrx].extend(aa('h', [-1]) * nextra)
+                trow.extend(bn * nextra)
+                if self.formatting_info:
+                    self._cell_xf_indexes[nrx].extend(bf * nextra)
                 self._cell_values[nrx].extend([''] * nextra)
+                
         if nc > self.ncols:
             self.ncols = nc
             self._need_fix_ragged_rows = 1
@@ -483,25 +484,16 @@ class Sheet(BaseObject):
             scva = self._cell_values.append
             scxa = self._cell_xf_indexes.append
             fmt_info = self.formatting_info
-            xce = XL_CELL_EMPTY
             nc = self.ncols
-            if self.dont_use_array:
-                for _unused in xrange(self.nrows, nr):
-                    scta([xce] * nc)
-                    scva([''] * nc)
-                    if fmt_info:
-                        scxa([-1] * nc)
-            else:
-                aa = array_array
-                for _unused in xrange(self.nrows, nr):
-                    scta(aa('B', [xce]) * nc)
-                    scva([''] * nc)
-                    if fmt_info:
-                        scxa(aa('h', [-1]) * nc)
+            for _unused in xrange(self.nrows, nr):
+                scta(bn * nc)
+                scva([''] * nc)
+                if fmt_info:
+                    scxa(bf * nc)
             self.nrows = nr
 
     def fix_ragged_rows(self):
-        t0 = time.time()
+        # t0 = time.time()
         ncols = self.ncols
         xce = XL_CELL_EMPTY
         aa = array_array
@@ -526,7 +518,7 @@ class Sheet(BaseObject):
                     trow.extend(aa('B', [xce]) * nextra)
                     if s_fmt_info:
                         s_cell_xf_indexes[rowx][rlen:] = aa('h', [-1]) * nextra
-        self._fix_ragged_rows_time = time.time() - t0
+        # self._fix_ragged_rows_time = time.time() - t0
         if 0 and self.nrows:
             avgrowlen = float(totrowlen) / self.nrows
             print >> self.logfile, \
@@ -568,6 +560,9 @@ class Sheet(BaseObject):
             self.fix_ragged_rows()
 
     def put_cell(self, rowx, colx, ctype, value, xf_index):
+        if ctype is None:
+            # we have a number, so look up the cell type
+            ctype = self._xf_index_to_xl_type_map[xf_index]
         try:
             self._cell_types[rowx][colx] = ctype
             self._cell_values[rowx][colx] = value
@@ -586,50 +581,6 @@ class Sheet(BaseObject):
                 raise
         except:
             print >> self.logfile, "put_cell", rowx, colx
-            raise
-
-    def put_blank_cell(self, rowx, colx, xf_index):
-        # This is used for cells from BLANK and MULBLANK records
-        ctype = XL_CELL_BLANK
-        value = ''
-        try:
-            self._cell_types[rowx][colx] = ctype
-            self._cell_values[rowx][colx] = value
-            self._cell_xf_indexes[rowx][colx] = xf_index
-        except IndexError:
-            # print >> self.logfile, "put_cell extending", rowx, colx
-            self.extend_cells(rowx+1, colx+1)
-            try:
-                self._cell_types[rowx][colx] = ctype
-                self._cell_values[rowx][colx] = value
-                self._cell_xf_indexes[rowx][colx] = xf_index
-            except:
-                print >> self.logfile, "put_cell", rowx, colx
-                raise
-        except:
-            print >> self.logfile, "put_cell", rowx, colx
-            raise
-
-    def put_number_cell(self, rowx, colx, value, xf_index):
-        ctype = self._xf_index_to_xl_type_map[xf_index]
-        try:
-            self._cell_types[rowx][colx] = ctype
-            self._cell_values[rowx][colx] = value
-            if self.formatting_info:
-                self._cell_xf_indexes[rowx][colx] = xf_index
-        except IndexError:
-            # print >> self.logfile, "put_number_cell extending", rowx, colx
-            self.extend_cells(rowx+1, colx+1)
-            try:
-                self._cell_types[rowx][colx] = ctype
-                self._cell_values[rowx][colx] = value
-                if self.formatting_info:
-                    self._cell_xf_indexes[rowx][colx] = xf_index
-            except:
-                print >> self.logfile, "put_number_cell", rowx, colx
-                raise
-        except:
-            print >> self.logfile, "put_number_cell", rowx, colx
             raise
 
     # === Methods after this line neither know nor care about how cells are stored.
@@ -647,9 +598,7 @@ class Sheet(BaseObject):
             XL_SHRFMLA, XL_ARRAY, XL_TABLEOP, XL_TABLEOP2,
             XL_ARRAY2, XL_TABLEOP_B2,
             )
-        self_put_number_cell = self.put_number_cell
         self_put_cell = self.put_cell
-        self_put_blank_cell = self.put_blank_cell
         local_unpack = unpack
         bk_get_record_parts = bk.get_record_parts
         bv = self.biff_version
@@ -669,7 +618,7 @@ class Sheet(BaseObject):
                 # if xf_index == 0:
                 #     fprintf(self.logfile,
                 #         "NUMBER: r=%d c=%d xfx=%d %f\n", rowx, colx, xf_index, d)
-                self_put_number_cell(rowx, colx, d, xf_index)
+                self_put_cell(rowx, colx, None, d, xf_index)
             elif rc == XL_LABELSST:
                 rowx, colx, xf_index, sstindex = local_unpack('<HHHi', data)
                 # print "LABELSST", rowx, colx, sstindex, bk._sharedstrings[sstindex]
@@ -685,7 +634,7 @@ class Sheet(BaseObject):
             elif rc == XL_RK:
                 rowx, colx, xf_index = local_unpack('<HHH', data[:6])
                 d = unpack_RK(data[6:10])
-                self_put_number_cell(rowx, colx, d, xf_index)
+                self_put_cell(rowx, colx, None, d, xf_index)
             elif rc == XL_MULRK:
                 mulrk_row, mulrk_first = local_unpack('<HH', data[0:4])
                 mulrk_last, = local_unpack('<H', data[-2:])
@@ -694,7 +643,7 @@ class Sheet(BaseObject):
                     xf_index, = local_unpack('<H', data[pos:pos+2])
                     d = unpack_RK(data[pos+2:pos+6])
                     pos += 6
-                    self_put_number_cell(mulrk_row, colx, d, xf_index)
+                    self_put_cell(mulrk_row, colx, None, d, xf_index)
             elif rc == XL_ROW:
                 # Version 0.6.0a3: ROW records are just not worth using (for memory allocation).
                 # Version 0.6.1: now used for formatting info.
@@ -827,7 +776,7 @@ class Sheet(BaseObject):
                 else:
                     # it is a number
                     d = local_unpack('<d', result_str)[0]
-                    self_put_number_cell(rowx, colx, d, xf_index)
+                    self_put_cell(rowx, colx, None, d, xf_index)
             elif rc == XL_BOOLERR:
                 rowx, colx, xf_index, value, is_err = local_unpack('<HHHBB', data[:8])
                 # Note OOo Calc 2.0 writes 9-byte BOOLERR records.
@@ -899,7 +848,7 @@ class Sheet(BaseObject):
                 if not fmt_info: continue
                 rowx, colx, xf_index = local_unpack('<HHH', data[:6])
                 # if 0: print >> self.logfile, "BLANK", rowx, colx, xf_index
-                self_put_blank_cell(rowx, colx, xf_index)
+                self_put_cell(rowx, colx, XL_CELL_BLANK, '', xf_index)
             elif rc == XL_MULBLANK: # 00BE
                 if not fmt_info: continue
                 nitems = data_len >> 1
@@ -910,7 +859,7 @@ class Sheet(BaseObject):
                 assert nitems == mul_last + 4 - mul_first
                 pos = 2
                 for colx in xrange(mul_first, mul_last + 1):
-                    self_put_blank_cell(rowx, colx, result[pos])
+                    self_put_cell(rowx, colx, XL_CELL_BLANK, '', result[pos])
                     pos += 1
             elif rc == XL_DIMENSION or rc == XL_DIMENSION2:
                 # if data_len == 10:
@@ -1172,10 +1121,10 @@ class Sheet(BaseObject):
                     self._ixfe = local_unpack('<H', data)[0]
                 elif rc == XL_NUMBER_B2:
                     rowx, colx, cell_attr, d = local_unpack('<HH3sd', data)
-                    self_put_number_cell(rowx, colx, d, self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
+                    self_put_cell(rowx, colx, None, d, self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
                 elif rc == XL_INTEGER:
                     rowx, colx, cell_attr, d = local_unpack('<HH3sH', data)
-                    self_put_number_cell(rowx, colx, float(d), self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
+                    self_put_cell(rowx, colx, None, float(d), self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
                 elif rc == XL_LABEL_B2:
                     rowx, colx, cell_attr = local_unpack('<HH3s', data[0:7])
                     strg = unpack_string(data, 7, bk.encoding or bk.derive_encoding(), lenlen=1)
@@ -1188,7 +1137,7 @@ class Sheet(BaseObject):
                 elif rc == XL_BLANK_B2:
                     if not fmt_info: continue
                     rowx, colx, cell_attr = local_unpack('<HH3s', data[:7])
-                    self_put_blank_cell(rowx, colx, self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
+                    self_put__cell(rowx, colx, XL_CELL_BLANK, '', self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
                 elif rc == XL_EFONT:
                     bk.handle_efont(data)
                 elif rc == XL_ROW_B2:
