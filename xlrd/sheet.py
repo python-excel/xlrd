@@ -5,6 +5,12 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2010-03-28 SJM Tailored put_cell method for each of ragged_rows=False (fixed speed regression) and =True (faster)
+# 2010-03-25 CW  r4236 Slight refactoring to remove method calls
+# 2010-03-25 CW  r4235 Collapse expand_cells into put_cell and enhance the raggedness. This should save even more memory!
+# 2010-03-25 CW  r4234 remove duplicate chunks for extend_cells; refactor to remove put_number_cell and put_blank_cell which essentially duplicated the code of put_cell
+# 2010-03-10 SJM r4222 Added reading of the PANE record.
+# 2010-03-10 SJM r4221 Preliminary work on "cooked" mag factors; use at own peril
 # 2010-03-01 SJM Reading SCL record
 # 2010-03-01 SJM Added ragged_rows functionality
 # 2009-08-23 SJM Reduced CPU time taken by parsing MULBLANK records.
@@ -238,6 +244,10 @@ class Sheet(BaseObject):
         self.verbosity = book.verbosity
         self.formatting_info = book.formatting_info
         self.ragged_rows = book.ragged_rows
+        if self.ragged_rows:
+            self.put_cell = self.put_cell_ragged
+        else:
+            self.put_cell = self.put_cell_unragged
         self._xf_index_to_xl_type_map = book._xf_index_to_xl_type_map
         self.nrows = 0 # actual, including possibly empty cells
         self.ncols = 0
@@ -295,6 +305,14 @@ class Sheet(BaseObject):
         else:
             self.utter_max_rows = 16384
         self.utter_max_cols = 256
+
+        self._first_full_rowx = -1
+
+        # self._put_cell_exceptions = 0
+        # self._put_cell_row_widenings = 0
+        # self._put_cell_rows_appended = 0
+        # self._put_cell_cells_appended = 0
+
 
     ##
     # Cell object in the given row and column.
@@ -481,7 +499,7 @@ class Sheet(BaseObject):
                 # we put one empty cell at (nr-1,0) to make sure
                 # we have the right number of rows. The ragged rows
                 # will sort out the rest if needed.
-                self.put_cell(nr-1,0,XL_CELL_EMPTY,-1)
+                self.put_cell(nr-1, 0, XL_CELL_EMPTY, -1)
         if self.verbosity >= 1 \
         and (self.nrows != self._dimnrows or self.ncols != self._dimncols):
             fprintf(self.logfile,
@@ -500,47 +518,67 @@ class Sheet(BaseObject):
             s_cell_values = self._cell_values
             s_cell_xf_indexes = self._cell_xf_indexes
             s_fmt_info = self.formatting_info
-            for rowx in xrange(self.nrows):
+            # for rowx in xrange(self.nrows):
+            if self._first_full_rowx == -2:
+                ubound = self.nrows
+            else:
+                ubound = self._first_full_rowx
+            for rowx in xrange(ubound):
                 trow = s_cell_types[rowx]
                 rlen = len(trow)
                 nextra = ncols - rlen
                 if nextra > 0:
                     s_cell_values[rowx][rlen:] = [''] * nextra
-                    trow.extend(self.bt * nextra)
+                    trow[rlen:] = self.bt * nextra
                     if s_fmt_info:
                         s_cell_xf_indexes[rowx][rlen:] = self.bf * nextra
 
-    def put_cell(self, rowx, colx, ctype, value, xf_index):
+    def put_cell_ragged(self, rowx, colx, ctype, value, xf_index):
         if ctype is None:
             # we have a number, so look up the cell type
             ctype = self._xf_index_to_xl_type_map[xf_index]
-        assert 0 <= colx <= self.utter_max_cols-1
-        assert 0 <= rowx <= self.utter_max_rows-1
+        assert 0 <= colx < self.utter_max_cols
+        assert 0 <= rowx < self.utter_max_rows
         fmt_info = self.formatting_info
-            
+
         try:
-            nr = rowx+1
+            nr = rowx + 1
             if self.nrows < nr:
+
                 to_add = nr - self.nrows
-                self._cell_types.extend([self.bt*0]*to_add)
-                self._cell_values.extend([[]]*to_add)
+                # self._put_cell_rows_appended += to_add
+                self._cell_types.extend([self.bt * 0] * to_add)
+                self._cell_values.extend([[]] * to_add)
                 if fmt_info:
-                    self._cell_xf_indexes.extend([self.bf*0]*to_add)
+                    self._cell_xf_indexes.extend([self.bf * 0] * to_add)
                 self.nrows = nr
             types_row = self._cell_types[rowx]
             values_row = self._cell_values[rowx]
             if fmt_info:
                 fmt_row = self._cell_xf_indexes[rowx]
-            nc = colx+1
             ltr = len(types_row)
-            if ltr < nc:
-                to_add = nc - ltr
-                types_row.extend(self.bt*to_add)
-                values_row.extend(['']*to_add)
+            if colx >= self.ncols:
+                self.ncols = colx + 1
+            num_empty = colx - ltr
+            if not num_empty:
+                # most common case: colx == previous colx + 1
+                # self._put_cell_cells_appended += 1
+                types_row.append(ctype)
+                values_row.append(value)
                 if fmt_info:
-                    fmt_row.extend(self.bf*to_add)
-            if nc > self.ncols:
-                self.ncols = nc
+                    fmt_row.append(xf_index)
+                return
+            if num_empty > 0:
+                num_empty += 1
+                # self._put_cell_row_widenings += 1
+                # types_row.extend(self.bt * num_empty)
+                # values_row.extend([''] * num_empty)
+                # if fmt_info:
+                #     fmt_row.extend(self.bf * num_empty)
+                types_row[ltr:] = self.bt * num_empty
+                values_row[ltr:] = [''] * num_empty
+                if fmt_info:
+                    fmt_row[ltr:] = self.bf * num_empty
             types_row[colx] = ctype
             values_row[colx] = value
             if fmt_info:
@@ -548,6 +586,80 @@ class Sheet(BaseObject):
         except:
             print >> self.logfile, "put_cell", rowx, colx
             raise
+
+    def put_cell_unragged(self, rowx, colx, ctype, value, xf_index):
+        if ctype is None:
+            # we have a number, so look up the cell type
+            ctype = self._xf_index_to_xl_type_map[xf_index]
+        # assert 0 <= colx < self.utter_max_cols
+        # assert 0 <= rowx < self.utter_max_rows
+        try:
+            self._cell_types[rowx][colx] = ctype
+            self._cell_values[rowx][colx] = value
+            if self.formatting_info:
+                self._cell_xf_indexes[rowx][colx] = xf_index
+        except IndexError:
+            # print >> self.logfile, "put_cell extending", rowx, colx
+            # self.extend_cells(rowx+1, colx+1)
+            # self._put_cell_exceptions += 1
+            nr = rowx + 1
+            nc = colx + 1
+            assert 1 <= nc <= self.utter_max_cols
+            assert 1 <= nr <= self.utter_max_rows
+            if nc > self.ncols:
+                self.ncols = nc
+                # The row self._first_full_rowx and all subsequent rows
+                # are guaranteed to have length == self.ncols. Thus the
+                # "fix ragged rows" section of the tidy_dimensions method
+                # doesn't need to examine them.
+                if nr < self.nrows:
+                    # cell data is not in non-descending row order *AND*
+                    # self.ncols has been bumped up.
+                    # This very rare case ruins this optmisation.
+                    self._first_full_rowx = -2
+                elif rowx > self._first_full_rowx > -2:
+                    self._first_full_rowx = rowx
+            if nr <= self.nrows:
+                # New cell is in an existing row, so extend that row (if necessary).
+                # Note that nr < self.nrows means that the cell data
+                # is not in ascending row order!!
+                trow = self._cell_types[rowx]
+                nextra = self.ncols - len(trow)
+                if nextra > 0:
+                    # self._put_cell_row_widenings += 1
+                    trow.extend(self.bt * nextra)
+                    if self.formatting_info:
+                        self._cell_xf_indexes[rowx].extend(self.bf * nextra)
+                    self._cell_values[rowx].extend([''] * nextra)
+            else:
+                scta = self._cell_types.append
+                scva = self._cell_values.append
+                scxa = self._cell_xf_indexes.append
+                fmt_info = self.formatting_info
+                xce = XL_CELL_EMPTY
+                nc = self.ncols
+                bt = self.bt
+                bf = self.bf
+                for _unused in xrange(self.nrows, nr):
+                    # self._put_cell_rows_appended += 1
+                    scta(bt * nc)
+                    scva([''] * nc)
+                    if fmt_info:
+                        scxa(bf * nc)
+                self.nrows = nr
+            # === end of code from extend_cells()
+            try:
+                self._cell_types[rowx][colx] = ctype
+                self._cell_values[rowx][colx] = value
+                if self.formatting_info:
+                    self._cell_xf_indexes[rowx][colx] = xf_index
+            except:
+                print >> self.logfile, "put_cell", rowx, colx
+                raise
+        except:
+           print >> self.logfile, "put_cell", rowx, colx
+           raise
+
 
     # === Methods after this line neither know nor care about how cells are stored.
 
@@ -729,14 +841,14 @@ class Sheet(BaseObject):
                     elif result_str[0] == '\x01':
                         # boolean formula result
                         value = ord(result_str[2])
-                        self.put_cell(rowx, colx, XL_CELL_BOOLEAN, value, xf_index)
+                        self_put_cell(rowx, colx, XL_CELL_BOOLEAN, value, xf_index)
                     elif result_str[0] == '\x02':
                         # Error in cell
                         value = ord(result_str[2])
-                        self.put_cell(rowx, colx, XL_CELL_ERROR, value, xf_index)
+                        self_put_cell(rowx, colx, XL_CELL_ERROR, value, xf_index)
                     elif result_str[0] == '\x03':
                         # empty ... i.e. empty (zero-length) string, NOT an empty cell.
-                        self.put_cell(rowx, colx, XL_CELL_TEXT, u"", xf_index)
+                        self_put_cell(rowx, colx, XL_CELL_TEXT, u"", xf_index)
                     else:
                         raise XLRDError("unexpected special case (0x%02x) in FORMULA" % ord(result_str[0]))
                 else:
@@ -749,7 +861,7 @@ class Sheet(BaseObject):
                 # OOo docs say 8. Excel writes 8.
                 cellty = (XL_CELL_BOOLEAN, XL_CELL_ERROR)[is_err]
                 # if DEBUG: print "XL_BOOLERR", rowx, colx, xf_index, value, is_err
-                self.put_cell(rowx, colx, cellty, value, xf_index)
+                self_put_cell(rowx, colx, cellty, value, xf_index)
             elif rc == XL_COLINFO:
                 if not fmt_info: continue
                 c = Colinfo()
@@ -1099,7 +1211,7 @@ class Sheet(BaseObject):
                     rowx, colx, cell_attr, value, is_err = local_unpack('<HH3sBB', data)
                     cellty = (XL_CELL_BOOLEAN, XL_CELL_ERROR)[is_err]
                     # if DEBUG: print "XL_BOOLERR_B2", rowx, colx, cell_attr, value, is_err
-                    self.put_cell(rowx, colx, cellty, value, self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
+                    self_put_cell(rowx, colx, cellty, value, self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
                 elif rc == XL_BLANK_B2:
                     if not fmt_info: continue
                     rowx, colx, cell_attr = local_unpack('<HH3s', data[:7])
