@@ -5,6 +5,7 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2010-03-29 SJM Fixed bug in adding new empty rows in put_cell_ragged
 # 2010-03-28 SJM Tailored put_cell method for each of ragged_rows=False (fixed speed regression) and =True (faster)
 # 2010-03-25 CW  r4236 Slight refactoring to remove method calls
 # 2010-03-25 CW  r4235 Collapse expand_cells into put_cell and enhance the raggedness. This should save even more memory!
@@ -545,13 +546,18 @@ class Sheet(BaseObject):
             nr = rowx + 1
             if self.nrows < nr:
 
-                to_add = nr - self.nrows
-                # self._put_cell_rows_appended += to_add
-                self._cell_types.extend([self.bt * 0] * to_add)
-                self._cell_values.extend([[]] * to_add)
-                if fmt_info:
-                    self._cell_xf_indexes.extend([self.bf * 0] * to_add)
+                scta = self._cell_types.append
+                scva = self._cell_values.append
+                scxa = self._cell_xf_indexes.append
+                bt = self.bt
+                bf = self.bf
+                for _unused in xrange(self.nrows, nr):
+                    scta(bt * 0)
+                    scva([])
+                    if fmt_info:
+                        scxa(bf * 0)
                 self.nrows = nr
+
             types_row = self._cell_types[rowx]
             values_row = self._cell_values[rowx]
             if fmt_info:
@@ -636,7 +642,6 @@ class Sheet(BaseObject):
                 scva = self._cell_values.append
                 scxa = self._cell_xf_indexes.append
                 fmt_info = self.formatting_info
-                xce = XL_CELL_EMPTY
                 nc = self.ncols
                 bt = self.bt
                 bf = self.bf
