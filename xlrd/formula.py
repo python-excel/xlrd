@@ -1210,7 +1210,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                 relflags = (0, 0, row_rel, row_rel, col_rel, col_rel)
                 ref3d = Ref3D(coords + relflags)
                 res.kind = oREL
-                res.text = rangename3drel(bk, ref3d)
+                res.text = rangename3drel(bk, ref3d, r1c1=1)
             else:
                 ref3d = Ref3D(coords)
                 res.kind = oREF
@@ -1244,7 +1244,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                 relflags = (0, 0, row_rel1, row_rel2, col_rel1, col_rel2)
                 ref3d = Ref3D(coords + relflags)
                 res.kind = oREL
-                res.text = rangename3drel(bk, ref3d)
+                res.text = rangename3drel(bk, ref3d, r1c1=1)
             else:
                 ref3d = Ref3D(coords)
                 res.kind = oREF
@@ -2036,16 +2036,6 @@ def dump_formula(bk, data, fmlalen, bv, reldelta, blah=0, isname=0):
 
 # === Some helper functions for displaying cell references ===
 
-# Note that a "non-standard" syntax is used in row and column
-# components in relative references.
-# For example, consider a relative reference: up two rows, right 3 columns.
-# On screen, with cursor in cell D10, this would appear as G8.
-# On screen, with cursor in cell Z100, this would appear as AC98.
-# On screen, with cursor in cell A1, this would appear as D65535.
-# These functions will display such a reference as [@+3,#-2].
-# "@" refers to the unknown base column.
-# "#" refers to the unknown base row.
-#
 # I'm aware of only one possibility of a sheet-relative component in
 # a reference: a 2D reference located in the "current sheet".
 # xlrd stores this internally with bounds of (0, 1, ...) and
