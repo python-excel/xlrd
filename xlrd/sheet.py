@@ -226,6 +226,10 @@ class Sheet(BaseObject):
     # Frozen panes: ignore it. Split panes: explanation and diagrams in OOo docs.
     split_active_pane = 0
 
+    ##
+    # Boolean specifying if a PANE record was present, ignore unless you're xlutils.copy
+    has_pane_record = 0
+
     def __init__(self, book, position, name, number):
         self.book = book
         self.biff_version = book.biff_version
@@ -1176,6 +1180,7 @@ class Sheet(BaseObject):
                 self.vert_split_first_visible,
                 self.split_active_pane,
                 ) = unpack("<HHHHB", data[:9])
+                self.has_pane_record = 1
             #### all of the following are for BIFF <= 4W
             elif bv <= 45:
                 if rc == XL_FORMAT or rc == XL_FORMAT2:
