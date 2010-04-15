@@ -1329,19 +1329,14 @@ class Sheet(BaseObject):
         return 1
 
     def update_cooked_mag_factors(self):
-        if self.show_in_page_break_preview:
-            if self.scl_mag_factor is None: # no SCL record
-                self.cooked_page_break_preview_mag_factor = 60
-                self.cooked_normal_view_mag_factor = 100 # or cached???
-            else:
+        if self.cached_page_break_preview_mag_factor:
+            self.cooked_page_break_preview_mag_factor = self.cached_page_break_preview_mag_factor
+        if self.cached_normal_view_mag_factor:
+            self.cooked_normal_view_mag_factor = self.cached_normal_view_mag_factor
+        if self.scl_mag_factor is not None:
+            if self.show_in_page_break_preview:
                 self.cooked_page_break_preview_mag_factor = self.scl_mag_factor
-                self.cooked_normal_view_mag_factor = 100 # or cached???
-        else:
-            if self.scl_mag_factor is None: # no SCL record
-                self.cooked_page_break_preview_mag_factor = 60 # or cached???
-                self.cooked_normal_view_mag_factor = 100
             else:
-                self.cooked_page_break_preview_mag_factor = 60 # or cached???
                 self.cooked_normal_view_mag_factor = self.scl_mag_factor
 
     def fixed_BIFF2_xfindex(self, cell_attr, rowx, colx, true_xfx=None):
