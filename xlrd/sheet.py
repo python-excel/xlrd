@@ -5,6 +5,9 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+# 2010-04-25 SJM fix zoom factors cooking logic
+# 2010-04-15 CW  r4253 fix zoom factors cooking logic
+# 2010-04-09 CW  r4248 add a flag so xlutils knows whether or not to write a PANE record
 # 2010-03-29 SJM Fixed bug in adding new empty rows in put_cell_ragged
 # 2010-03-28 SJM Tailored put_cell method for each of ragged_rows=False (fixed speed regression) and =True (faster)
 # 2010-03-25 CW  r4236 Slight refactoring to remove method calls
@@ -1160,18 +1163,19 @@ class Sheet(BaseObject):
                 for attr, _unused_defval in _WINDOW2_options:
                     setattr(self, attr, options & 1)
                     options >>= 1
-                # print "WINDOW2: visible=%d selected=%d" \
-                #     % (self.sheet_visible, self.sheet_selected)
-                self.update_cooked_mag_factors()
             elif rc == XL_SCL:
                 num, den = unpack("<HH", data)
-                if den == 0:
-                    assert num == 0
-                else:
-                    num = int_floor_div(num * 100, den)
-                    assert num == 0 or 10 <= num <= 400
-                self.scl_mag_factor = num
-                self.update_cooked_mag_factors()
+                result = 0
+                if den:
+                    result = int_floor_div(num * 100, den)
+                if not(10 <= result <= 400):
+                    if DEBUG or self.verbosity >= 0:
+                        print >> self.logfile, (
+                            "WARNING *** SCL rcd sheet %d: should have 0.1 <= num/den <= 4; got %d/%d"
+                            % (self.number, num, den)
+                            )
+                    result = 100
+                self.scl_mag_factor = result
             elif rc == XL_PANE:
                 (
                 self.vert_split_pos,
@@ -1325,19 +1329,52 @@ class Sheet(BaseObject):
             raise XLRDError("Sheet %d (%r) missing EOF record" \
                 % (self.number, self.name))
         self.tidy_dimensions()
+        self.update_cooked_mag_factors()
         bk._position = oldpos
         return 1
 
     def update_cooked_mag_factors(self):
-        if self.cached_page_break_preview_mag_factor:
-            self.cooked_page_break_preview_mag_factor = self.cached_page_break_preview_mag_factor
-        if self.cached_normal_view_mag_factor:
-            self.cooked_normal_view_mag_factor = self.cached_normal_view_mag_factor
-        if self.scl_mag_factor is not None:
-            if self.show_in_page_break_preview:
+        # Cached values are used ONLY for the non-active view mode.
+        # When the user switches to the non-active view mode,
+        # if the cached value for that mode is not valid,
+        # Excel pops up a window which says:
+        # "The number must be between 10 and 400. Try again by entering a number in this range."
+        # When the user hits OK, it drops into the non-active view mode
+        # but uses the magn from the active mode.
+        # NOTE: definition of "valid" depends on mode ... see below
+        blah = DEBUG or self.verbosity >= 0
+        if self.show_in_page_break_preview:
+            if self.scl_mag_factor is None: # no SCL record
+                self.cooked_page_break_preview_mag_factor = 100 # Yes, 100, not 60, NOT a typo
+            else:
                 self.cooked_page_break_preview_mag_factor = self.scl_mag_factor
+            zoom = self.cached_normal_view_mag_factor
+            if not (10 <= zoom <=400):
+                if blah:
+                    print >> self.logfile, (
+                        "WARNING *** WINDOW2 rcd sheet %d: Bad cached_normal_view_mag_factor: %d"
+                        % (self.number, self.cached_normal_view_mag_factor)
+                        )
+                zoom = self.cooked_page_break_preview_mag_factor
+            self.cooked_normal_view_mag_factor = zoom
+        else:
+            # normal view mode
+            if self.scl_mag_factor is None: # no SCL record
+                self.cooked_normal_view_mag_factor = 100
             else:
                 self.cooked_normal_view_mag_factor = self.scl_mag_factor
+            zoom = self.cached_page_break_preview_mag_factor
+            if zoom == 0:
+                # VALID, defaults to 60
+                zoom = 60
+            elif not (10 <= zoom <= 400):
+                if blah:
+                    print >> self.logfile, (
+                        "WARNING *** WINDOW2 rcd sheet %d: Bad cached_page_break_preview_mag_factor: %d"
+                        % (self.number, self.cached_page_break_preview_mag_factor)
+                        )
+                zoom = self.cooked_normal_view_mag_factor
+            self.cooked_page_break_preview_mag_factor = zoom
 
     def fixed_BIFF2_xfindex(self, cell_attr, rowx, colx, true_xfx=None):
         DEBUG = 0
