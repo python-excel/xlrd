@@ -86,7 +86,9 @@ class Sheet(BaseObject):
     nrows = 0
 
     ##
-    # Number of columns in sheet. A column index is in range(thesheet.ncols).
+    # Nominal number of columns in sheet. It is 1 + the maximum column index
+    # found, ignoring empty cells. See also open_workbook(,,,ragged_rows=???)
+    # and Sheet.row_len(row_index).
     ncols = 0
 
     ##
@@ -94,14 +96,14 @@ class Sheet(BaseObject):
     # in COLINFO records for all column indexes in range(257).
     # Note that xlrd ignores the entry for the non-existent
     # 257th column. On the other hand, there may be no entry for unused columns.
-    # <br /> -- New in version 0.6.1
+    # <br /> -- New in version 0.6.1. Populated only if open_workbook(formatting_info=True).
     colinfo_map = {}
 
     ##
     # The map from a row index to a Rowinfo object. Note that it is possible
     # to have missing entries -- at least one source of XLS files doesn't
     # bother writing ROW records.
-    # <br /> -- New in version 0.6.1
+    # <br /> -- New in version 0.6.1. Populated only if open_workbook(formatting_info=True).
     rowinfo_map = {}
 
     ##
@@ -129,7 +131,7 @@ class Sheet(BaseObject):
     # List of address ranges of cells which have been merged.
     # These are set up in Excel by Format > Cells > Alignment, then ticking
     # the "Merge cells" box.
-    # <br> -- New in version 0.6.1. Extracted only if open_workbook(..., formatting_info=True)
+    # <br> -- New in version 0.6.1. Extracted only if open_workbook(formatting_info=True).
     # <br>How to deconstruct the list:
     # <pre>
     # for crange in thesheet.merged_cells:
@@ -235,15 +237,15 @@ class Sheet(BaseObject):
 
     ##
     # A list of the horizontal page breaks in this sheet.
-    # Breaks are tuples in the form (<index of row after break>, <start col index>, <end col index>).
-    # Populated only if open_workbook(..., formatting_info=True).
+    # Breaks are tuples in the form (index of row after break, start col index, end col index).
+    # Populated only if open_workbook(formatting_info=True).
     # <br /> -- New in version 0.7.2
     horizontal_page_breaks = []
 
     ##
     # A list of the vertical page breaks in this sheet.
-    # Breaks are tuples in the form (<index of col after break>, <start row index>, <end row index>).
-    # Populated only if open_workbook(..., formatting_info=True).
+    # Breaks are tuples in the form (index of col after break, start row index, end row index).
+    # Populated only if open_workbook(formatting_info=True).
     # <br /> -- New in version 0.7.2
     vertical_page_breaks = []
 
@@ -393,7 +395,10 @@ class Sheet(BaseObject):
             return 15
 
     ##
-    # Returns the effective number of cells in the given row.
+    # Returns the effective number of cells in the given row. For use with
+    # open_workbook(..., ragged_rows=True) which is likely to produce rows
+    # with fewer than Sheet.ncols cells.
+    # <br /> -- New in version 0.7.2
     def row_len(self, rowx):
         return len(self._cell_values[rowx])
 
@@ -1151,16 +1156,14 @@ class Sheet(BaseObject):
                     self.cached_page_break_preview_mag_factor,
                     self.cached_normal_view_mag_factor
                     ) = unpack("<HHHHxxHH", data[:14])
-                else: # BIFF3-7
+                else:
+                    assert bv >= 30 # BIFF3-7
                     (options,
                     self.first_visible_rowx, self.first_visible_colx,
                     ) = unpack("<HHH", data[:6])
                     self.gridline_colour_rgb = unpack("<BBB", data[6:9])
-                    self.gridline_colour_index = \
-                        nearest_colour_index(
-                            self.book.colour_map,
-                            self.gridline_colour_rgb,
-                            debug=0)
+                    self.gridline_colour_index = nearest_colour_index(
+                        self.book.colour_map, self.gridline_colour_rgb, debug=0)
                     self.cached_page_break_preview_mag_factor = 0 # default (60%)
                     self.cached_normal_view_mag_factor = 0 # default (100%)
                 # options -- Bit, Mask, Contents:
@@ -1365,6 +1368,19 @@ class Sheet(BaseObject):
                             c = Colinfo()
                             self.colinfo_map[colx] = c
                         c.xf_index = xf_index
+                elif rc == XL_WINDOW2_B2: # BIFF 2 only
+                    attr_names = ("show_formulas", "show_grid_lines", "show_sheet_headers",
+                        "panes_are_frozen", "show_zero_values")
+                    for attr, char in zip(attr_names, data[0:5]):
+                        setattr(self, attr, int(char != "\x00"))
+                    (self.first_visible_rowx, self.first_visible_colx,
+                    self.automatic_grid_line_colour,
+                    ) = unpack("<HHB", data[5:10])
+                    self.gridline_colour_rgb = unpack("<BBB", data[10:13])
+                    self.gridline_colour_index = nearest_colour_index(
+                        self.book.colour_map, self.gridline_colour_rgb, debug=0)
+                    self.cached_page_break_preview_mag_factor = 0 # default (60%)
+                    self.cached_normal_view_mag_factor = 0 # default (100%)
             else:
                 # if DEBUG: print "SHEET.READ: Unhandled record type %02x %d bytes %r" % (rc, data_len, data)
                 pass

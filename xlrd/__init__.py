@@ -402,7 +402,13 @@ del _bin, _bic
 #
 # @param on_demand Governs whether sheets are all loaded initially or when demanded
 # by the caller. Please refer back to the section "Loading worksheets on demand" for details.
-# -- New in version 0.7.1
+# <br /> -- New in version 0.7.1
+#
+# @param ragged_rows False (the default) means all rows are padded out with empty cells so that all
+# rows have the same size (Sheet.ncols). True means that there are no empty cells at the ends of rows.
+# This can result in substantial memory savings if rows are of widely varying sizes. See also the
+# Sheet.row_len() method.
+# <br /> -- New in version 0.7.2
 #
 # @return An instance of the Book class.
 

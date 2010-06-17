@@ -8,7 +8,7 @@
 <h1>The xlrd Module</h1>
 <p /><p><b>A Python module for extracting data from MS Excel &#8482; spreadsheet files.
 <br /><br />
-Version 0.7.1 -- 2009-05-31
+Version 0.7.2a2 -- 2010-03-01
 </b></p>
 
 <h2>General information</h2>
@@ -304,7 +304,7 @@ Book.sheet_loaded(sheet_name_or_index) -&gt; a bool</p>
 <dd>
 <p>Utility function: (5, 7) =&gt; 'H6'</p>
 </dd>
-<dt><a id='formula.cellnameabs-function' name='formula.cellnameabs-function'><b>cellnameabs(rowx, colx)</b></a> [<a href='#formula.cellnameabs-function'>#</a>]</dt>
+<dt><a id='formula.cellnameabs-function' name='formula.cellnameabs-function'><b>cellnameabs(rowx, colx, r1c1=0)</b></a> [<a href='#formula.cellnameabs-function'>#</a>]</dt>
 <dd>
 <p>Utility function: (5, 7) =&gt; '$H$6'</p>
 </dd>
@@ -367,7 +367,7 @@ that Excel uses for error cells. Here are its contents:
 0x17: '#REF!',   # Illegal or deleted cell reference
 0x1D: '#NAME?',  # Wrong function or range name
 0x24: '#NUM!',   # Value range overflow
-0x2A: '#N/A!',   # Argument or function not available
+0x2A: '#N/A',    # Argument or function not available
 </pre></p>
 </dd>
 <dt><b>Font</b> (class)  [<a href='#formatting.Font-class'>#</a>]</dt>
@@ -390,7 +390,7 @@ considered a font, but also several other display attributes.</p>
 logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP, 
 file_contents=None, 
 encoding_override=None, 
-formatting_info=False, on_demand=False, 
+formatting_info=False, on_demand=False, ragged_rows=False, 
 )</b></a> [<a href='#__init__.open_workbook-function'>#</a>]</dt>
 <dd>
 <p>Open a spreadsheet file for data extraction.</p>
@@ -445,7 +445,18 @@ XF information is available for each cell.
 <dd>
 Governs whether sheets are all loaded initially or when demanded
 by the caller. Please refer back to the section &quot;Loading worksheets on demand&quot; for details.
--- New in version 0.7.1</dd>
+<br /> -- New in version 0.7.1
+
+</dd>
+<dt><i>ragged_rows</i></dt>
+<dd>
+False (the default) means all rows are padded out with empty cells so that all
+rows have the same size (Sheet.ncols). True means that there are no empty cells at the ends of rows.
+This can result in substantial memory savings if rows are of widely varying sizes. See also the
+Sheet.row_len() method.
+<br /> -- New in version 0.7.2
+
+</dd>
 <dt>Returns:</dt>
 <dd>
 An instance of the Book class.</dd>
@@ -461,13 +472,12 @@ An instance of the Book class.</dd>
 <p>Utility function:
 <br /> Ref3D((1, 4, 5, 20, 7, 10)) =&gt; 'Sheet2:Sheet3!$H$6:$J$20'
 </p></dd>
-<dt><a id='formula.rangename3drel-function' name='formula.rangename3drel-function'><b>rangename3drel(book, ref3d)</b></a> [<a href='#formula.rangename3drel-function'>#</a>]</dt>
+<dt><a id='formula.rangename3drel-function' name='formula.rangename3drel-function'><b>rangename3drel(book, ref3d, browx=None, bcolx=None, r1c1=0)</b></a> [<a href='#formula.rangename3drel-function'>#</a>]</dt>
 <dd>
 <p>Utility function:
 <br /> Ref3D(coords=(0, 1, -32, -22, -13, 13), relflags=(0, 0, 1, 1, 1, 1))
-=&gt; 'Sheet1![@-13,#-32]:[@+12,#-23]'
-where '@' refers to the current or base column and '#'
-refers to the current or base row.
+R1C1 mode =&gt; 'Sheet1!R[-32]C[-13]:R[-23]C[12]'
+A1 mode =&gt; depends on base cell (browx, bcolx)
 </p></dd>
 <dt><b>Ref3D(atuple)</b> (class) [<a href='#formula.Ref3D-class'>#</a>]</dt>
 <dd>
@@ -475,7 +485,7 @@ refers to the current or base row.
 of one or more cells.</p>
 <p>For more information about this class, see <a href='#formula.Ref3D-class'><i>The Ref3D Class</i></a>.</p>
 </dd>
-<dt><b>Rowinfo</b> (class)  [<a href='#sheet.Rowinfo-class'>#</a>]</dt>
+<dt><b>Rowinfo()</b> (class) [<a href='#sheet.Rowinfo-class'>#</a>]</dt>
 <dd>
 <p>Height and default formatting information that applies to a row in a sheet.</p>
 <p>For more information about this class, see <a href='#sheet.Rowinfo-class'><i>The Rowinfo Class</i></a>.</p>
@@ -1318,61 +1328,41 @@ a reference has been noticed: a 2D reference located in the "current sheet".
 </dl>
 <h2><a id='sheet.Rowinfo-class' name='sheet.Rowinfo-class'>The Rowinfo Class</a></h2>
 <dl>
-<dt><b>Rowinfo</b> (class)  [<a href='#sheet.Rowinfo-class'>#</a>]</dt>
+<dt><b>Rowinfo()</b> (class) [<a href='#sheet.Rowinfo-class'>#</a>]</dt>
 <dd>
 <p>Height and default formatting information that applies to a row in a sheet.
 Derived from ROW records.
 <br /> -- New in version 0.6.1
-</p></dd>
-<dt><a id='sheet.Rowinfo.additional_space_above-attribute' name='sheet.Rowinfo.additional_space_above-attribute'><b>additional_space_above</b></a> [<a href='#sheet.Rowinfo.additional_space_above-attribute'>#</a>]</dt>
-<dd>
-<p>This flag is set, if the upper border of at least one cell in this row
+
+height: Height of the row, in twips. One twip == 1/20 of a point. <br />
+
+has_default_height: 0 = Row has custom height; 1 = Row has default height. <br />
+
+outline_level: Outline level of the row (0 to 7) <br />
+
+outline_group_starts_ends: 1 = Outline group starts or ends here (depending on where the
+outline buttons are located, see WSBOOL record [TODO ??]),
+<i>and</i> is collapsed <br />
+
+hidden: 1 = Row is hidden (manually, or by a filter or outline group) <br />
+
+height_mismatch: 1 = Row height and default font height do not match <br />
+
+has_default_xf_index: 1 = the xf_index attribute is usable; 0 = ignore it <br />
+
+xf_index: Index to default XF record for empty cells in this row.
+Don't use this if has_default_xf_index == 0. <br />
+
+additional_space_above: This flag is set, if the upper border of at least one cell in this row
 or if the lower border of at least one cell in the row above is
 formatted with a thick line style. Thin and medium line styles are not
-taken into account.</p>
-</dd>
-<dt><a id='sheet.Rowinfo.additional_space_below-attribute' name='sheet.Rowinfo.additional_space_below-attribute'><b>additional_space_below</b></a> [<a href='#sheet.Rowinfo.additional_space_below-attribute'>#</a>]</dt>
-<dd>
-<p>This flag is set, if the lower border of at least one cell in this row
+taken into account. <br />
+
+additional_space_below: This flag is set, if the lower border of at least one cell in this row
 or if the upper border of at least one cell in the row below is
 formatted with a medium or thick line style. Thin line styles are not
-taken into account.</p>
-</dd>
-<dt><a id='sheet.Rowinfo.has_default_height-attribute' name='sheet.Rowinfo.has_default_height-attribute'><b>has_default_height</b></a> [<a href='#sheet.Rowinfo.has_default_height-attribute'>#</a>]</dt>
-<dd>
-<p>0 = Row has custom height; 1 = Row has default height</p>
-</dd>
-<dt><a id='sheet.Rowinfo.has_default_xf_index-attribute' name='sheet.Rowinfo.has_default_xf_index-attribute'><b>has_default_xf_index</b></a> [<a href='#sheet.Rowinfo.has_default_xf_index-attribute'>#</a>]</dt>
-<dd>
-<p>1 = the xf_index attribute is usable; 0 = ignore it</p>
-</dd>
-<dt><a id='sheet.Rowinfo.height-attribute' name='sheet.Rowinfo.height-attribute'><b>height</b></a> [<a href='#sheet.Rowinfo.height-attribute'>#</a>]</dt>
-<dd>
-<p>Height of the row, in twips. One twip == 1/20 of a point</p>
-</dd>
-<dt><a id='sheet.Rowinfo.height_mismatch-attribute' name='sheet.Rowinfo.height_mismatch-attribute'><b>height_mismatch</b></a> [<a href='#sheet.Rowinfo.height_mismatch-attribute'>#</a>]</dt>
-<dd>
-<p>1 = Row height and default font height do not match</p>
-</dd>
-<dt><a id='sheet.Rowinfo.hidden-attribute' name='sheet.Rowinfo.hidden-attribute'><b>hidden</b></a> [<a href='#sheet.Rowinfo.hidden-attribute'>#</a>]</dt>
-<dd>
-<p>1 = Row is hidden (manually, or by a filter or outline group)</p>
-</dd>
-<dt><a id='sheet.Rowinfo.outline_group_starts_ends-attribute' name='sheet.Rowinfo.outline_group_starts_ends-attribute'><b>outline_group_starts_ends</b></a> [<a href='#sheet.Rowinfo.outline_group_starts_ends-attribute'>#</a>]</dt>
-<dd>
-<p>1 = Outline group starts or ends here (depending on where the
-outline buttons are located, see WSBOOL record [TODO ??]),
-<i>and</i> is collapsed
+taken into account. <br />
 </p></dd>
-<dt><a id='sheet.Rowinfo.outline_level-attribute' name='sheet.Rowinfo.outline_level-attribute'><b>outline_level</b></a> [<a href='#sheet.Rowinfo.outline_level-attribute'>#</a>]</dt>
-<dd>
-<p>Outline level of the row</p>
-</dd>
-<dt><a id='sheet.Rowinfo.xf_index-attribute' name='sheet.Rowinfo.xf_index-attribute'><b>xf_index</b></a> [<a href='#sheet.Rowinfo.xf_index-attribute'>#</a>]</dt>
-<dd>
-<p>Index to default XF record for empty cells in this row.
-Don't use this if has_default_xf_index == 0.</p>
-</dd>
 </dl>
 <h2><a id='sheet.Sheet-class' name='sheet.Sheet-class'>The Sheet Class</a></h2>
 <dl>
@@ -1515,6 +1505,25 @@ For the default hierarchy, refer to the Colinfo class above.
 If no such record, treat as all bits zero.
 Applies to BIFF4-7 only. See docs of Colinfo class for discussion.</p>
 </dd>
+<dt><a id='sheet.Sheet.has_pane_record-attribute' name='sheet.Sheet.has_pane_record-attribute'><b>has_pane_record</b></a> [<a href='#sheet.Sheet.has_pane_record-attribute'>#</a>]</dt>
+<dd>
+<p>Boolean specifying if a PANE record was present, ignore unless you're xlutils.copy</p>
+</dd>
+<dt><a id='sheet.Sheet.horizontal_page_breaks-attribute' name='sheet.Sheet.horizontal_page_breaks-attribute'><b>horizontal_page_breaks</b></a> [<a href='#sheet.Sheet.horizontal_page_breaks-attribute'>#</a>]</dt>
+<dd>
+<p>A list of the horizontal page breaks in this sheet.
+Breaks are tuples in the form (index of row after break, start col index, end col index).
+Populated only if open_workbook(..., formatting_info=True).
+<br /> -- New in version 0.7.2
+</p></dd>
+<dt><a id='sheet.Sheet.horz_split_first_visible-attribute' name='sheet.Sheet.horz_split_first_visible-attribute'><b>horz_split_first_visible</b></a> [<a href='#sheet.Sheet.horz_split_first_visible-attribute'>#</a>]</dt>
+<dd>
+<p>Index of first visible row in bottom frozen/split pane</p>
+</dd>
+<dt><a id='sheet.Sheet.horz_split_pos-attribute' name='sheet.Sheet.horz_split_pos-attribute'><b>horz_split_pos</b></a> [<a href='#sheet.Sheet.horz_split_pos-attribute'>#</a>]</dt>
+<dd>
+<p>Number of rows in top pane (frozen panes; for split panes, see comments below in code)</p>
+</dd>
 <dt><a id='sheet.Sheet.merged_cells-attribute' name='sheet.Sheet.merged_cells-attribute'><b>merged_cells</b></a> [<a href='#sheet.Sheet.merged_cells-attribute'>#</a>]</dt>
 <dd>
 <p>List of address ranges of cells which have been merged.
@@ -1540,7 +1549,9 @@ for crange in thesheet.merged_cells:
 </dd>
 <dt><a id='sheet.Sheet.ncols-attribute' name='sheet.Sheet.ncols-attribute'><b>ncols</b></a> [<a href='#sheet.Sheet.ncols-attribute'>#</a>]</dt>
 <dd>
-<p>Number of columns in sheet. A column index is in range(thesheet.ncols).</p>
+<p>Nominal number of columns in sheet. It is 1 + the maximum column index
+found, ignoring empty cells. See also open_workbook(,,,ragged_rows=???)
+and Sheet.row_len(row_index).</p>
 </dd>
 <dt><a id='sheet.Sheet.nrows-attribute' name='sheet.Sheet.nrows-attribute'><b>nrows</b></a> [<a href='#sheet.Sheet.nrows-attribute'>#</a>]</dt>
 <dd>
@@ -1555,6 +1566,13 @@ for crange in thesheet.merged_cells:
 <p>List of address ranges of cells containing row labels.
 For more details, see <i>col_label_ranges</i> above.
 <br /> -- New in version 0.6.0
+</p></dd>
+<dt><a id='sheet.Sheet.row_len-method' name='sheet.Sheet.row_len-method'><b>row_len(rowx)</b></a> [<a href='#sheet.Sheet.row_len-method'>#</a>]</dt>
+<dd>
+<p>Returns the effective number of cells in the given row. For use with
+open_workbook(..., ragged_rows=True) which is likely to produce rows
+with fewer than Sheet.ncols cells.
+<br /> -- New in version 0.7.2
 </p></dd>
 <dt><a id='sheet.Sheet.row_slice-method' name='sheet.Sheet.row_slice-method'><b>row_slice(rowx, start_colx=0, end_colx=None)</b></a> [<a href='#sheet.Sheet.row_slice-method'>#</a>]</dt>
 <dd>
@@ -1577,6 +1595,10 @@ to have missing entries -- at least one source of XLS files doesn't
 bother writing ROW records.
 <br /> -- New in version 0.6.1
 </p></dd>
+<dt><a id='sheet.Sheet.split_active_pane-attribute' name='sheet.Sheet.split_active_pane-attribute'><b>split_active_pane</b></a> [<a href='#sheet.Sheet.split_active_pane-attribute'>#</a>]</dt>
+<dd>
+<p>Frozen panes: ignore it. Split panes: explanation and diagrams in OOo docs.</p>
+</dd>
 <dt><a id='sheet.Sheet.standardwidth-attribute' name='sheet.Sheet.standardwidth-attribute'><b>standardwidth</b></a> [<a href='#sheet.Sheet.standardwidth-attribute'>#</a>]</dt>
 <dd>
 <p>Default column width from STANDARDWIDTH record, else None.
@@ -1585,6 +1607,21 @@ From the OOo docs:<br />
 character, using default font (first FONT record in the file)."""<br />
 For the default hierarchy, refer to the Colinfo class above.
 <br /> -- New in version 0.6.1
+</p></dd>
+<dt><a id='sheet.Sheet.vert_split_first_visible-attribute' name='sheet.Sheet.vert_split_first_visible-attribute'><b>vert_split_first_visible</b></a> [<a href='#sheet.Sheet.vert_split_first_visible-attribute'>#</a>]</dt>
+<dd>
+<p>Index of first visible column in right frozen/split pane</p>
+</dd>
+<dt><a id='sheet.Sheet.vert_split_pos-attribute' name='sheet.Sheet.vert_split_pos-attribute'><b>vert_split_pos</b></a> [<a href='#sheet.Sheet.vert_split_pos-attribute'>#</a>]</dt>
+<dd>
+<p>Number of columns in left pane (frozen panes; for split panes, see comments below in code)</p>
+</dd>
+<dt><a id='sheet.Sheet.vertical_page_breaks-attribute' name='sheet.Sheet.vertical_page_breaks-attribute'><b>vertical_page_breaks</b></a> [<a href='#sheet.Sheet.vertical_page_breaks-attribute'>#</a>]</dt>
+<dd>
+<p>A list of the vertical page breaks in this sheet.
+Breaks are tuples in the form (index of col after break, start row index, end row index).
+Populated only if open_workbook(..., formatting_info=True).
+<br /> -- New in version 0.7.2
 </p></dd>
 <dt><a id='sheet.Sheet.visibility-attribute' name='sheet.Sheet.visibility-attribute'><b>visibility</b></a> [<a href='#sheet.Sheet.visibility-attribute'>#</a>]</dt>
 <dd>
