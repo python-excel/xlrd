@@ -1229,7 +1229,7 @@ class Sheet(BaseObject):
                 elif rc == XL_BLANK_B2:
                     if not fmt_info: continue
                     rowx, colx, cell_attr = local_unpack('<HH3s', data[:7])
-                    self_put__cell(rowx, colx, XL_CELL_BLANK, '', self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
+                    self_put_cell(rowx, colx, XL_CELL_BLANK, '', self.fixed_BIFF2_xfindex(cell_attr, rowx, colx))
                 elif rc == XL_EFONT:
                     bk.handle_efont(data)
                 elif rc == XL_ROW_B2:
