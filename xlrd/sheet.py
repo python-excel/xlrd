@@ -233,6 +233,21 @@ class Sheet(BaseObject):
     # Boolean specifying if a PANE record was present, ignore unless you're xlutils.copy
     has_pane_record = 0
 
+    ##
+    # A list of the horizontal page breaks in this sheet.
+    # Breaks are tuples in the form (<index of row after break>, <start col index>, <end col index>).
+    # Populated only if open_workbook(..., formatting_info=True).
+    # <br /> -- New in version 0.7.2
+    horizontal_page_breaks = []
+
+    ##
+    # A list of the vertical page breaks in this sheet.
+    # Breaks are tuples in the form (<index of col after break>, <start row index>, <end row index>).
+    # Populated only if open_workbook(..., formatting_info=True).
+    # <br /> -- New in version 0.7.2
+    vertical_page_breaks = []
+
+
     def __init__(self, book, position, name, number):
         self.book = book
         self.biff_version = book.biff_version
@@ -278,6 +293,8 @@ class Sheet(BaseObject):
         self.col_label_ranges = []
         self.row_label_ranges = []
         self.merged_cells = []
+        self.horizontal_page_breaks = []
+        self.vertical_page_breaks = []
         self._xf_index_stats = [0, 0, 0, 0]
         self.visibility = book._sheet_visibility[number] # from BOUNDSHEET record
         for attr, defval in _WINDOW2_options:
@@ -1185,6 +1202,32 @@ class Sheet(BaseObject):
                 self.split_active_pane,
                 ) = unpack("<HHHHB", data[:9])
                 self.has_pane_record = 1
+            elif rc == XL_HORIZONTALPAGEBREAKS:
+                if not fmt_info: continue
+                num_breaks, = local_unpack("<H", data[:2])
+                assert num_breaks * (2 + 4 * (bv >= 80)) + 2 == data_len
+                pos = 2
+                if bv < 80:
+                    while pos < data_len:
+                        self.horizontal_page_breaks.append((local_unpack("<H", data[pos:pos+2])[0], 0, 255))
+                        pos += 2
+                else:
+                    while pos < data_len:
+                        self.horizontal_page_breaks.append(local_unpack("<HHH", data[pos:pos+6]))
+                        pos += 6
+            elif rc == XL_VERTICALPAGEBREAKS:
+                if not fmt_info: continue
+                num_breaks, = local_unpack("<H", data[:2])
+                assert num_breaks * (2 + 4 * (bv >= 80)) + 2 == data_len
+                pos = 2
+                if bv < 80:
+                    while pos < data_len:
+                        self.vertical_page_breaks.append((local_unpack("<H", data[pos:pos+2])[0], 0, 65535))
+                        pos += 2
+                else:
+                    while pos < data_len:
+                        self.vertical_page_breaks.append(local_unpack("<HHH", data[pos:pos+6]))
+                        pos += 6
             #### all of the following are for BIFF <= 4W
             elif bv <= 45:
                 if rc == XL_FORMAT or rc == XL_FORMAT2:
