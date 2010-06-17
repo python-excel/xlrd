@@ -683,6 +683,14 @@ def check_colour_indexes_in_obj(book, obj, orig_index):
                 "*** xf #%d : %s.%s =  0x%04x (unknown)" \
                 % (orig_index, oname, attr, nobj)
 
+def fill_in_standard_formats(book):
+    for x in std_format_code_types.keys():
+        if not book.format_map.has_key(x):
+            ty = std_format_code_types[x]
+            fmt_str = std_format_strings[x]
+            fmtobj = Format(x, ty, fmt_str)
+            book.format_map[x] = fmtobj
+
 def handle_xf(self, data):
     ### self is a Book instance
     # DEBUG = 0
@@ -703,12 +711,7 @@ def handle_xf(self, data):
     # fill in the known standard formats
     if bv >= 50 and not self.xfcount:
         # i.e. do this once before we process the first XF record
-        for x in std_format_code_types.keys():
-            if not self.format_map.has_key(x):
-                ty = std_format_code_types[x]
-                fmt_str = std_format_strings[x]
-                fmtobj = Format(x, ty, fmt_str)
-                self.format_map[x] = fmtobj
+        fill_in_standard_formats(self)
     if bv >= 80:
         unpack_fmt = '<HHHBBBBIiH'
         (xf.font_index, xf.format_key, pkd_type_par,
