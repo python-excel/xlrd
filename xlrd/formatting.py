@@ -1,16 +1,16 @@
-# -*- coding:cp1252 -*-
+# -*- coding: cp1252 -*-
 
 ##
 # Module for formatting information.
 #
-# <p>Copyright © 2005-2008 Stephen John Machin, Lingfo Pty Ltd</p>
-# <p>Copyright © 2005-2009 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2010 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under
 # a BSD-style licence.</p>
 ##
 
 # No part of the content of this file was derived from the works of David Giffin.
 
+# 2010-10-30 SJM Added space after colon in "# coding" line to work around IBM iSeries Python bug
 # 2009-05-31 SJM Fixed problem with non-zero reserved bits in some STYLE records in Mac Excel files
 # 2008-08-03 SJM Ignore PALETTE record when Book.formatting_info is false
 # 2008-08-03 SJM Tolerate up to 4 bytes trailing junk on PALETTE record
