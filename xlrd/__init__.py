@@ -949,7 +949,7 @@ class Book(BaseObject):
         self.format_list = []
         self.xfcount = 0
         self.actualfmtcount = 0 # number of FORMAT records seen so far
-        self._xf_index_to_xl_type_map = {}
+        self._xf_index_to_xl_type_map = {0: XL_CELL_NUMBER}
         self._xf_epilogue_done = 0
         self.xf_list = []
         self.font_list = []

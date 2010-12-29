@@ -739,7 +739,7 @@ class Sheet(BaseObject):
                 # RSTRING has extra richtext info at the end, but we ignore it.
                 rowx, colx, xf_index = local_unpack('<HHH', data[0:6])
                 if bv < BIFF_FIRST_UNICODE:
-                    strg = unpack_string(data, 6, bk.encoding or bk.derive_encoding, lenlen=2)
+                    strg = unpack_string(data, 6, bk.encoding or bk.derive_encoding(), lenlen=2)
                 else:
                     strg = unpack_unicode(data, 6, lenlen=2)
                 self_put_cell(rowx, colx, XL_CELL_TEXT, strg, xf_index)
@@ -867,7 +867,7 @@ class Sheet(BaseObject):
                                 raise XLRDError("Expected STRING record; found 0x%04x" % rc2)
                         # if DEBUG: print "STRING: data=%r BIFF=%d cp=%d" % (data2, self.biff_version, bk.encoding)
                         if self.biff_version < BIFF_FIRST_UNICODE:
-                            strg = unpack_string(data2, 0, bk.encoding or bk.derive_encoding, lenlen=1 + int(bv > 20))
+                            strg = unpack_string(data2, 0, bk.encoding or bk.derive_encoding(), lenlen=1 + int(bv > 20))
                         else:
                             strg = unpack_unicode(data2, 0, lenlen=2)
                         self.put_cell(rowx, colx, XL_CELL_TEXT, strg, xf_index)
@@ -1429,7 +1429,7 @@ class Sheet(BaseObject):
             elif not (10 <= zoom <= 400):
                 if blah:
                     print >> self.logfile, (
-                        "WARNING *** WINDOW2 rcd sheet %d: Bad cached_page_break_preview_mag_factor: %d"
+                        "WARNING *** WINDOW2 rcd sheet %r: Bad cached_page_break_preview_mag_factor: %r"
                         % (self.number, self.cached_page_break_preview_mag_factor)
                         )
                 zoom = self.cooked_normal_view_mag_factor
