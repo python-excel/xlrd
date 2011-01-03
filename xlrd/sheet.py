@@ -145,6 +145,26 @@ class Sheet(BaseObject):
     #             # the range.
     # </pre>
     merged_cells = []
+    
+    ##
+    # Mapping of (rowx, colx) to list of (offset, font_index) tuples. The offset
+    # defines where in the string the font begins to be used.
+    # Offsets are expected to be in ascending order.
+    # If the first offset is not zero, the meaning is that the cell's XF's font should
+    # be used from offset 0.
+    # <br> This is a sparse mapping. Meaning for cells that do not contain any 
+    # rich text or cells that contain numbers, there will be no entry in the mapping.
+    # <br>How to use:
+    # <pre>
+    # runlist = thesheet.rich_text_runlist_map.get((rowx, colx))
+    # if runlist:
+    #     for offset, font_index in runlist:
+    #         # do work here.
+    #         pass
+    # </pre>
+    # Populated only if open_workbook(formatting_info=True).
+    # <br /> -- New in version 0.7.2
+    rich_text_runlist_map = {}    
 
     ##
     # Default column width from DEFCOLWIDTH record, else None.
@@ -295,6 +315,7 @@ class Sheet(BaseObject):
         self.col_label_ranges = []
         self.row_label_ranges = []
         self.merged_cells = []
+        self.rich_text_runlist_map = {}
         self.horizontal_page_breaks = []
         self.vertical_page_breaks = []
         self._xf_index_stats = [0, 0, 0, 0]
@@ -715,6 +736,7 @@ class Sheet(BaseObject):
         bk_get_record_parts = bk.get_record_parts
         bv = self.biff_version
         fmt_info = self.formatting_info
+        do_sst_rich_text = fmt_info and bk._rich_text_runlist_map
         rowinfo_sharing_dict = {}
         eof_found = 0
         while 1:
@@ -735,14 +757,39 @@ class Sheet(BaseObject):
                 rowx, colx, xf_index, sstindex = local_unpack('<HHHi', data)
                 # print "LABELSST", rowx, colx, sstindex, bk._sharedstrings[sstindex]
                 self_put_cell(rowx, colx, XL_CELL_TEXT, bk._sharedstrings[sstindex], xf_index)
-            elif rc == XL_LABEL or rc == XL_RSTRING:
-                # RSTRING has extra richtext info at the end, but we ignore it.
+                if do_sst_rich_text:
+                    runlist = bk._rich_text_runlist_map.get(sstindex)
+                    if runlist:
+                        self.rich_text_runlist_map[(rowx, colx)] = runlist
+            elif rc == XL_LABEL:
                 rowx, colx, xf_index = local_unpack('<HHH', data[0:6])
                 if bv < BIFF_FIRST_UNICODE:
                     strg = unpack_string(data, 6, bk.encoding or bk.derive_encoding(), lenlen=2)
                 else:
                     strg = unpack_unicode(data, 6, lenlen=2)
                 self_put_cell(rowx, colx, XL_CELL_TEXT, strg, xf_index)
+            elif rc == XL_RSTRING:
+                rowx, colx, xf_index = local_unpack('<HHH', data[0:6])
+                if bv < BIFF_FIRST_UNICODE:
+                    strg, pos = unpack_string_update_pos(data, 6, bk.encoding or bk.derive_encoding(), lenlen=2)
+                    nrt = ord(data[pos])
+                    pos += 1
+                    runlist = []
+                    for _unused in xrange(nrt):
+                        runlist.append(unpack('<BB', data[pos:pos+2]))
+                        pos += 2
+                    assert pos == len(data)
+                else:
+                    strg, pos = unpack_unicode_update_pos(data, 6, lenlen=2)
+                    nrt = unpack('<H', data[pos:pos+2])[0]
+                    pos += 2
+                    runlist = []
+                    for _unused in xrange(nrt):
+                        runlist.append(unpack('<HH', data[pos:pos+4]))
+                        pos += 4
+                    assert pos == len(data)
+                self_put_cell(rowx, colx, XL_CELL_TEXT, strg, xf_index)
+                self.rich_text_runlist_map[(rowx, colx)] = runlist
             elif rc == XL_RK:
                 rowx, colx, xf_index = local_unpack('<HHH', data[:6])
                 d = unpack_RK(data[6:10])

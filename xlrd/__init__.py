@@ -2,7 +2,7 @@
 
 __VERSION__ = "0.7.2a2" # 2010-03-01
 
-# <p>Copyright © 2005-2010 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2011 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
@@ -836,6 +836,7 @@ class Book(BaseObject):
         self.nsheets = 0
         self._sh_abs_posn = [] # sheet's absolute position in the stream
         self._sharedstrings = []
+        self._rich_text_runlist_map = {}
         self.raw_user_name = False
         self._sheethdr_count = 0 # BIFF 4W only
         self.builtinfmtcount = -1 # unknown as yet. BIFF 3, 4S, 4W
@@ -958,6 +959,7 @@ class Book(BaseObject):
         self._resources_released = 1
         del self.mem
         del self._sharedstrings
+        del self._rich_text_runlist_map
 
     def get2bytes(self):
         pos = self._position
@@ -1453,7 +1455,9 @@ class Book(BaseObject):
             if DEBUG >= 2:
                 fprintf(self.logfile, "CONTINUE: adding %d bytes to SST -> %d\n", nb, nbt)
             strlist.append(data)
-        self._sharedstrings = unpack_SST_table(strlist, uniquestrings)
+        self._sharedstrings, rt_runlist = unpack_SST_table(strlist, uniquestrings)
+        if self.formatting_info:
+            self._rich_text_runlist_map = rt_runlist        
         if DEBUG:
             t1 = time.time()
             print >> self.logfile, "SST processing took %.2f seconds" % (t1 - t0, )
@@ -1665,6 +1669,7 @@ def unpack_SST_table(datatab, nstrings):
     pos = 8
     strings = []
     strappend = strings.append
+    richtext_runs = {}
     local_unpack = unpack
     local_min = min
     local_ord = ord
@@ -1674,12 +1679,13 @@ def unpack_SST_table(datatab, nstrings):
         pos += 2
         options = local_ord(data[pos])
         pos += 1
-        rtsz = 0
+        rtcount = 0
+        phosz = 0
         if options & 0x08: # richtext
-            rtsz = 4 * local_unpack('<H', data[pos:pos+2])[0]
+            rtcount = local_unpack('<H', data[pos:pos+2])[0]
             pos += 2
         if options & 0x04: # phonetic
-            rtsz += local_unpack('<i', data[pos:pos+4])[0]
+            phosz = local_unpack('<i', data[pos:pos+4])[0]
             pos += 4
         accstrg = u''
         charsgot = 0
@@ -1715,8 +1721,20 @@ def unpack_SST_table(datatab, nstrings):
             datalen = len(data)
             options = local_ord(data[0])
             pos = 1
-        pos += rtsz # size of richtext & phonetic stuff to skip
-        # also allow for the rich text etc being split ...
+        
+        if rtcount:
+            runs = []
+            for runindex in xrange(rtcount):
+                if pos == datalen:
+                    pos = 0
+                    datainx += 1
+                    data = datatab[datainx]
+                    datalen = len(data)
+                runs.append(local_unpack("<HH", data[pos:pos+4]))
+                pos += 4
+            richtext_runs[len(strings)] = runs
+                
+        pos += phosz # size of the phonetic stuff to skip
         if pos >= datalen:
             # adjust to correct position in next record
             pos = pos - datalen
@@ -1727,4 +1745,4 @@ def unpack_SST_table(datatab, nstrings):
             else:
                 assert _unused_i == nstrings - 1
         strappend(accstrg)
-    return strings
+    return strings, richtext_runs
