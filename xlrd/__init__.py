@@ -424,59 +424,61 @@ def open_workbook(filename=None,
         if orig_gc_enabled:
             gc.disable()
     bk = Book()
-    bk.biff2_8_load(
-        filename=filename, file_contents=file_contents,
-        logfile=logfile, verbosity=verbosity, pickleable=pickleable, use_mmap=use_mmap,
-        encoding_override=encoding_override,
-        formatting_info=formatting_info,
-        on_demand=on_demand,
-        ragged_rows=ragged_rows,
-        )
-    t1 = time.clock()
-    bk.load_time_stage_1 = t1 - t0
-    biff_version = bk.getbof(XL_WORKBOOK_GLOBALS)
-    if not biff_version:
-        raise XLRDError("Can't determine file's BIFF version")
-    if biff_version not in SUPPORTED_VERSIONS:
-        raise XLRDError(
-            "BIFF version %s is not supported"
-            % biff_text_from_num[biff_version]
+    try:
+        bk.biff2_8_load(
+            filename=filename, file_contents=file_contents,
+            logfile=logfile, verbosity=verbosity, pickleable=pickleable, use_mmap=use_mmap,
+            encoding_override=encoding_override,
+            formatting_info=formatting_info,
+            on_demand=on_demand,
+            ragged_rows=ragged_rows,
             )
-    bk.biff_version = biff_version
-    if biff_version <= 40:
-        # no workbook globals, only 1 worksheet
-        if on_demand:
+        t1 = time.clock()
+        bk.load_time_stage_1 = t1 - t0
+        biff_version = bk.getbof(XL_WORKBOOK_GLOBALS)
+        if not biff_version:
+            raise XLRDError("Can't determine file's BIFF version")
+        if biff_version not in SUPPORTED_VERSIONS:
+            raise XLRDError(
+                "BIFF version %s is not supported"
+                % biff_text_from_num[biff_version]
+                )
+        bk.biff_version = biff_version
+        if biff_version <= 40:
+            # no workbook globals, only 1 worksheet
+            if on_demand:
+                fprintf(bk.logfile,
+                    "*** WARNING: on_demand is not supported for this Excel version.\n"
+                    "*** Setting on_demand to False.\n")
+                bk.on_demand = on_demand = False
+            bk.fake_globals_get_sheet()
+        elif biff_version == 45:
+            # worksheet(s) embedded in global stream
+            bk.parse_globals()
+            if on_demand:
+                fprintf(bk.logfile, "*** WARNING: on_demand is not supported for this Excel version.\n"
+                                    "*** Setting on_demand to False.\n")
+                bk.on_demand = on_demand = False
+        else:
+            bk.parse_globals()
+            bk._sheet_list = [None for sh in bk._sheet_names]
+            if not on_demand:
+                bk.get_sheets()
+        bk.nsheets = len(bk._sheet_list)
+        if biff_version == 45 and bk.nsheets > 1:
             fprintf(bk.logfile,
-                "*** WARNING: on_demand is not supported for this Excel version.\n"
-                "*** Setting on_demand to False.\n")
-            bk.on_demand = on_demand = False
-        bk.fake_globals_get_sheet()
-    elif biff_version == 45:
-        # worksheet(s) embedded in global stream
-        bk.parse_globals()
-        if on_demand:
-            fprintf(bk.logfile, "*** WARNING: on_demand is not supported for this Excel version.\n"
-                                "*** Setting on_demand to False.\n")
-            bk.on_demand = on_demand = False
-    else:
-        bk.parse_globals()
-        bk._sheet_list = [None for sh in bk._sheet_names]
+                "*** WARNING: Excel 4.0 workbook (.XLW) file contains %d worksheets.\n"
+                "*** Book-level data will be that of the last worksheet.\n",
+                bk.nsheets
+                )
+        if TOGGLE_GC:
+            if orig_gc_enabled:
+                gc.enable()
+        t2 = time.clock()
+        bk.load_time_stage_2 = t2 - t1
+    finally:
         if not on_demand:
-            bk.get_sheets()
-    bk.nsheets = len(bk._sheet_list)
-    if biff_version == 45 and bk.nsheets > 1:
-        fprintf(bk.logfile,
-            "*** WARNING: Excel 4.0 workbook (.XLW) file contains %d worksheets.\n"
-            "*** Book-level data will be that of the last worksheet.\n",
-            bk.nsheets
-            )
-    if not on_demand:
-        bk.release_resources()
-    if TOGGLE_GC:
-        if orig_gc_enabled:
-            gc.enable()
-    t2 = time.clock()
-    bk.load_time_stage_2 = t2 - t1
+            bk.release_resources()
     return bk
 
 ##
@@ -859,6 +861,8 @@ class Book(BaseObject):
         self.palette_record = []
         self.xf_list = []
         self.style_name_map = {}
+        self.mem = ""
+        self.filestr = ""
 
     def biff2_8_load(self, filename=None, file_contents=None,
         logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
@@ -877,7 +881,6 @@ class Book(BaseObject):
         self.on_demand = on_demand
         self.ragged_rows = ragged_rows
 
-        need_close_filestr = 0
         if not file_contents:
             if python_version < (2, 2) and self.use_mmap:
                 # need to open for update
@@ -885,43 +888,47 @@ class Book(BaseObject):
             else:
                 open_mode = "rb"
             retry = False
+            f = None
             try:
-                f = open(filename, open_mode)
-            except IOError:
-                e, v = sys.exc_info()[:2]
-                if open_mode == "r+b" \
-                and (v.errno == 13 or v.strerror == "Permission denied"):
-                    # Maybe the file is read-only
-                    retry = True
-                    self.use_mmap = False
-                else:
-                    raise
-            if retry:
-                f = open(filename, "rb")
-            if self.use_mmap:
+                try:
+                    f = open(filename, open_mode)
+                except IOError:
+                    e, v = sys.exc_info()[:2]
+                    if open_mode == "r+b" \
+                    and (v.errno == 13 or v.strerror == "Permission denied"):
+                        # Maybe the file is read-only
+                        retry = True
+                        self.use_mmap = False
+                    else:
+                        raise
+                if retry:
+                    f = open(filename, "rb")
                 f.seek(0, 2) # EOF
                 size = f.tell()
                 f.seek(0, 0) # BOF
-                if python_version < (2, 2):
-                    filestr = mmap.mmap(f.fileno(), size)
+                if size == 0:
+                    raise XLRDError("File size is 0 bytes")
+                if self.use_mmap:
+                    if python_version < (2, 2):
+                        self.filestr = mmap.mmap(f.fileno(), size)
+                    else:
+                        self.filestr = mmap.mmap(f.fileno(), size, access=mmap.ACCESS_READ)
+                    self.stream_len = size
                 else:
-                    filestr = mmap.mmap(f.fileno(), size, access=mmap.ACCESS_READ)
-                need_close_filestr = 1
-                self.stream_len = size
-            else:
-                filestr = f.read()
-                self.stream_len = len(filestr)
-            f.close()
+                    self.filestr = f.read()
+                    self.stream_len = len(self.filestr)
+            finally:
+                if f: f.close()
         else:
-            filestr = file_contents
+            self.filestr = file_contents
             self.stream_len = len(file_contents)
 
         self.base = 0
-        if filestr[:8] != compdoc.SIGNATURE:
+        if self.filestr[:8] != compdoc.SIGNATURE:
             # got this one at the antique store
-            self.mem = filestr
+            self.mem = self.filestr
         else:
-            cd = compdoc.CompDoc(filestr, logfile=self.logfile)
+            cd = compdoc.CompDoc(self.filestr, logfile=self.logfile)
             if USE_FANCY_CD:
                 for qname in [u'Workbook', u'Book']:
                     self.mem, self.base, self.stream_len = cd.locate_named_stream(qname)
@@ -936,10 +943,10 @@ class Book(BaseObject):
                     raise XLRDError("Can't find workbook in OLE2 compound document")
                 self.stream_len = len(self.mem)
             del cd
-            if self.mem is not filestr:
-                if need_close_filestr:
-                    filestr.close()
-                del filestr
+            if self.mem is not self.filestr:
+                if hasattr(self.filestr, "close"):
+                    self.filestr.close()
+                self.filestr = ""
         self._position = self.base
         if DEBUG:
             print >> self.logfile, "mem: %s, base: %d, len: %d" % (type(self.mem), self.base, self.stream_len)
@@ -955,11 +962,19 @@ class Book(BaseObject):
         self.xf_list = []
         self.font_list = []
 
-    def release_resources(self):
+    def close(self):
         self._resources_released = 1
-        del self.mem
+        if hasattr(self.mem, "close"):
+            # must be a mmap.mmap object
+            self.mem.close()
+        self.mem = ""
+        if hasattr(self.filestr, "close"):
+            self.filestr.close()
+        self.filestr = ""
         del self._sharedstrings
         del self._rich_text_runlist_map
+
+    release_resources = close
 
     def get2bytes(self):
         pos = self._position
