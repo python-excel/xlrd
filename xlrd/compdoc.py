@@ -199,7 +199,7 @@ class CompDoc(object):
             actual_SAT_sectors += 1
             if actual_SAT_sectors > SAT_sectors_reqd:
                 print "[3]===>>>", mem_data_secs, nent, SAT_sectors_reqd, expected_MSATX_sectors, actual_MSATX_sectors, actual_SAT_sectors, msid
-            # assert actual_SAT_sectors <= SAT_sectors_reqd
+            assert actual_SAT_sectors <= SAT_sectors_reqd
             offset = 512 + sec_size * msid
             news = list(unpack(fmt, mem[offset:offset+sec_size]))
             self.SAT.extend(news)
@@ -409,7 +409,7 @@ class CompDoc(object):
         found_limit = int_floor_div(expected_stream_size + sec_size - 1, sec_size)
         while s >= 0:
             if self.seen[s]:
-                # print >> self.logfile, "_locate_stream(%s): seen" % qname; dump_list(self.seen, 20, self.logfile)
+                print >> self.logfile, "_locate_stream(%s): seen" % qname; dump_list(self.seen, 20, self.logfile)
                 raise CompDocError("%s corruption: seen[%d] == %d" % (qname, s, self.seen[s]))
             self.seen[s] = seen_id
             tot_found += 1

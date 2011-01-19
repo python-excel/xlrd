@@ -3,7 +3,7 @@
 ##
 # Module for formatting information.
 #
-# <p>Copyright © 2005-2010 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2011 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under
 # a BSD-style licence.</p>
 ##
@@ -408,16 +408,20 @@ std_format_strings = {
 
 fmt_code_ranges = [ # both-inclusive ranges of "standard" format codes
     # Source: the openoffice.org doc't
+    # and the OOXML spec Part 4, section 3.8.30
     ( 0,  0, FGE),
     ( 1, 13, FNU),
     (14, 22, FDT),
-    #### (27, 36, FDT), # Japanese dates -- not sure of reliability of this
+    (27, 36, FDT), # CJK date formats
     (37, 44, FNU),
     (45, 47, FDT),
     (48, 48, FNU),
     (49, 49, FTX),
-    ####(50, 58, FDT), # Japanese dates -- but Gnumeric assumes
-                       # built-in formats finish at 49, not at 163
+    # Gnumeric assumes (or assumed) that built-in formats finish at 49, not at 163
+    (50, 58, FDT), # CJK date formats
+    (59, 62, FNU), # Thai number (currency?) formats
+    (67, 70, FNU), # Thai number (currency?) formats
+    (71, 81, FDT), # Thai date formats
     ]
 
 std_format_code_types = {}
@@ -510,13 +514,15 @@ def is_date_format_string(book, fmt):
     if num_count and not date_count:
         return False
     if date_count:
-        fprintf(book.logfile,
-            'WARNING *** is_date_format: ambiguous d=%d n=%d fmt=%r\n',
-            date_count, num_count, fmt)
+        if book.verbosity:
+            fprintf(book.logfile,
+                'WARNING *** is_date_format: ambiguous d=%d n=%d fmt=%r\n',
+                date_count, num_count, fmt)
     elif not got_sep:
-        fprintf(book.logfile,
-            "WARNING *** format %r produces constant result\n",
-            fmt)
+        if book.verbosity:
+            fprintf(book.logfile,
+                "WARNING *** format %r produces constant result\n",
+                fmt)
     return date_count > num_count
 
 def handle_format(self, data, rectype=XL_FORMAT):
@@ -552,7 +558,7 @@ def handle_format(self, data, rectype=XL_FORMAT):
         std_ty = std_format_code_types.get(fmtkey, FUN)
         # print "std ty", std_ty
         is_date_c = std_ty == FDT
-        if 0 < fmtkey < 50 and (is_date_c ^ is_date_s):
+        if self.verbosity and 0 < fmtkey < 50 and (is_date_c ^ is_date_s):
             DEBUG = 2
             fprintf(self.logfile,
                 "WARNING *** Conflict between "
@@ -687,7 +693,10 @@ def fill_in_standard_formats(book):
     for x in std_format_code_types.keys():
         if not book.format_map.has_key(x):
             ty = std_format_code_types[x]
-            fmt_str = std_format_strings[x]
+            # Note: many standard format codes (mostly CJK date formats) have
+            # format strings that vary by locale; xlrd does not (yet)
+            # handle those; the type (date or numeric) is recorded but the fmt_str will be None.
+            fmt_str = std_format_strings.get(x)
             fmtobj = Format(x, ty, fmt_str)
             book.format_map[x] = fmtobj
 
@@ -950,13 +959,14 @@ def handle_xf(self, data):
         )
     # Now for some assertions ...
     if self.formatting_info:
-        if xf.is_style and xf.parent_style_index != 0x0FFF:
+        if self.verbosity and xf.is_style and xf.parent_style_index != 0x0FFF:
             msg = "WARNING *** XF[%d] is a style XF but parent_style_index is 0x%04x, not 0x0fff\n"
             fprintf(self.logfile, msg, xf.xf_index, xf.parent_style_index)
         check_colour_indexes_in_obj(self, xf, xf.xf_index)
     if not self.format_map.has_key(xf.format_key):
         msg = "WARNING *** XF[%d] unknown (raw) format key (%d, 0x%04x)\n"
-        fprintf(self.logfile, msg,
+        if self.verbosity:
+            fprintf(self.logfile, msg,
                 xf.xf_index, xf.format_key, xf.format_key)
         xf.format_key = 0
 
@@ -999,9 +1009,10 @@ def xf_epilogue(self):
         if xf.is_style:
             continue
         if not(0 <= xf.parent_style_index < num_xfs):
-            fprintf(self.logfile,
-                "WARNING *** XF[%d]: is_style=%d but parent_style_index=%d\n",
-                xf.xf_index, xf.is_style, xf.parent_style_index)
+            if blah1:
+                fprintf(self.logfile,
+                    "WARNING *** XF[%d]: is_style=%d but parent_style_index=%d\n",
+                    xf.xf_index, xf.is_style, xf.parent_style_index)
             # make it conform
             xf.parent_style_index = 0
         if self.biff_version >= 30:

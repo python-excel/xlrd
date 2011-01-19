@@ -1,7 +1,7 @@
 # -*- coding: cp1252 -*-
 
 ##
-# <p> Portions copyright © 2005-2010 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p> Portions copyright © 2005-2011 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
