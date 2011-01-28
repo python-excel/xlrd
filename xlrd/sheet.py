@@ -1448,7 +1448,7 @@ class Sheet(BaseObject):
         # When the user hits OK, it drops into the non-active view mode
         # but uses the magn from the active mode.
         # NOTE: definition of "valid" depends on mode ... see below
-        blah = DEBUG or self.verbosity >= 0
+        blah = DEBUG or self.verbosity > 0
         if self.show_in_page_break_preview:
             if self.scl_mag_factor is None: # no SCL record
                 self.cooked_page_break_preview_mag_factor = 100 # Yes, 100, not 60, NOT a typo
