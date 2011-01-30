@@ -236,7 +236,8 @@ import licences
 # <ul>
 #   <li>Rich text i.e. strings containing partial <b>bold</b> <i>italic</i>
 #       and <u>underlined</u> text, change of font inside a string, etc.
-#       See OOo docs s3.4 and s3.2</li>
+#       See OOo docs s3.4 and s3.2.
+#       <i> Rich text is included in version 0.7.2</i></li>
 #   <li>Asian phonetic text (known as "ruby"), used for Japanese furigana. See OOo docs
 #       s3.4.2 (p15)</li>
 #   <li>Conditional formatting. See OOo docs
@@ -286,6 +287,20 @@ import licences
 # <p>The caller may query the state of a sheet:
 # Book.sheet_loaded(sheet_name_or_index) -> a bool</p>
 #
+# <p> Book.release_resources() may used to save memory and close
+# any memory-mapped file before proceding to examine already-loaded
+# sheets. Once resources are released, no further sheets can be loaded.</p>
+#
+# <p> When using on-demand, it is advisable to ensure that
+# Book.release_resources() is always called even if an exception
+# is raised in your own code; otherwise if the input file has been
+# memory-mapped, the mmap.mmap object will not be closed and you will
+# not be able to access the physical file until your Python process
+# terminates. This can be done by calling Book.release_resources()
+# explicitly in the finally suite of a try/finally block.
+# New in xlrd 0.7.2: the Book object is a "context manager", so if
+# using Python 2.5 or later, you can wrap your code in a "with"
+# statement.</p>
 ##
 
 # 2010-03-01 SJM Added ragged_row functionality.
@@ -476,9 +491,12 @@ def open_workbook(filename=None,
                 gc.enable()
         t2 = time.clock()
         bk.load_time_stage_2 = t2 - t1
-    finally:
-        if not on_demand:
-            bk.release_resources()
+    except:
+        bk.release_resources()
+        raise
+    # normal exit
+    if not on_demand:
+        bk.release_resources()
     return bk
 
 ##
@@ -818,6 +836,34 @@ class Book(BaseObject):
             except ValueError:
                 raise XLRDError('No sheet named <%r>' % sheet_name_or_index)
         self._sheet_list[sheetx] = None
+        
+    ##
+    # This method has a dual purpose. You can call it to release
+    # memory-consuming objects and (possibly) a memory-mapped file
+    # (mmap.mmap object) when you have finished loading sheets in
+    # on_demand mode, but still require the Book object to examine the
+    # loaded sheets. It is also called automatically (a) when open_workbook
+    # raises an exception and (b) if you are using a "with" statement, when 
+    # the "with" block is exited. Calling this method multiple times on the 
+    # same object has no ill effect.
+    def release_resources(self):
+        self._resources_released = 1
+        if hasattr(self.mem, "close"):
+            # must be a mmap.mmap object
+            self.mem.close()
+        self.mem = None
+        if hasattr(self.filestr, "close"):
+            self.filestr.close()
+        self.filestr = None
+        self._sharedstrings = None
+        self._rich_text_runlist_map = None
+    
+    def __enter__(self):
+        return self
+        
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.release_resources()
+        # return false        
 
     ##
     # A mapping from (lower_case_name, scope) to a single Name object.
@@ -961,20 +1007,6 @@ class Book(BaseObject):
         self._xf_epilogue_done = 0
         self.xf_list = []
         self.font_list = []
-
-    def close(self):
-        self._resources_released = 1
-        if hasattr(self.mem, "close"):
-            # must be a mmap.mmap object
-            self.mem.close()
-        self.mem = ""
-        if hasattr(self.filestr, "close"):
-            self.filestr.close()
-        self.filestr = ""
-        del self._sharedstrings
-        del self._rich_text_runlist_map
-
-    release_resources = close
 
     def get2bytes(self):
         pos = self._position

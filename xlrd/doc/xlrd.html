@@ -233,7 +233,8 @@ worksheet/workbook default cell style, described by the very first XF record (in
 <ul>
   <li>Rich text i.e. strings containing partial <b>bold</b> <i>italic</i>
       and <u>underlined</u> text, change of font inside a string, etc.
-      See OOo docs s3.4 and s3.2</li>
+      See OOo docs s3.4 and s3.2.
+      <i> Rich text is included in version 0.7.2</i></li>
   <li>Asian phonetic text (known as "ruby"), used for Japanese furigana. See OOo docs
       s3.4.2 (p15)</li>
   <li>Conditional formatting. See OOo docs
@@ -283,6 +284,20 @@ case where an exception will be raised.</p>
 <p>The caller may query the state of a sheet:
 Book.sheet_loaded(sheet_name_or_index) -&gt; a bool</p>
 
+<p> Book.release_resources() may used to save memory and close
+any memory-mapped file before proceding to examine already-loaded
+sheets. Once resources are released, no further sheets can be loaded.</p>
+
+<p> When using on-demand, it is advisable to ensure that
+Book.release_resources() is always called even if an exception
+is raised in your own code; otherwise if the input file has been
+memory-mapped, the mmap.mmap object will not be closed and you will
+not be able to access the physical file until your Python process
+terminates. This can be done by calling Book.release_resources()
+explicitly in the finally suite of a try/finally block.
+New in xlrd 0.7.2: the Book object is a "context manager", so if
+using Python 2.5 or later, you can wrap your code in a "with"
+statement.</p>
 <h2>Module Contents</h2>
 <dl>
 <dt><b>BaseObject</b> (class)  [<a href='#biffh.BaseObject-class'>#</a>]</dt>
@@ -759,6 +774,17 @@ writing an output XLS file. If you want to render cells on screen or in a PDF
 file, use colour_map.
 <br /> -- New in version 0.6.1. Extracted only if open_workbook(..., formatting_info=True)
 </p></dd>
+<dt><a id='__init__.Book.release_resources-method' name='__init__.Book.release_resources-method'><b>release_resources()</b></a> [<a href='#__init__.Book.release_resources-method'>#</a>]</dt>
+<dd>
+<p>This method has a dual purpose. You can call it to release
+memory-consuming objects and (possibly) a memory-mapped file
+(mmap.mmap object) when you have finished loading sheets in
+on_demand mode, but still require the Book object to examine the
+loaded sheets. It is also called automatically (a) when open_workbook
+raises an exception and (b) if you are using a &quot;with&quot; statement, when
+the &quot;with&quot; block is exited. Calling this method multiple times on the
+same object has no ill effect.</p>
+</dd>
 <dt><a id='__init__.Book.sheet_by_index-method' name='__init__.Book.sheet_by_index-method'><b>sheet_by_index(sheetx)</b></a> [<a href='#__init__.Book.sheet_by_index-method'>#</a>]</dt>
 <dd>
 <dl>
@@ -1435,7 +1461,7 @@ for crange in thesheet.col_label_ranges:
 in COLINFO records for all column indexes in range(257).
 Note that xlrd ignores the entry for the non-existent
 257th column. On the other hand, there may be no entry for unused columns.
-<br /> -- New in version 0.6.1
+<br /> -- New in version 0.6.1. Populated only if open_workbook(formatting_info=True).
 </p></dd>
 <dt><a id='sheet.Sheet.computed_column_width-method' name='sheet.Sheet.computed_column_width-method'><b>computed_column_width(colx)</b></a> [<a href='#sheet.Sheet.computed_column_width-method'>#</a>]</dt>
 <dd>
@@ -1513,7 +1539,7 @@ Applies to BIFF4-7 only. See docs of Colinfo class for discussion.</p>
 <dd>
 <p>A list of the horizontal page breaks in this sheet.
 Breaks are tuples in the form (index of row after break, start col index, end col index).
-Populated only if open_workbook(..., formatting_info=True).
+Populated only if open_workbook(formatting_info=True).
 <br /> -- New in version 0.7.2
 </p></dd>
 <dt><a id='sheet.Sheet.horz_split_first_visible-attribute' name='sheet.Sheet.horz_split_first_visible-attribute'><b>horz_split_first_visible</b></a> [<a href='#sheet.Sheet.horz_split_first_visible-attribute'>#</a>]</dt>
@@ -1529,7 +1555,7 @@ Populated only if open_workbook(..., formatting_info=True).
 <p>List of address ranges of cells which have been merged.
 These are set up in Excel by Format &gt; Cells &gt; Alignment, then ticking
 the "Merge cells" box.
-<br /> -- New in version 0.6.1. Extracted only if open_workbook(..., formatting_info=True)
+<br /> -- New in version 0.6.1. Extracted only if open_workbook(formatting_info=True).
 <br />How to deconstruct the list:
 <pre>
 for crange in thesheet.merged_cells:
@@ -1557,6 +1583,27 @@ and Sheet.row_len(row_index).</p>
 <dd>
 <p>Number of rows in sheet. A row index is in range(thesheet.nrows).</p>
 </dd>
+<dt><a id='sheet.Sheet.rich_text_runlist_map-attribute' name='sheet.Sheet.rich_text_runlist_map-attribute'><b>rich_text_runlist_map</b></a> [<a href='#sheet.Sheet.rich_text_runlist_map-attribute'>#</a>]</dt>
+<dd>
+<p>Mapping of (rowx, colx) to list of (offset, font_index) tuples. The offset
+defines where in the string the font begins to be used.
+Offsets are expected to be in ascending order.
+If the first offset is not zero, the meaning is that the cell's XF's font should
+be used from offset 0.
+<br /> This is a sparse mapping. Meaning for cells that do not contain any
+rich text or cells that contain numbers, there will be no entry in the mapping.
+<br />How to use:
+<pre>
+runlist = thesheet.rich_text_runlist_map.get((rowx, colx))
+if runlist:
+    for offset, font_index in runlist:
+        # do work here.
+        pass
+</pre>
+Populated only if open_workbook(formatting_info=True).
+<br /> -- New in version 0.7.2.
+<br /> &#160;
+</p></dd>
 <dt><a id='sheet.Sheet.row-method' name='sheet.Sheet.row-method'><b>row(rowx)</b></a> [<a href='#sheet.Sheet.row-method'>#</a>]</dt>
 <dd>
 <p>Returns a sequence of the Cell objects in the given row.</p>
@@ -1593,7 +1640,7 @@ of the cells in the given row.</p>
 <p>The map from a row index to a Rowinfo object. Note that it is possible
 to have missing entries -- at least one source of XLS files doesn't
 bother writing ROW records.
-<br /> -- New in version 0.6.1
+<br /> -- New in version 0.6.1. Populated only if open_workbook(formatting_info=True).
 </p></dd>
 <dt><a id='sheet.Sheet.split_active_pane-attribute' name='sheet.Sheet.split_active_pane-attribute'><b>split_active_pane</b></a> [<a href='#sheet.Sheet.split_active_pane-attribute'>#</a>]</dt>
 <dd>
@@ -1620,7 +1667,7 @@ For the default hierarchy, refer to the Colinfo class above.
 <dd>
 <p>A list of the vertical page breaks in this sheet.
 Breaks are tuples in the form (index of col after break, start row index, end row index).
-Populated only if open_workbook(..., formatting_info=True).
+Populated only if open_workbook(formatting_info=True).
 <br /> -- New in version 0.7.2
 </p></dd>
 <dt><a id='sheet.Sheet.visibility-attribute' name='sheet.Sheet.visibility-attribute'><b>visibility</b></a> [<a href='#sheet.Sheet.visibility-attribute'>#</a>]</dt>
