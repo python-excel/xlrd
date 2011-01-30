@@ -1016,8 +1016,15 @@ def xf_epilogue(self):
             # make it conform
             xf.parent_style_index = 0
         if self.biff_version >= 30:
-            assert xf.parent_style_index != xf.xf_index
-            assert self.xf_list[xf.parent_style_index].is_style
+            if blah1:
+                if xf.parent_style_index == xf.xf_index:
+                    fprintf(self.logfile,
+                        "NOTE !!! XF[%d]: parent_style_index is also %d\n",
+                        xf.xf_index, xf.parent_style_index)
+                elif not self.xf_list[xf.parent_style_index].is_style:
+                    fprintf(self.logfile,
+                        "NOTE !!! XF[%d]: parent_style_index is %d; style flag not set\n",
+                        xf.xf_index, xf.parent_style_index)                
             if blah1 and xf.parent_style_index > xf.xf_index:
                 fprintf(self.logfile,
                     "NOTE !!! XF[%d]: parent_style_index is %d; out of order?\n",
