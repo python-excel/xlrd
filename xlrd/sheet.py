@@ -338,6 +338,8 @@ class Sheet(BaseObject):
         self.first_visible_colx = 0
         self.gridline_colour_index = 0x40
         self.gridline_colour_rgb = None # pre-BIFF8
+        self.hyperlink_list = []
+        self.hyperlink_map = {}
 
         # Values calculated by xlrd to predict the mag factors that
         # will actually be used by Excel to display your worksheet.
