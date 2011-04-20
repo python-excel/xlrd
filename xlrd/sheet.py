@@ -163,7 +163,8 @@ class Sheet(BaseObject):
     #         pass
     # </pre>
     # Populated only if open_workbook(formatting_info=True).
-    # <br /> -- New in version 0.7.2
+    # <br /> -- New in version 0.7.2.
+    # <br /> &nbsp;
     rich_text_runlist_map = {}    
 
     ##
@@ -230,6 +231,17 @@ class Sheet(BaseObject):
     # If no such record, treat as all bits zero.
     # Applies to BIFF4-7 only. See docs of Colinfo class for discussion.
     gcw = (0, ) * 256
+
+    ##
+    # <p>A list of Hyperlink objects corresponding to HLINK records found
+    # in the worksheet.<br />-- New in version 0.7.2 </p>
+    hyperlink_list = []
+
+    ##
+    # <p>A sparse mapping from (rowx, colx) to an item in Sheet.hyperlink_list.
+    # Cells not containing a hyperlink are not mapped.
+    # <br />-- New in version 0.7.2 </p>
+    hyperlink_map = {}
 
     ##
     # Number of columns in left pane (frozen panes; for split panes, see comments below in code)
@@ -1038,6 +1050,8 @@ class Sheet(BaseObject):
                         "sheet %d(%r) DIMENSIONS: ncols=%d nrows=%d\n",
                         self.number, self.name, self._dimncols, self._dimnrows
                         )
+            elif rc == XL_HLINK:
+                self.handle_hlink(data)
             elif rc == XL_EOF:
                 DEBUG = 0
                 if DEBUG: print >> self.logfile, "SHEET.READ: EOF"
@@ -1623,6 +1637,100 @@ class Sheet(BaseObject):
             return self.defcolwidth * 256
         return 8 * 256 # 8 is what Excel puts in a DEFCOLWIDTH record
 
+    def handle_hlink(self, data):
+        DEBUG = 0
+        if DEBUG: print "\n=== hyperlink ==="
+        record_size = len(data)
+        h = Hyperlink()
+        h.frowx, h.lrowx, h.fcolx, h.lcolx, guid0, dummy, options = unpack('<HHHH16s4si', data[:32])
+        assert guid0 == "\xD0\xC9\xEA\x79\xF9\xBA\xCE\x11\x8C\x82\x00\xAA\x00\x4B\xA9\x0B"
+        assert dummy == "\x02\x00\x00\x00"
+        if DEBUG: print "options: %08X" % options
+        offset = 32
+
+        def get_nul_terminated_unicode(buf, ofs):
+            nb = unpack('<L', buf[ofs:ofs+4])[0] * 2
+            ofs += 4
+            uc = unicode(buf[ofs:ofs+nb], 'UTF-16le')[:-1]
+            ofs += nb
+            return uc, ofs
+
+        if options & 0x14: # has a description
+            h.desc, offset = get_nul_terminated_unicode(data, offset)
+            
+        if options & 0x80: # has a target
+            h.target, offset = get_nul_terminated_unicode(data, offset)
+            
+        if (options & 1) and not (options & 0x100): # HasMoniker and not MonikerSavedAsString
+            # an OLEMoniker structure
+            clsid, = unpack('<16s', data[offset:offset + 16])
+            if DEBUG: print "clsid=%r" %clsid
+            offset += 16
+            if clsid == "\xE0\xC9\xEA\x79\xF9\xBA\xCE\x11\x8C\x82\x00\xAA\x00\x4B\xA9\x0B":
+                #          E0H C9H EAH 79H F9H BAH CEH 11H 8CH 82H 00H AAH 00H 4BH A9H 0BH
+                # URL Moniker
+                h.type = u'url'
+                nbytes = unpack('<L', data[offset:offset + 4])[0]
+                offset += 4
+                h.url_or_path = unicode(data[offset:offset + nbytes], 'UTF-16le')
+                if DEBUG: print "initial url=%r len=%d" % (h.url_or_path, len(h.url_or_path))
+                endpos = h.url_or_path.find(u'\x00')
+                if DEBUG: print "endpos=%d" % endpos
+                h.url_or_path = h.url_or_path[:endpos]
+                true_nbytes = 2 * (endpos + 1)
+                offset += true_nbytes
+                extra_nbytes = nbytes - true_nbytes
+                extra_data = data[offset:offset + extra_nbytes]
+                offset += extra_nbytes
+                if DEBUG: print "url=%r" % h.url_or_path
+                if DEBUG: print "extra=%r" % extra_data
+                if DEBUG: print "nbytes=%d true_nbytes=%d extra_nbytes=%d" % (nbytes, true_nbytes, extra_nbytes)
+                assert extra_nbytes in (24, 0)
+            elif clsid == "\x03\x03\x00\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46":
+                # file moniker
+                h.type = u'local file'
+                uplevels, nbytes = unpack("<Hi", data[offset:offset + 6])
+                offset += 6
+                shortpath = "..\\" * uplevels + data[offset:offset + nbytes - 1] #### BYTES, not unicode
+                if DEBUG: print "uplevels=%d shortpath=%r" % (uplevels, shortpath)
+                offset += nbytes
+                offset += 24 # OOo: "unknown byte sequence"
+                # above is version 0xDEAD + 20 reserved zero bytes
+                sz = unpack('<i', data[offset:offset + 4])[0]
+                if DEBUG: print "sz=%d" % sz
+                offset += 4
+                if sz:
+                    xl = unpack('<i', data[offset:offset + 4])[0]
+                    offset += 4
+                    offset += 2 # "unknown byte sequence" MS: 0x0003
+                    extended_path = unicode(data[offset:offset + xl], 'UTF-16le') # not zero-terminated
+                    offset += xl
+                    h.url_or_path = extended_path
+                else:
+                    h.url_or_path = shortpath
+                    #### MS KLUDGE WARNING ####
+                    # The "shortpath" is bytes encoded in the **UNKNOWN** creator's "ANSI" encoding.
+            else:
+                print "*** unknown clsid %r" % clsid
+        elif options & 0x163 == 0x103: # UNC
+            h.type = u'unc'
+            h.url_or_path, offset = get_nul_terminated_unicode(data, offset)
+        elif options & 0x16B == 8:
+            h.type = u'workbook'
+        else:
+            h.type = u'unknown'
+            
+        if options & 0x8: # has textmark
+            h.textmark, offset = get_nul_terminated_unicode(data, offset)
+
+        assert offset == record_size
+        if DEBUG: h.dump(header="... object dump ...")        
+
+        self.hyperlink_list.append(h)
+        for rowx in xrange(h.frowx, h.lrowx+1):
+            for colx in xrange(h.fcolx, h.lcolx+1):
+                self.hyperlink_map[rowx, colx] = h
+
     def handle_msodrawingetc(self, recid, data_len, data):
         if not OBJ_MSO_DEBUG:
             return
@@ -1816,6 +1924,48 @@ class MSTxo(BaseObject):
 
 class MSNote(BaseObject):
     pass
+
+##
+# <p>Contains the attributes of a hyperlink.
+# <br />-- New in version 0.7.2
+# </p>   
+class Hyperlink(BaseObject):
+    ##
+    # Index of first row
+    frowx = None
+    ##
+    # Index of last row
+    lrowx = None
+    ##
+    # Index of first column
+    fcolx = None
+    ##
+    # Index of last column
+    lcolx = None
+    ##
+    # Type of hyperlink. Unicode string, one of 'url', 'unc',
+    # 'local file', 'workbook', 'unknown'
+    type = None
+    ##
+    # The URL or file-path, depending in the type. Unicode string, except 
+    # in the rare case of a local but non-existent file with non-ASCII
+    # characters in the name, in which case only the "8.3" filename is available,
+    # as a bytes (3.x) or str (2.x) string, <i>with unknown encoding.</i>
+    url_or_path = None
+    ##
+    # Description ... this is displayed in the cell,
+    # and should be identical to the cell value. Unicode string, or None. It seems
+    # impossible NOT to have a description created by the Excel UI.
+    desc = None
+    ##
+    # Target frame. Unicode string. Note: I have not seen a case of this.
+    # It seems impossible to create one in the Excel UI.
+    target = None
+    ##
+    # "Textmark": the piece after the "#" in 
+    # "http://docs.python.org/library#struct_module", or the Sheet1!A1:Z99
+    # part when type is "workbook".
+    textmark = None
 
 # === helpers ===
 

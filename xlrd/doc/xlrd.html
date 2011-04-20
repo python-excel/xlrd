@@ -396,6 +396,11 @@ considered a font, but also several other display attributes.</p>
 <p>&quot;Number format&quot; information from a FORMAT record.</p>
 <p>For more information about this class, see <a href='#formatting.Format-class'><i>The Format Class</i></a>.</p>
 </dd>
+<dt><b>Hyperlink</b> (class)  [<a href='#sheet.Hyperlink-class'>#</a>]</dt>
+<dd>
+<p>Contains the attributes of a hyperlink.</p>
+<p>For more information about this class, see <a href='#sheet.Hyperlink-class'><i>The Hyperlink Class</i></a>.</p>
+</dd>
 <dt><b>Name</b> (class)  [<a href='#__init__.Name-class'>#</a>]</dt>
 <dd>
 <p>Information relating to a named reference, formula, macro, etc.</p>
@@ -1132,6 +1137,60 @@ Currently, this is used only to distinguish between numbers and dates.
 <br />FTX = 4 # text
 </p></dd>
 </dl>
+<h2><a id='sheet.Hyperlink-class' name='sheet.Hyperlink-class'>The Hyperlink Class</a></h2>
+<dl>
+<dt><b>Hyperlink</b> (class)  [<a href='#sheet.Hyperlink-class'>#</a>]</dt>
+<dd>
+<p /><p>Contains the attributes of a hyperlink.
+<br />-- New in version 0.7.2
+</p>
+</dd>
+<dt><a id='sheet.Hyperlink.desc-attribute' name='sheet.Hyperlink.desc-attribute'><b>desc</b></a> [<a href='#sheet.Hyperlink.desc-attribute'>#</a>]</dt>
+<dd>
+<p>Description ... this is displayed in the cell,
+and should be identical to the cell value. Unicode string, or None. It seems
+impossible NOT to have a description created by the Excel UI.</p>
+</dd>
+<dt><a id='sheet.Hyperlink.fcolx-attribute' name='sheet.Hyperlink.fcolx-attribute'><b>fcolx</b></a> [<a href='#sheet.Hyperlink.fcolx-attribute'>#</a>]</dt>
+<dd>
+<p>Index of first column</p>
+</dd>
+<dt><a id='sheet.Hyperlink.frowx-attribute' name='sheet.Hyperlink.frowx-attribute'><b>frowx</b></a> [<a href='#sheet.Hyperlink.frowx-attribute'>#</a>]</dt>
+<dd>
+<p>Index of first row</p>
+</dd>
+<dt><a id='sheet.Hyperlink.lcolx-attribute' name='sheet.Hyperlink.lcolx-attribute'><b>lcolx</b></a> [<a href='#sheet.Hyperlink.lcolx-attribute'>#</a>]</dt>
+<dd>
+<p>Index of last column</p>
+</dd>
+<dt><a id='sheet.Hyperlink.lrowx-attribute' name='sheet.Hyperlink.lrowx-attribute'><b>lrowx</b></a> [<a href='#sheet.Hyperlink.lrowx-attribute'>#</a>]</dt>
+<dd>
+<p>Index of last row</p>
+</dd>
+<dt><a id='sheet.Hyperlink.target-attribute' name='sheet.Hyperlink.target-attribute'><b>target</b></a> [<a href='#sheet.Hyperlink.target-attribute'>#</a>]</dt>
+<dd>
+<p>Target frame. Unicode string. Note: I have not seen a case of this.
+It seems impossible to create one in the Excel UI.</p>
+</dd>
+<dt><a id='sheet.Hyperlink.textmark-attribute' name='sheet.Hyperlink.textmark-attribute'><b>textmark</b></a> [<a href='#sheet.Hyperlink.textmark-attribute'>#</a>]</dt>
+<dd>
+<p>&quot;Textmark&quot;: the piece after the &quot;#&quot; in
+&quot;http://docs.python.org/library#struct_module&quot;, or the Sheet1!A1:Z99
+part when type is &quot;workbook&quot;.</p>
+</dd>
+<dt><a id='sheet.Hyperlink.type-attribute' name='sheet.Hyperlink.type-attribute'><b>type</b></a> [<a href='#sheet.Hyperlink.type-attribute'>#</a>]</dt>
+<dd>
+<p>Type of hyperlink. Unicode string, one of 'url', 'unc',
+'local file', 'workbook', 'unknown'</p>
+</dd>
+<dt><a id='sheet.Hyperlink.url_or_path-attribute' name='sheet.Hyperlink.url_or_path-attribute'><b>url_or_path</b></a> [<a href='#sheet.Hyperlink.url_or_path-attribute'>#</a>]</dt>
+<dd>
+<p>The URL or file-path, depending in the type. Unicode string, except
+in the rare case of a local but non-existent file with non-ASCII
+characters in the name, in which case only the "8.3" filename is available,
+as a bytes (3.x) or str (2.x) string, <i>with unknown encoding.</i>
+</p></dd>
+</dl>
 <h2><a id='__init__.Name-class' name='__init__.Name-class'>The Name Class</a></h2>
 <dl>
 <dt><b>Name</b> (class)  [<a href='#__init__.Name-class'>#</a>]</dt>
@@ -1549,6 +1608,17 @@ Populated only if open_workbook(formatting_info=True).
 <dt><a id='sheet.Sheet.horz_split_pos-attribute' name='sheet.Sheet.horz_split_pos-attribute'><b>horz_split_pos</b></a> [<a href='#sheet.Sheet.horz_split_pos-attribute'>#</a>]</dt>
 <dd>
 <p>Number of rows in top pane (frozen panes; for split panes, see comments below in code)</p>
+</dd>
+<dt><a id='sheet.Sheet.hyperlink_list-attribute' name='sheet.Sheet.hyperlink_list-attribute'><b>hyperlink_list</b></a> [<a href='#sheet.Sheet.hyperlink_list-attribute'>#</a>]</dt>
+<dd>
+<p /><p>A list of Hyperlink objects corresponding to HLINK records found
+in the worksheet.<br />-- New in version 0.7.2 </p>
+</dd>
+<dt><a id='sheet.Sheet.hyperlink_map-attribute' name='sheet.Sheet.hyperlink_map-attribute'><b>hyperlink_map</b></a> [<a href='#sheet.Sheet.hyperlink_map-attribute'>#</a>]</dt>
+<dd>
+<p /><p>A sparse mapping from (rowx, colx) to an item in Sheet.hyperlink_list.
+Cells not containing a hyperlink are not mapped.
+<br />-- New in version 0.7.2 </p>
 </dd>
 <dt><a id='sheet.Sheet.merged_cells-attribute' name='sheet.Sheet.merged_cells-attribute'><b>merged_cells</b></a> [<a href='#sheet.Sheet.merged_cells-attribute'>#</a>]</dt>
 <dd>
