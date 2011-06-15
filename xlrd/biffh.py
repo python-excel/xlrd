@@ -358,10 +358,9 @@ def unpack_unicode_update_pos(data, pos, lenlen=2, known_len=None):
 def unpack_cell_range_address_list_update_pos(
     output_list, data, pos, biff_version, addr_size=6):
     # output_list is updated in situ
-    if biff_version < 80:
-        assert addr_size == 6
-    else:
-        assert addr_size in (6, 8)
+    assert addr_size in (6, 8)
+    # Used to assert size == 6 if not BIFF8, but pyWLWriter writes
+    # BIFF8-only MERGEDCELLS records in a BIFF5 file!
     n, = unpack("<H", data[pos:pos+2])
     pos += 2
     if n:
