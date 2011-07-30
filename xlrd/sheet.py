@@ -2353,3 +2353,4 @@ class Rowinfo(BaseObject):
             self.additional_space_above,
             self.additional_space_below,
             ) = state
+###
