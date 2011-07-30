@@ -1067,6 +1067,8 @@ class Sheet(BaseObject):
                         )
             elif rc == XL_HLINK:
                 self.handle_hlink(data)
+            elif rc == XL_QUICKTIP:
+                self.handle_quicktip(data)
             elif rc == XL_EOF:
                 DEBUG = 0
                 if DEBUG: print >> self.logfile, "SHEET.READ: EOF"
@@ -1750,6 +1752,15 @@ class Sheet(BaseObject):
         for rowx in xrange(h.frowx, h.lrowx+1):
             for colx in xrange(h.fcolx, h.lcolx+1):
                 self.hyperlink_map[rowx, colx] = h
+                
+    def handle_quicktip(self, data):
+        rcx, frowx, lrowx, fcolx, lcolx = unpack('<5H', data[:10])
+        assert rcx == XL_QUICKTIP
+        assert self.hyperlink_list
+        h = self.hyperlink_list[-1]
+        assert (frowx, lrowx, fcolx, lcolx) == (h.frowx, h.lrowx, h.fcolx, h.lcolx)
+        assert data[-2:] == '\x00\x00'
+        h.quicktip = unicode(data[10:-2], 'utf_16_le')
 
     def handle_msodrawingetc(self, recid, data_len, data):
         if not OBJ_MSO_DEBUG:
@@ -2070,6 +2081,10 @@ class Hyperlink(BaseObject):
     # "http://docs.python.org/library#struct_module", or the Sheet1!A1:Z99
     # part when type is "workbook".
     textmark = None
+    ##
+    # The text of the "quick tip" displayed when the cursor
+    # hovers over the hyperlink.
+    quicktip = None
 
 # === helpers ===
 
