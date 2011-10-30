@@ -1231,7 +1231,7 @@ class Sheet(BaseObject):
                 assert pos == data_len, \
                     "MERGEDCELLS: pos=%d data_len=%d" % (pos, data_len)
             elif rc == XL_WINDOW2:
-                if bv >= 80:
+                if bv >= 80 and data_len >= 14:
                     (options,
                     self.first_visible_rowx, self.first_visible_colx,
                     self.gridline_colour_index,
