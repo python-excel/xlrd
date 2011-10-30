@@ -433,7 +433,7 @@ class Sheet(BaseObject):
         # Check for a column xf_index
         try:
             xfx = self.colinfo_map[colx].xf_index
-            assert xfx > -1
+            if xfx == -1: xfx = 15
             self._xf_index_stats[2] += 1
             return xfx
         except KeyError:
@@ -1057,8 +1057,7 @@ class Sheet(BaseObject):
                     dim_tuple = local_unpack('<ixxH', data[4:12])
                 self.nrows, self.ncols = 0, 0
                 self._dimnrows, self._dimncols = dim_tuple
-                if not self.book._xf_epilogue_done:
-                    # Needed for bv <= 40
+                if bv in (21, 30, 40) and self.book.xf_list and not self.book._xf_epilogue_done:
                     self.book.xf_epilogue()
                 if blah:
                     fprintf(self.logfile,
@@ -1522,7 +1521,7 @@ class Sheet(BaseObject):
         DEBUG = 0
         blah = DEBUG or self.verbosity >= 2
         if self.biff_version == 21:
-            if self._xf_index_to_xl_type_map:
+            if self.book.xf_list:
                 if true_xfx is not None:
                     xfx = true_xfx
                 else:
@@ -1546,21 +1545,30 @@ class Sheet(BaseObject):
             return xfx
         if blah:
             fprintf(self.logfile, "New cell_attr %r at (%r, %r)\n", cell_attr, rowx, colx)
+        if not self.book.xf_list:
+            for xfx in xrange(16):
+                self.insert_new_BIFF20_xf(cell_attr="\x40\x00\x00", style=xfx < 15)
+        xfx = self.insert_new_BIFF20_xf(cell_attr=cell_attr)
+        return xfx
+
+    def insert_new_BIFF20_xf(self, cell_attr, style=0):
+        DEBUG = 0
+        blah = DEBUG or self.verbosity >= 2
         book = self.book
-        xf = self.fake_XF_from_BIFF20_cell_attr(cell_attr)
         xfx = len(book.xf_list)
+        xf = self.fake_XF_from_BIFF20_cell_attr(cell_attr, style)
         xf.xf_index = xfx
         book.xf_list.append(xf)
         if blah:
             xf.dump(self.logfile, header="=== Faked XF %d ===" % xfx, footer="======")
         if not book.format_map.has_key(xf.format_key):
-            msg = "ERROR *** XF[%d] unknown format key (%d, 0x%04x)\n"
-            fprintf(self.logfile, msg,
-                    xf.xf_index, xf.format_key, xf.format_key)
+            if xf.format_key:
+                msg = "ERROR *** XF[%d] unknown format key (%d, 0x%04x)\n"
+                fprintf(self.logfile, msg,
+                        xf.xf_index, xf.format_key, xf.format_key)
             fmt = Format(xf.format_key, FUN, u"General")
             book.format_map[xf.format_key] = fmt
-            while len(book.format_list) <= xf.format_key:
-                book.format_list.append(fmt)
+            book.format_list.append(fmt)
         cellty_from_fmtty = {
             FNU: XL_CELL_NUMBER,
             FUN: XL_CELL_NUMBER,
@@ -1574,7 +1582,7 @@ class Sheet(BaseObject):
         self._cell_attr_to_xfx[cell_attr] = xfx
         return xfx
 
-    def fake_XF_from_BIFF20_cell_attr(self, cell_attr):
+    def fake_XF_from_BIFF20_cell_attr(self, cell_attr, style=0):
         from formatting import XF, XFAlignment, XFBorder, XFBackground, XFProtection
         xf = XF()
         xf.alignment = XFAlignment()
@@ -1610,7 +1618,7 @@ class Sheet(BaseObject):
             bg.fill_pattern = 0
         bg.background_colour_index = 9 # white
         bg.pattern_colour_index = 8 # black
-        xf.parent_style_index = 0 # ???????????
+        xf.parent_style_index = (0x0FFF, 0)[style]
         xf.alignment.vert_align = 2 # bottom
         xf.alignment.rotation = 0
         for attr_stem in \
@@ -2353,4 +2361,3 @@ class Rowinfo(BaseObject):
             self.additional_space_above,
             self.additional_space_below,
             ) = state
-###

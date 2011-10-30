@@ -1607,14 +1607,16 @@ class Book(BaseObject):
         length = self.get2bytes()
         if length == MY_EOF:
             bof_error('Incomplete BOF record[1]; met end of file')
-        if length < boflen[opcode] or length > 20:
+        if not (4 <= length <= 20):
             bof_error(
                 'Invalid length (%d) for BOF record type 0x%04x'
                 % (length, opcode))
+        padding = "\x00" * max(0, boflen[opcode] - length)
         data = self.read(self._position, length);
         if DEBUG: print >> self.logfile, "\ngetbof(): data=%r" % data
         if len(data) < length:
             bof_error('Incomplete BOF record[2]; met end of file')
+        data += padding
         version1 = opcode >> 8
         version2, streamtype = unpack('<HH', data[0:4])
         if DEBUG:
