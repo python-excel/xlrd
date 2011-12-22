@@ -72,7 +72,7 @@ _WINDOW2_options = (
 #
 # <p>For information about cell types and cell values, refer to the documentation of the {@link #Cell} class.</p>
 #
-# <p>WARNING: You don't call this class yourself. You access Sheet objects via the {@link #Book} object that
+# <p>WARNING: You don't call this class yourself. You access Sheet objects via the Book object that
 # was returned when you called xlrd.open_workbook("myfile.xls").</p>
 
 
@@ -81,6 +81,11 @@ class Sheet(BaseObject):
     # Name of sheet.
     name = ''
 
+    ##
+    # A reference to the Book object to which this sheet belongs.
+    # Example usage: some_sheet.book.datemode
+    book = None
+    
     ##
     # Number of rows in sheet. A row index is in range(thesheet.nrows).
     nrows = 0
