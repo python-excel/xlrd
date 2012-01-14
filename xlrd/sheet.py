@@ -780,7 +780,9 @@ class Sheet(BaseObject):
             #     rc_stats[rc] = 1
             # if DEBUG: print "SHEET.READ: op 0x%04x, %d bytes %r" % (rc, data_len, data)
             if rc == XL_NUMBER:
-                rowx, colx, xf_index, d = local_unpack('<HHHd', data)
+                # [:14] in following stmt ignores extraneous rubbish at end of record.
+                # Sample file testEON-8.xls supplied by Jan Kraus.
+                rowx, colx, xf_index, d = local_unpack('<HHHd', data[:14])
                 # if xf_index == 0:
                 #     fprintf(self.logfile,
                 #         "NUMBER: r=%d c=%d xfx=%d %f\n", rowx, colx, xf_index, d)
