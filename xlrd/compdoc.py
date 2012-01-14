@@ -111,7 +111,7 @@ class CompDoc(object):
         (
             SAT_tot_secs, self.dir_first_sec_sid, _unused, self.min_size_std_stream,
             SSAT_first_sec_sid, SSAT_tot_secs,
-            MSAT_first_sec_sid, MSAT_tot_secs,
+            MSATX_first_sec_sid, MSATX_tot_secs,
         # ) = unpack('<ii4xiiiii', mem[44:76])
         ) = unpack('<iiiiiiii', mem[44:76])
         mem_data_len = len(mem) - 512
@@ -132,7 +132,7 @@ class CompDoc(object):
             print >> logfile, "SAT_tot_secs=%d, dir_first_sec_sid=%d, min_size_std_stream=%d" \
                 % (SAT_tot_secs, self.dir_first_sec_sid, self.min_size_std_stream,)
             print >> logfile, "SSAT_first_sec_sid=%d, SSAT_tot_secs=%d" % (SSAT_first_sec_sid, SSAT_tot_secs,)
-            print >> logfile, "MSAT_first_sec_sid=%d, MSAT_tot_secs=%d" % (MSAT_first_sec_sid, MSAT_tot_secs,)
+            print >> logfile, "MSATX_first_sec_sid=%d, MSATX_tot_secs=%d" % (MSATX_first_sec_sid, MSATX_tot_secs,)
         nent = int_floor_div(sec_size, 4) # number of SID entries in a sector
         fmt = "<%di" % nent
         trunc_warned = 0
@@ -143,30 +143,38 @@ class CompDoc(object):
         SAT_sectors_reqd = int_floor_div(mem_data_secs + nent - 1, nent)
         expected_MSATX_sectors = max(0, int_floor_div(SAT_sectors_reqd - 109 + nent - 2, nent - 1))
         actual_MSATX_sectors = 0
-        sid = MSAT_first_sec_sid
-        while sid not in (EOCSID, FREESID):
-            # above should be only EOCSID according to MS & OOo docs
-            # but Excel doesn't complain about FREESID
-            if sid >= mem_data_secs:
-                raise CompDocError(
-                    "MSAT extension: accessing sector %d but only %d in file" % (sid, mem_data_secs)
-                    )
-            elif sid < 0:
-                raise CompDocError("MSAT extension: invalid sector id: %d" % sid)
-            if seen[sid]:
-                raise CompDocError("MSAT corruption: seen[%d] == %d" % (sid, seen[sid]))
-            seen[sid] = 1
-            actual_MSATX_sectors += 1
-            if actual_MSATX_sectors > expected_MSATX_sectors:
-                print >> logfile, "[1]===>>>", mem_data_secs, nent, SAT_sectors_reqd, expected_MSATX_sectors, actual_MSATX_sectors
-            assert actual_MSATX_sectors <= expected_MSATX_sectors
-            offset = 512 + sec_size * sid
-            news = list(unpack(fmt, mem[offset:offset+sec_size]))
-            sid = news.pop()
-            MSAT.extend(news)
-        if actual_MSATX_sectors != expected_MSATX_sectors:
+        if MSATX_tot_secs == 0 and MSATX_first_sec_sid in (EOCSID, FREESID, 0):
+            # Strictly, if there is no MSAT extension, then MSATX_first_sec_sid
+            # should be set to EOCSID ... FREESID and 0 have been met in the wild.
+            pass # Presuming no extension
+        else:
+            sid = MSATX_first_sec_sid
+            while sid not in (EOCSID, FREESID):
+                # Above should be only EOCSID according to MS & OOo docs
+                # but Excel doesn't complain about FREESID. Zero is a valid
+                # sector number, not a sentinel.
+                if DEBUG > 1:
+                    print >> logfile, 'MSATX: sid=%d (0x%08X)' % (sid, sid)
+                if sid >= mem_data_secs:
+                    msg = "MSAT extension: accessing sector %d but only %d in file" % (sid, mem_data_secs)
+                    if DEBUG > 1:
+                        print >> logfile, msg
+                        break
+                    raise CompDocError(msg)
+                elif sid < 0:
+                    raise CompDocError("MSAT extension: invalid sector id: %d" % sid)
+                if seen[sid]:
+                    raise CompDocError("MSAT corruption: seen[%d] == %d" % (sid, seen[sid]))
+                seen[sid] = 1
+                actual_MSATX_sectors += 1
+                if DEBUG and actual_MSATX_sectors > expected_MSATX_sectors:
+                    print >> logfile, "[1]===>>>", mem_data_secs, nent, SAT_sectors_reqd, expected_MSATX_sectors, actual_MSATX_sectors
+                offset = 512 + sec_size * sid
+                news = list(unpack(fmt, mem[offset:offset+sec_size]))
+                sid = news.pop()
+                MSAT.extend(news)
+        if DEBUG and actual_MSATX_sectors != expected_MSATX_sectors:
             print >> logfile, "[2]===>>>", mem_data_secs, nent, SAT_sectors_reqd, expected_MSATX_sectors, actual_MSATX_sectors
-        assert actual_MSATX_sectors == expected_MSATX_sectors
         if DEBUG:
             print >> logfile, "MSAT: len =", len(MSAT)
             dump_list(MSAT, 10, logfile)
@@ -174,7 +182,6 @@ class CompDoc(object):
         # === build the SAT ===
         #
         self.SAT = []
-        assert SAT_sectors_reqd <= len(MSAT) < SAT_sectors_reqd + nent #### BS -- FIXME
         actual_SAT_sectors = 0
         dump_again = 0
         for msidx in xrange(len(MSAT)):
@@ -199,7 +206,6 @@ class CompDoc(object):
             actual_SAT_sectors += 1
             if actual_SAT_sectors > SAT_sectors_reqd:
                 print "[3]===>>>", mem_data_secs, nent, SAT_sectors_reqd, expected_MSATX_sectors, actual_MSATX_sectors, actual_SAT_sectors, msid
-            assert actual_SAT_sectors <= SAT_sectors_reqd
             offset = 512 + sec_size * msid
             news = list(unpack(fmt, mem[offset:offset+sec_size]))
             self.SAT.extend(news)
@@ -272,7 +278,6 @@ class CompDoc(object):
                 news = list(unpack(fmt, mem[start_pos:start_pos+sec_size]))
                 self.SSAT.extend(news)
                 sid = self.SAT[sid]
-            # assert SSAT_tot_secs == 0 or sid == EOCSID
             if DEBUG: print >> logfile, "SSAT last sid %d; remaining sectors %d" % (sid, nsecs)
             assert nsecs == 0 and sid == EOCSID
         if DEBUG:
