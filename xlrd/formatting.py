@@ -3,7 +3,7 @@
 ##
 # Module for formatting information.
 #
-# <p>Copyright © 2005-2011 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under
 # a BSD-style licence.</p>
 ##
@@ -51,24 +51,8 @@ excel_default_palette_b5 = (
 
 excel_default_palette_b2 = excel_default_palette_b5[:16]
 
-# Following two tables borrowed from Gnumeric 1.4 source.
-excel_default_palette_b5_gnumeric_14 = (
-    #### dodgy; didn't match Excel results
-    (  0,  0,  0), (255,255,255), (255,  0,  0), (  0,255,  0),
-    (  0,  0,255), (255,255,  0), (255,  0,255), (  0,255,255),
-    (128,  0,  0), (  0,128,  0), (  0,  0,128), (128,128,  0),
-    (128,  0,128), (  0,128,128), (192,192,192), (128,128,128),
-    (128,128,255), (128, 32, 96), (255,255,192), (160,224,224),
-    ( 96,  0,128), (255,128,128), (  0,128,192), (192,192,255),
-    (  0,  0,128), (255,  0,255), (255,255,  0), (  0,255,255),
-    (128,  0,128), (128,  0,  0), (  0,128,128), (  0,  0,255),
-    (  0,204,255), (105,255,255), (204,255,204), (255,255,153),
-    (166,202,240), (204,156,204), (204,153,255), (227,227,227),
-    ( 51,102,255), ( 51,204,204), ( 51,153, 51), (153,153, 51),
-    (153,102, 51), (153,102,102), (102,102,153), (150,150,150),
-    ( 51, 51,204), ( 51,102,102), (  0, 51,  0), ( 51, 51,  0),
-    (102, 51,  0), (153, 51,102), ( 51, 51,153), ( 66, 66, 66),
-    )
+# Following table borrowed from Gnumeric 1.4 source.
+# Checked against OOo docs and MS docs.
 excel_default_palette_b8 = ( # (red, green, blue)
     (  0,  0,  0), (255,255,255), (255,  0,  0), (  0,255,  0), # 0
     (  0,  0,255), (255,255,  0), (255,  0,255), (  0,255,255), # 4
@@ -164,7 +148,7 @@ def nearest_colour_index(colour_map, rgb, debug=0):
             best_colourx = colourx
             if metric == 0:
                 break
-    if debug:
+    if 0 and debug:
         print "nearest_colour_index for %r is %r -> %r; best_metric is %d" \
             % (rgb, best_colourx, colour_map[best_colourx], best_metric)
     return best_colourx
@@ -493,7 +477,7 @@ def is_date_format_string(book, fmt):
             state = 0
         assert 0 <= state <= 2
     if book.verbosity >= 4:
-        print "is_date_format_string: reduced format is %r" % s
+        print >> book.logfile, "is_date_format_string: reduced format is %r" % s
     s = fmt_bracketed_sub('', s)
     if non_date_formats.has_key(s):
         return False
@@ -626,8 +610,8 @@ def palette_epilogue(book):
             continue
         if book.colour_map.has_key(cx):
             book.colour_indexes_used[cx] = 1
-        else:
-            print "Size of colour table:", len(book.colour_map)
+        elif book.verbosity:
+            print >> book.logfile, "Size of colour table:", len(book.colour_map)
             print >> book.logfile, \
                 "*** Font #%d (%r): colour index 0x%04x is unknown" \
                 % (font.font_index, font.name, cx)

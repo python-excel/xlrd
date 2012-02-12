@@ -3,7 +3,7 @@
 ##
 # Module for parsing/evaluating Microsoft Excel formulas.
 #
-# <p>Copyright © 2005-2009 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under
 # a BSD-style licence.</p>
 ##
@@ -472,32 +472,32 @@ def get_externsheet_local_range(bk, refx, blah=0):
     try:
         info = bk._externsheet_info[refx]
     except IndexError:
-        print "!!! get_externsheet_local_range: refx=%d, not in range(%d)" \
+        print >> bk.logfile, "!!! get_externsheet_local_range: refx=%d, not in range(%d)" \
             % (refx, len(bk._externsheet_info))
         return (-101, -101)
     ref_recordx, ref_first_sheetx, ref_last_sheetx = info
     if ref_recordx == bk._supbook_addins_inx:
         if blah:
-            print "/// get_externsheet_local_range(refx=%d) -> addins %r" % (refx, info)
+            print >> bk.logfile, "/// get_externsheet_local_range(refx=%d) -> addins %r" % (refx, info)
         assert ref_first_sheetx == 0xFFFE == ref_last_sheetx
         return (-5, -5)
     if ref_recordx != bk._supbook_locals_inx:
         if blah:
-            print "/// get_externsheet_local_range(refx=%d) -> external %r" % (refx, info)
+            print >> bk.logfile, "/// get_externsheet_local_range(refx=%d) -> external %r" % (refx, info)
         return (-4, -4) # external reference
     if ref_first_sheetx == 0xFFFE == ref_last_sheetx:
         if blah:
-            print "/// get_externsheet_local_range(refx=%d) -> unspecified sheet %r" % (refx, info)
+            print >> bk.logfile, "/// get_externsheet_local_range(refx=%d) -> unspecified sheet %r" % (refx, info)
         return (-1, -1) # internal reference, any sheet
     if ref_first_sheetx == 0xFFFF == ref_last_sheetx:
         if blah:
-            print "/// get_externsheet_local_range(refx=%d) -> deleted sheet(s)" % (refx, )
+            print >> bk.logfile, "/// get_externsheet_local_range(refx=%d) -> deleted sheet(s)" % (refx, )
         return (-2, -2) # internal reference, deleted sheet(s)
     nsheets = len(bk._all_sheets_map)
     if not(0 <= ref_first_sheetx <= ref_last_sheetx < nsheets):
         if blah:
-            print "/// get_externsheet_local_range(refx=%d) -> %r" % (refx, info)
-            print "--- first/last sheet not in range(%d)" % nsheets
+            print >> bk.logfile, "/// get_externsheet_local_range(refx=%d) -> %r" % (refx, info)
+            print >> bk.logfile, "--- first/last sheet not in range(%d)" % nsheets
         return (-102, -102) # stuffed up somewhere :-(
     xlrd_sheetx1 = bk._all_sheets_map[ref_first_sheetx]
     xlrd_sheetx2 = bk._all_sheets_map[ref_last_sheetx]
@@ -509,16 +509,16 @@ def get_externsheet_local_range_b57(
         bk, raw_extshtx, ref_first_sheetx, ref_last_sheetx, blah=0):
     if raw_extshtx > 0:
         if blah:
-            print "/// get_externsheet_local_range_b57(raw_extshtx=%d) -> external" % raw_extshtx
+            print >> bk.logfile, "/// get_externsheet_local_range_b57(raw_extshtx=%d) -> external" % raw_extshtx
         return (-4, -4) # external reference
     if ref_first_sheetx == -1 and ref_last_sheetx == -1:
         return (-2, -2) # internal reference, deleted sheet(s)
     nsheets = len(bk._all_sheets_map)
     if not(0 <= ref_first_sheetx <= ref_last_sheetx < nsheets):
         if blah:
-            print "/// get_externsheet_local_range_b57(%d, %d, %d) -> ???" \
+            print >> bk.logfile, "/// get_externsheet_local_range_b57(%d, %d, %d) -> ???" \
                 % (raw_extshtx, ref_first_sheetx, ref_last_sheetx)
-            print "--- first/last sheet not in range(%d)" % nsheets
+            print >> bk.logfile, "--- first/last sheet not in range(%d)" % nsheets
         return (-103, -103) # stuffed up somewhere :-(
     xlrd_sheetx1 = bk._all_sheets_map[ref_first_sheetx]
     xlrd_sheetx2 = bk._all_sheets_map[ref_last_sheetx]
@@ -747,9 +747,9 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
     bv = bk.biff_version
     reldelta = 1 # All defined name formulas use "Method B" [OOo docs]
     if blah:
-        print "::: evaluate_name_formula %r %r %d %d %r level=%d" \
+        print >> bk.logfile, "::: evaluate_name_formula %r %r %d %d %r level=%d" \
             % (namex, nobj.name, fmlalen, bv, data, level)
-        hex_char_dump(data, 0, fmlalen)
+        hex_char_dump(data, 0, fmlalen, fout=bk.logfile)
     if level > STACK_PANIC_LEVEL:
         raise XLRDError("Excessive indirect references in NAME formula")
     sztab = szdict[bv]
@@ -829,9 +829,9 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
         oname = onames[opx] # + [" RVA"][optype]
         sz = sztab[opx]
         if blah:
-            print "Pos:%d Op:0x%02x Name:t%s Sz:%d opcode:%02xh optype:%02xh" \
+            print >> bk.logfile, "Pos:%d Op:0x%02x Name:t%s Sz:%d opcode:%02xh optype:%02xh" \
                 % (pos, op, oname, sz, opcode, optype)
-            print "Stack =", stack
+            print >> bk.logfile, "Stack =", stack
         if sz == -2:
             msg = 'ERROR *** Unexpected token 0x%02x ("%s"); biff_version=%d' \
                 % (op, oname, bv)
@@ -1004,7 +1004,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                 else:
                     sz = 4
                 if blah:
-                    print "   subop=%02xh subname=t%s sz=%d nc=%02xh" \
+                    print >> bk.logfile, "   subop=%02xh subname=t%s sz=%d nc=%02xh" \
                         % (subop, subname, sz, nc)
             elif 0x1A <= opcode <= 0x1B: # tSheet, tEndSheet
                 assert bv < 50
@@ -1043,12 +1043,15 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
             else:
                 func_name, nargs = func_attrs[:2]
                 if blah:
-                    print "    FuncID=%d name=%s nargs=%d" \
+                    print >> bk.logfile, "    FuncID=%d name=%s nargs=%d" \
                           % (funcx, func_name, nargs)
                 assert len(stack) >= nargs
-                argtext = listsep.join([arg.text for arg in stack[-nargs:]])
-                otext = "%s(%s)" % (func_name, argtext)
-                del stack[-nargs:]
+                if nargs:
+                    argtext = listsep.join([arg.text for arg in stack[-nargs:]])
+                    otext = "%s(%s)" % (func_name, argtext)
+                    del stack[-nargs:]
+                else:
+                    otext = func_name + "()"
                 res = Operand(oUNK, None, FUNC_RANK, otext)
                 spush(res)
         elif opcode == 0x02: #tFuncVar
@@ -1057,7 +1060,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
             prompt, nargs = divmod(nargs, 128)
             macro, funcx = divmod(funcx, 32768)
             if blah:
-                print "   FuncID=%d nargs=%d macro=%d prompt=%d" \
+                print >> bk.logfile, "   FuncID=%d nargs=%d macro=%d prompt=%d" \
                       % (funcx, nargs, macro, prompt)
             func_attrs = func_defs.get(funcx, None)
             if not func_attrs:
@@ -1067,7 +1070,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
             else:
                 func_name, minargs, maxargs = func_attrs[:3]
                 if blah:
-                    print "    name: %r, min~max args: %d~%d" \
+                    print >> bk.logfile, "    name: %r, min~max args: %d~%d" \
                         % (func_name, minargs, maxargs)
                 assert minargs <= nargs <= maxargs
                 assert len(stack) >= nargs
@@ -1079,10 +1082,10 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                     testarg = stack[-nargs]
                     if testarg.kind not in (oNUM, oBOOL):
                         if blah and testarg.kind != oUNK:
-                            print "IF testarg kind?"
+                            print >> bk.logfile, "IF testarg kind?"
                     elif testarg.value not in (0, 1):
                         if blah and testarg.value is not None:
-                            print "IF testarg value?"
+                            print >> bk.logfile, "IF testarg value?"
                     else:
                         if nargs == 2 and not testarg.value:
                             # IF(FALSE, tv) => FALSE
@@ -1095,7 +1098,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                             else:
                                 res.kind, res.value = chosen.kind, chosen.value
                         if blah:
-                            print "$$$$$$ IF => constant"
+                            print >> bk.logfile, "$$$$$$ IF => constant"
                 elif funcx == 100: # CHOOSE
                     testarg = stack[-nargs]
                     if testarg.kind == oNUM:
@@ -1333,11 +1336,11 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
         pos += sz
     any_rel = not not any_rel
     if blah:
-        print "End of formula. level=%d any_rel=%d any_err=%d stack=%r" % \
+        print >> bk.logfile, "End of formula. level=%d any_rel=%d any_err=%d stack=%r" % \
             (level, not not any_rel, any_err, stack)
         if len(stack) >= 2:
-            print "*** Stack has unprocessed args"
-        print
+            print >> bk.logfile, "*** Stack has unprocessed args"
+        print >> bk.logfile
     nobj.stack = stack
     if len(stack) != 1:
         nobj.result = None
@@ -1358,9 +1361,9 @@ def decompile_formula(bk, fmla, fmlalen,
     data = fmla
     bv = bk.biff_version
     if blah:
-        print "::: decompile_formula len=%d fmlatype=%r browx=%r bcolx=%r reldelta=%d %r level=%d" \
+        print >> bk.logfile, "::: decompile_formula len=%d fmlatype=%r browx=%r bcolx=%r reldelta=%d %r level=%d" \
             % (fmlalen, fmlatype, browx, bcolx, reldelta, data, level)
-        hex_char_dump(data, 0, fmlalen)
+        hex_char_dump(data, 0, fmlalen, fout=bk.logfile)
     if level > STACK_PANIC_LEVEL:
         raise XLRDError("Excessive indirect references in formula")
     sztab = szdict[bv]
@@ -1406,7 +1409,7 @@ def decompile_formula(bk, fmla, fmlalen,
     def unexpected_opcode(op_arg, oname_arg):
         msg = "ERROR *** Unexpected token 0x%02x (%s) found in formula type %s" \
               % (op_arg, oname_arg, FMLA_TYPEDESCR_MAP[fmlatype])
-        print msg
+        print >> bk.logfile, msg
         # raise FormulaError(msg)
 
     if fmlalen == 0:
@@ -1423,9 +1426,9 @@ def decompile_formula(bk, fmla, fmlalen,
         oname = onames[opx] # + [" RVA"][optype]
         sz = sztab[opx]
         if blah:
-            print "Pos:%d Op:0x%02x opname:t%s Sz:%d opcode:%02xh optype:%02xh" \
+            print >> bk.logfile, "Pos:%d Op:0x%02x opname:t%s Sz:%d opcode:%02xh optype:%02xh" \
                 % (pos, op, oname, sz, opcode, optype)
-            print "Stack =", stack
+            print >> bk.logfile, "Stack =", stack
         if sz == -2:
             msg = 'ERROR *** Unexpected token 0x%02x ("%s"); biff_version=%d' \
                 % (op, oname, bv)
@@ -1575,7 +1578,7 @@ def decompile_formula(bk, fmla, fmlalen,
                 else:
                     sz = 4
                 if blah:
-                    print "   subop=%02xh subname=t%s sz=%d nc=%02xh" \
+                    print >> bk.logfile, "   subop=%02xh subname=t%s sz=%d nc=%02xh" \
                         % (subop, subname, sz, nc)
             elif 0x1A <= opcode <= 0x1B: # tSheet, tEndSheet
                 assert bv < 50
@@ -1613,12 +1616,15 @@ def decompile_formula(bk, fmla, fmlalen,
             else:
                 func_name, nargs = func_attrs[:2]
                 if blah:
-                    print "    FuncID=%d name=%s nargs=%d" \
+                    print >> bk.logfile, "    FuncID=%d name=%s nargs=%d" \
                           % (funcx, func_name, nargs)
                 assert len(stack) >= nargs
-                argtext = listsep.join([arg.text for arg in stack[-nargs:]])
-                otext = "%s(%s)" % (func_name, argtext)
-                del stack[-nargs:]
+                if nargs:
+                    argtext = listsep.join([arg.text for arg in stack[-nargs:]])
+                    otext = "%s(%s)" % (func_name, argtext)
+                    del stack[-nargs:]
+                else:
+                    otext = func_name + "()"
                 res = Operand(oUNK, None, FUNC_RANK, otext)
                 spush(res)
         elif opcode == 0x02: #tFuncVar
@@ -1627,7 +1633,7 @@ def decompile_formula(bk, fmla, fmlalen,
             prompt, nargs = divmod(nargs, 128)
             macro, funcx = divmod(funcx, 32768)
             if blah:
-                print "   FuncID=%d nargs=%d macro=%d prompt=%d" \
+                print >> bk.logfile, "   FuncID=%d nargs=%d macro=%d prompt=%d" \
                       % (funcx, nargs, macro, prompt)
             #### TODO #### if funcx == 255: # call add-in function
             if funcx == 255:
@@ -1641,7 +1647,7 @@ def decompile_formula(bk, fmla, fmlalen,
             else:
                 func_name, minargs, maxargs = func_attrs[:3]
                 if blah:
-                    print "    name: %r, min~max args: %d~%d" \
+                    print >> bk.logfile, "    name: %r, min~max args: %d~%d" \
                         % (func_name, minargs, maxargs)
                 assert minargs <= nargs <= maxargs
                 assert len(stack) >= nargs
@@ -1865,11 +1871,11 @@ def decompile_formula(bk, fmla, fmlalen,
         pos += sz
     any_rel = not not any_rel
     if blah:
-        print "End of formula. level=%d any_rel=%d any_err=%d stack=%r" % \
+        print >> bk.logfile, "End of formula. level=%d any_rel=%d any_err=%d stack=%r" % \
             (level, not not any_rel, any_err, stack)
         if len(stack) >= 2:
-            print "*** Stack has unprocessed args"
-        print
+            print >> bk.logfile, "*** Stack has unprocessed args"
+        print >> bk.logfile
 
     if len(stack) != 1:
         result = None
@@ -1880,8 +1886,8 @@ def decompile_formula(bk, fmla, fmlalen,
 #### under deconstruction ###
 def dump_formula(bk, data, fmlalen, bv, reldelta, blah=0, isname=0):
     if blah:
-        print "dump_formula", fmlalen, bv, len(data)
-        hex_char_dump(data, 0, fmlalen)
+        print >> bk.logfile, "dump_formula", fmlalen, bv, len(data)
+        hex_char_dump(data, 0, fmlalen, fout=bk.logfile)
     assert bv >= 80 #### this function needs updating ####
     sztab = szdict[bv]
     pos = 0
@@ -1901,7 +1907,7 @@ def dump_formula(bk, data, fmlalen, bv, reldelta, blah=0, isname=0):
 
         sz = sztab[opx]
         if blah:
-            print "Pos:%d Op:0x%02x Name:t%s Sz:%d opcode:%02xh optype:%02xh" \
+            print >> bk.logfile, "Pos:%d Op:0x%02x Name:t%s Sz:%d opcode:%02xh optype:%02xh" \
                 % (pos, op, oname, sz, opcode, optype)
         if not optype:
             if 0x01 <= opcode <= 0x02: # tExp, tTbl
@@ -1954,7 +1960,7 @@ def dump_formula(bk, data, fmlalen, bv, reldelta, blah=0, isname=0):
                 if blah: print >> bk.logfile, "   sz=%d strg=%r" % (sz, strg)
             else:
                 if sz <= 0:
-                    print "**** Dud size; exiting ****"
+                    print >> bk.logfile, "**** Dud size; exiting ****"
                     return
             pos += sz
             continue
@@ -2025,7 +2031,7 @@ def dump_formula(bk, data, fmlalen, bv, reldelta, blah=0, isname=0):
             if blah: print >> bk.logfile, "FORMULA: /// Not handled yet: t" + oname
             any_err = 1
         if sz <= 0:
-            print "**** Dud size; exiting ****"
+            print >> bk.logfile, "**** Dud size; exiting ****"
             return
         pos += sz
     if blah:

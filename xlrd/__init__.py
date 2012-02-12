@@ -2,7 +2,7 @@
 
 __VERSION__ = "0.7.2"
 
-# <p>Copyright © 2005-2011 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
@@ -11,7 +11,7 @@ import licences
 ##
 # <p><b>A Python module for extracting data from MS Excel ™ spreadsheet files.
 # <br /><br />
-# Version 0.7.2 -- January 2012
+# Version 0.7.2 -- February 2012
 # </b></p>
 #
 # <h2>General information</h2>
@@ -1243,19 +1243,19 @@ class Book(BaseObject):
         else:
             nc, ty = unpack("<BB", data[:2])
             if blah2:
-                print "EXTERNSHEET(b7-):"
-                hex_char_dump(data, 0, len(data))
+                print >> self.logfile, "EXTERNSHEET(b7-):"
+                hex_char_dump(data, 0, len(data), fout=self.logfile)
                 msg = {
                     1: "Encoded URL",
                     2: "Current sheet!!",
                     3: "Specific sheet in own doc't",
                     4: "Nonspecific sheet in own doc't!!",
                     }.get(ty, "Not encoded")
-                print "   %3d chars, type is %d (%s)" % (nc, ty, msg)
+                print >> self.logfile, "   %3d chars, type is %d (%s)" % (nc, ty, msg)
             if ty == 3:
                 sheet_name = unicode(data[2:nc+2], self.encoding)
                 self._extnsht_name_from_num[self._extnsht_count] = sheet_name
-                if blah2: print self._extnsht_name_from_num
+                if blah2: print >> self.logfile, self._extnsht_name_from_num
             if not (1 <= ty <= 4):
                 ty = 0
             self._externsheet_type_b57.append(ty)
@@ -1290,7 +1290,7 @@ class Book(BaseObject):
             return
         self.derive_encoding()
         # print
-        # hex_char_dump(data, 0, len(data))
+        # hex_char_dump(data, 0, len(data), fout=self.logfile)
         (
         option_flags, kb_shortcut, name_len, fmla_len, extsht_index, sheet_index,
         menu_text_len, description_text_len, help_topic_text_len, status_bar_text_len,
@@ -1322,13 +1322,13 @@ class Book(BaseObject):
         nobj.excel_sheet_index = sheet_index
         nobj.scope = None # patched up in the names_epilogue() method
         if blah:
-            print "NAME[%d]:%s oflags=%d, name_len=%d, fmla_len=%d, extsht_index=%d, sheet_index=%d, name=%r" \
+            print >> self.logfile, "NAME[%d]:%s oflags=%d, name_len=%d, fmla_len=%d, extsht_index=%d, sheet_index=%d, name=%r" \
                 % (name_index, macro_flag, option_flags, name_len,
                 fmla_len, extsht_index, sheet_index, internal_name)
         name = internal_name
         if nobj.builtin:
             name = builtin_name_from_code.get(name, "??Unknown??")
-            if blah: print "    builtin: %s" % name
+            if blah: print >> self.logfile, "    builtin: %s" % name
         nobj.name = name
         nobj.raw_formula = data[pos:]
         nobj.basic_formula_len = fmla_len
@@ -1427,8 +1427,8 @@ class Book(BaseObject):
         self._supbook_types.append(None)
         blah = DEBUG or self.verbosity >= 2
         if 0:
-            print "SUPBOOK:"
-            hex_char_dump(data, 0, len(data))
+            print >> self.logfile, "SUPBOOK:"
+            hex_char_dump(data, 0, len(data), fout=self.logfile)
         num_sheets = unpack("<H", data[0:2])[0]
         sbn = self._supbook_count
         self._supbook_count += 1
@@ -1436,26 +1436,26 @@ class Book(BaseObject):
             self._supbook_types[-1] = SUPBOOK_INTERNAL
             self._supbook_locals_inx = self._supbook_count - 1
             if blah:
-                print "SUPBOOK[%d]: internal 3D refs; %d sheets" % (sbn, num_sheets)
-                print "    _all_sheets_map", self._all_sheets_map
+                print >> self.logfile, "SUPBOOK[%d]: internal 3D refs; %d sheets" % (sbn, num_sheets)
+                print >> self.logfile, "    _all_sheets_map", self._all_sheets_map
             return
         if data[0:4] == "\x01\x00\x01\x3A":
             self._supbook_types[-1] = SUPBOOK_ADDIN
             self._supbook_addins_inx = self._supbook_count - 1
-            if blah: print "SUPBOOK[%d]: add-in functions" % sbn
+            if blah: print >> self.logfile, "SUPBOOK[%d]: add-in functions" % sbn
             return
         url, pos = unpack_unicode_update_pos(data, 2, lenlen=2)
         if num_sheets == 0:
             self._supbook_types[-1] = SUPBOOK_DDEOLE
-            if blah: print "SUPBOOK[%d]: DDE/OLE document = %r" % (sbn, url)
+            if blah: print >> self.logfile, "SUPBOOK[%d]: DDE/OLE document = %r" % (sbn, url)
             return
         self._supbook_types[-1] = SUPBOOK_EXTERNAL
-        if blah: print "SUPBOOK[%d]: url = %r" % (sbn, url)
+        if blah: print >> self.logfile, "SUPBOOK[%d]: url = %r" % (sbn, url)
         sheet_names = []
         for x in range(num_sheets):
             shname, pos = unpack_unicode_update_pos(data, pos, lenlen=2)
             sheet_names.append(shname)
-            if blah: print "    sheet %d: %r" % (x, shname)
+            if blah: print >> self.logfile, "    sheet %d: %r" % (x, shname)
 
     def handle_sheethdr(self, data):
         # This a BIFF 4W special.
@@ -1529,7 +1529,7 @@ class Book(BaseObject):
         formatting.initialise_book(self)
         while 1:
             rc, length, data = self.get_record_parts()
-            if DEBUG: print "parse_globals: record code is 0x%04x" % rc
+            if DEBUG: print >> self.logfile, "parse_globals: record code is 0x%04x" % rc
             if rc == XL_SST:
                 self.handle_sst(data)
             elif rc == XL_FONT or rc == XL_FONT_B3B4:
@@ -1577,14 +1577,14 @@ class Book(BaseObject):
                     self.derive_encoding()
                 if self.biff_version == 45:
                     # DEBUG = 0
-                    if DEBUG: print "global EOF: position", self._position
+                    if DEBUG: print >> self.logfile, "global EOF: position", self._position
                     # if DEBUG:
                     #     pos = self._position - 4
                     #     print repr(self.mem[pos:pos+40])
                 return
             else:
                 # if DEBUG:
-                #     print "parse_globals: ignoring record code 0x%04x" % rc
+                #     print >> self.logfile, "parse_globals: ignoring record code 0x%04x" % rc
                 pass
 
     def read(self, pos, length):

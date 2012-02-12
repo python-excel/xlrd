@@ -1,7 +1,7 @@
 # -*- coding: cp1252 -*-
 
 ##
-# <p> Portions copyright © 2005-2011 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p> Portions copyright © 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
@@ -754,7 +754,7 @@ class Sheet(BaseObject):
         DEBUG = 0
         blah = DEBUG or self.verbosity >= 2
         blah_rows = DEBUG or self.verbosity >= 4
-        blah_formulas = 1 and blah
+        blah_formulas = 0 and blah
         r1c1 = 0
         oldpos = bk._position
         bk._position = self._position
@@ -928,7 +928,7 @@ class Sheet(BaseObject):
                                 if blah_formulas:
                                     fprintf(self.logfile, "ARRAY: %d %d %d %d %d\n",
                                         row1x, rownx, col1x, colnx, array_flags)
-                                    dump_formula(bk, data2[14:], tokslen, bv, reldelta=0, blah=1)
+                                    # dump_formula(bk, data2[14:], tokslen, bv, reldelta=0, blah=1)
                             elif rc2 == XL_SHRFMLA:
                                 row1x, rownx, col1x, colnx, nfmlas, tokslen = \
                                     local_unpack("<HHBBxBH", data2[:10])
@@ -1036,7 +1036,7 @@ class Sheet(BaseObject):
                 self.gcw = tuple(gcw)
                 if 0:
                     showgcw = "".join(map(lambda x: "F "[x], gcw)).rstrip().replace(' ', '.')
-                    print "GCW:", showgcw
+                    print >> self.logfile, "GCW:", showgcw
             elif rc == XL_BLANK:
                 if not fmt_info: continue
                 rowx, colx, xf_index = local_unpack('<HHH', data[:6])
@@ -1122,13 +1122,13 @@ class Sheet(BaseObject):
                 row1x, rownx, col1x, colnx, array_flags, tokslen = \
                     local_unpack("<HHBBBxxxxxH", data[:14])
                 if blah_formulas:
-                    print "ARRAY:", row1x, rownx, col1x, colnx, array_flags
-                    dump_formula(bk, data[14:], tokslen, bv, reldelta=0, blah=1)
+                    print >> self.logfile, "ARRAY:", row1x, rownx, col1x, colnx, array_flags
+                    # dump_formula(bk, data[14:], tokslen, bv, reldelta=0, blah=1)
             elif rc == XL_SHRFMLA:
                 row1x, rownx, col1x, colnx, nfmlas, tokslen = \
                     local_unpack("<HHBBxBH", data[:10])
                 if blah_formulas:
-                    print "SHRFMLA (main):", row1x, rownx, col1x, colnx, nfmlas
+                    print >> self.logfile, "SHRFMLA (main):", row1x, rownx, col1x, colnx, nfmlas
                     decompile_formula(bk, data[10:], tokslen, FMLA_TYPE_SHARED,
                         blah=1, browx=rowx, bcolx=colx, r1c1=r1c1)
             elif rc == XL_CONDFMT:
@@ -1170,7 +1170,7 @@ class Sheet(BaseObject):
                         cf_type, cmp_op, sz1, sz2, flags,
                         font_block, bord_block, patt_block,
                         )
-                # hex_char_dump(data, 0, data_len)
+                # hex_char_dump(data, 0, data_len, fout=self.logfile)
                 pos = 12
                 if font_block:
                     (font_height, font_options, weight, escapement, underline,
@@ -1676,13 +1676,13 @@ class Sheet(BaseObject):
 
     def handle_hlink(self, data):
         # DEBUG = 1
-        if DEBUG: print "\n=== hyperlink ==="
+        if DEBUG: print >> self.logfile, "\n=== hyperlink ==="
         record_size = len(data)
         h = Hyperlink()
         h.frowx, h.lrowx, h.fcolx, h.lcolx, guid0, dummy, options = unpack('<HHHH16s4si', data[:32])
         assert guid0 == "\xD0\xC9\xEA\x79\xF9\xBA\xCE\x11\x8C\x82\x00\xAA\x00\x4B\xA9\x0B"
         assert dummy == "\x02\x00\x00\x00"
-        if DEBUG: print "options: %08X" % options
+        if DEBUG: print >> self.logfile, "options: %08X" % options
         offset = 32
 
         def get_nul_terminated_unicode(buf, ofs):
@@ -1701,7 +1701,7 @@ class Sheet(BaseObject):
         if (options & 1) and not (options & 0x100): # HasMoniker and not MonikerSavedAsString
             # an OLEMoniker structure
             clsid, = unpack('<16s', data[offset:offset + 16])
-            if DEBUG: print "clsid=%r" %clsid
+            if DEBUG: print >> self.logfile, "clsid=%r" %clsid
             offset += 16
             if clsid == "\xE0\xC9\xEA\x79\xF9\xBA\xCE\x11\x8C\x82\x00\xAA\x00\x4B\xA9\x0B":
                 #          E0H C9H EAH 79H F9H BAH CEH 11H 8CH 82H 00H AAH 00H 4BH A9H 0BH
@@ -1710,18 +1710,18 @@ class Sheet(BaseObject):
                 nbytes = unpack('<L', data[offset:offset + 4])[0]
                 offset += 4
                 h.url_or_path = unicode(data[offset:offset + nbytes], 'UTF-16le')
-                if DEBUG: print "initial url=%r len=%d" % (h.url_or_path, len(h.url_or_path))
+                if DEBUG: print >> self.logfile, "initial url=%r len=%d" % (h.url_or_path, len(h.url_or_path))
                 endpos = h.url_or_path.find(u'\x00')
-                if DEBUG: print "endpos=%d" % endpos
+                if DEBUG: print >> self.logfile, "endpos=%d" % endpos
                 h.url_or_path = h.url_or_path[:endpos]
                 true_nbytes = 2 * (endpos + 1)
                 offset += true_nbytes
                 extra_nbytes = nbytes - true_nbytes
                 extra_data = data[offset:offset + extra_nbytes]
                 offset += extra_nbytes
-                if DEBUG: print "url=%r" % h.url_or_path
-                if DEBUG: print "extra=%r" % extra_data
-                if DEBUG: print "nbytes=%d true_nbytes=%d extra_nbytes=%d" % (nbytes, true_nbytes, extra_nbytes)
+                if DEBUG: print >> self.logfile, "url=%r" % h.url_or_path
+                if DEBUG: print >> self.logfile, "extra=%r" % extra_data
+                if DEBUG: print >> self.logfile, "nbytes=%d true_nbytes=%d extra_nbytes=%d" % (nbytes, true_nbytes, extra_nbytes)
                 assert extra_nbytes in (24, 0)
             elif clsid == "\x03\x03\x00\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46":
                 # file moniker
@@ -1729,12 +1729,12 @@ class Sheet(BaseObject):
                 uplevels, nbytes = unpack("<Hi", data[offset:offset + 6])
                 offset += 6
                 shortpath = "..\\" * uplevels + data[offset:offset + nbytes - 1] #### BYTES, not unicode
-                if DEBUG: print "uplevels=%d shortpath=%r" % (uplevels, shortpath)
+                if DEBUG: print >> self.logfile, "uplevels=%d shortpath=%r" % (uplevels, shortpath)
                 offset += nbytes
                 offset += 24 # OOo: "unknown byte sequence"
                 # above is version 0xDEAD + 20 reserved zero bytes
                 sz = unpack('<i', data[offset:offset + 4])[0]
-                if DEBUG: print "sz=%d" % sz
+                if DEBUG: print >> self.logfile, "sz=%d" % sz
                 offset += 4
                 if sz:
                     xl = unpack('<i', data[offset:offset + 4])[0]
@@ -1748,7 +1748,7 @@ class Sheet(BaseObject):
                     #### MS KLUDGE WARNING ####
                     # The "shortpath" is bytes encoded in the **UNKNOWN** creator's "ANSI" encoding.
             else:
-                print "*** unknown clsid %r" % clsid
+                print >> self.logfile, "*** unknown clsid %r" % clsid
         elif options & 0x163 == 0x103: # UNC
             h.type = u'unc'
             h.url_or_path, offset = get_nul_terminated_unicode(data, offset)
@@ -1961,7 +1961,7 @@ class Sheet(BaseObject):
             del o.rich_text_runlist[-1]
         if OBJ_MSO_DEBUG:
             o.dump(self.logfile, header="=== MSTxo ===", footer= " ")
-            print o.rich_text_runlist
+            print >> self.logfile, o.rich_text_runlist
         return o
 
     def handle_feat11(self, data):
@@ -1984,7 +1984,7 @@ class Sheet(BaseObject):
         assert rt == 0x872
         assert fHdr == 0
         assert Ref1 == Ref0
-        print "FEAT11: grbitFrt=%d  Ref0=%r cref=%d cbFeatData=%d" % (grbitFrt, Ref0, cref, cbFeatData)
+        print >> self.logfile, "FEAT11: grbitFrt=%d  Ref0=%r cref=%d cbFeatData=%d" % (grbitFrt, Ref0, cref, cbFeatData)
         # lt: Table data source type:
         #   =0 for Excel Worksheet Table =1 for read-write SharePoint linked List
         #   =2 for XML mapper Table =3 for Query Table
@@ -2005,7 +2005,7 @@ class Sheet(BaseObject):
         (lt, idList, crwHeader, crwTotals, idFieldNext, cbFSData,
         rupBuild, unusedShort, listFlags, lPosStmCache, cbStmCache,
         cchStmCache, lem, rgbHashParam, cchName) = unpack('<iiiiiiHHiiiii16sH', data[35:35+66])
-        print "lt=%d  idList=%d crwHeader=%d  crwTotals=%d  idFieldNext=%d cbFSData=%d\n"\
+        print >> self.logfile, "lt=%d  idList=%d crwHeader=%d  crwTotals=%d  idFieldNext=%d cbFSData=%d\n"\
             "rupBuild=%d  unusedShort=%d listFlags=%04X  lPosStmCache=%d  cbStmCache=%d\n"\
             "cchStmCache=%d  lem=%d  rgbHashParam=%r  cchName=%d" % (
             lt, idList, crwHeader, crwTotals, idFieldNext, cbFSData,

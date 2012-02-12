@@ -4,7 +4,7 @@
 # Implements the minimal functionality required
 # to extract a "Workbook" or "Book" stream (as one big string)
 # from an OLE2 Compound Document file.
-# <p>Copyright © 2005-2008 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright © 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
@@ -60,12 +60,12 @@ class DirNode(object):
             self.dump(DEBUG)
 
     def dump(self, DEBUG=1):
-        print "DID=%d name=%r etype=%d DIDs(left=%d right=%d root=%d parent=%d kids=%r) first_SID=%d tot_size=%d" \
+        print >> logfile, "DID=%d name=%r etype=%d DIDs(left=%d right=%d root=%d parent=%d kids=%r) first_SID=%d tot_size=%d" \
             % (self.DID, self.name, self.etype, self.left_DID,
             self.right_DID, self.root_DID, self.parent, self.children, self.first_SID, self.tot_size)
         if DEBUG == 2:
             # cre_lo, cre_hi, mod_lo, mod_hi = tsinfo
-            print "timestamp info", self.tsinfo
+            print >> logfile, "timestamp info", self.tsinfo
 
 def _build_family_tree(dirlist, parent_DID, child_DID):
     if child_DID < 0: return
@@ -204,8 +204,8 @@ class CompDoc(object):
                 raise CompDocError("MSAT extension corruption: seen[%d] == %d" % (msid, seen[msid]))
             seen[msid] = 2
             actual_SAT_sectors += 1
-            if actual_SAT_sectors > SAT_sectors_reqd:
-                print "[3]===>>>", mem_data_secs, nent, SAT_sectors_reqd, expected_MSATX_sectors, actual_MSATX_sectors, actual_SAT_sectors, msid
+            if DEBUG and actual_SAT_sectors > SAT_sectors_reqd:
+                print >> logfile, "[3]===>>>", mem_data_secs, nent, SAT_sectors_reqd, expected_MSATX_sectors, actual_MSATX_sectors, actual_SAT_sectors, msid
             offset = 512 + sec_size * msid
             news = list(unpack(fmt, mem[offset:offset+sec_size]))
             self.SAT.extend(news)
@@ -217,7 +217,7 @@ class CompDoc(object):
             # for i, s in enumerate(self.SAT):
                 # print >> logfile, "entry: %4d offset: %6d, next entry: %4d" % (i, 512 + sec_size * i, s)
                 # print >> logfile, "%d:%d " % (i, s),
-            print
+            print >> logfile
         if DEBUG and dump_again:
             print >> logfile, "MSAT: len =", len(MSAT)
             dump_list(MSAT, 10, logfile)
@@ -450,14 +450,14 @@ def x_dump_line(alist, stride, f, dpos, equal=0):
     print >> f, "%5d%s" % (dpos, " ="[equal]),
     for value in alist[dpos:dpos + stride]:
         print >> f, str(value),
-    print
+    print >> f
 
 def dump_list(alist, stride, f=sys.stdout):
     def _dump_line(dpos, equal=0):
         print >> f, "%5d%s" % (dpos, " ="[equal]),
         for value in alist[dpos:dpos + stride]:
             print >> f, str(value),
-        print
+        print >> f
     pos = None
     oldpos = None
     for pos in xrange(0, len(alist), stride):
