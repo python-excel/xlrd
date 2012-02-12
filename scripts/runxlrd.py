@@ -45,6 +45,23 @@ if __name__ == "__main__":
     import xlrd
     import sys, time, glob, traceback, pprint, gc
 
+    class LogHandler(object):
+
+        def __init__(self, logfileobj):
+            self.logfileobj = logfileobj
+            self.fileheading = None
+            self.shown = 0
+            
+        def setfileheading(self, fileheading):
+            self.fileheading = fileheading
+            self.shown = 0
+            
+        def write(self, text):
+            if self.fileheading and not self.shown:
+                self.logfileobj.write(self.fileheading)
+                self.shown = 1
+            self.logfileobj.write(text)
+        
     null_cell = xlrd.empty_cell
 
     def show_row(bk, sh, rowx, colrange, printit):
@@ -98,8 +115,9 @@ if __name__ == "__main__":
         if bk.formatting_info:
             print "FORMATs: %d, FONTs: %d, XFs: %d" \
                 % (len(bk.format_list), len(bk.font_list), len(bk.xf_list))
-        print "Load time: %.2f seconds (stage 1) %.2f seconds (stage 2)" \
-            % (bk.load_time_stage_1, bk.load_time_stage_2)
+        if not options.suppress_timing:        
+            print "Load time: %.2f seconds (stage 1) %.2f seconds (stage 2)" \
+                % (bk.load_time_stage_1, bk.load_time_stage_2)
         print
 
     def show_fonts(bk):
@@ -264,10 +282,13 @@ if __name__ == "__main__":
             action="store_true", default=0,
             help="load sheets on demand instead of all at once")
         oparser.add_option(
+            "-t", "--suppress-timing",
+            action="store_true", default=0,
+            help="don't print timings (diffs are less messy)")
+        oparser.add_option(
             "-r", "--ragged-rows",
             action="store_true", default=0,
             help="open_workbook(..., ragged_rows=True)")
-
         options, args = oparser.parse_args(cmd_args)
         if len(args) == 1 and args[0] in ("version", ):
             pass
@@ -286,7 +307,7 @@ if __name__ == "__main__":
             print "Python:", sys.version
             sys.exit(0)
         if options.logfilename:
-            logfile = open(options.logfilename, 'w')
+            logfile = LogHandler(open(options.logfilename, 'w'))
         else:
             logfile = sys.stdout
         mmap_opt = options.mmap
@@ -301,11 +322,13 @@ if __name__ == "__main__":
             gc.disable()
         for pattern in args[1:]:
             for fname in glob.glob(pattern):
-                print >> logfile, "\n=== File: %s ===" % fname
+                print "\n=== File: %s ===" % fname
+                if logfile != sys.stdout:
+                    logfile.setfileheading("\n=== File: %s ===\n" % fname)
                 if gc_mode == 1:
                     n_unreachable = gc.collect()
                     if n_unreachable:
-                        print >> logfile, "GC before open:", n_unreachable, "unreachable objects"
+                        print "GC before open:", n_unreachable, "unreachable objects"
                 if PSYCO:
                     import psyco
                     psyco.full()
@@ -321,17 +344,18 @@ if __name__ == "__main__":
                         ragged_rows=options.ragged_rows,
                         )
                     t1 = time.time()
-                    print >> logfile, "Open took %.2f seconds" % (t1-t0,)
+                    if not options.suppress_timing:
+                        print "Open took %.2f seconds" % (t1-t0,)
                 except xlrd.XLRDError:
-                    print >> logfile, "*** Open failed: %s: %s" % sys.exc_info()[:2]
+                    print "*** Open failed: %s: %s" % sys.exc_info()[:2]
                     continue
                 except KeyboardInterrupt:
-                    print >> logfile, "*** KeyboardInterrupt ***"
-                    traceback.print_exc(file=logfile)
+                    print "*** KeyboardInterrupt ***"
+                    traceback.print_exc(file=sys.stdout)
                     sys.exit(1)
                 except:
-                    print >> logfile, "*** Open failed ***"
-                    traceback.print_exc(file=logfile)
+                    print "*** Open failed ***"
+                    traceback.print_exc(file=sys.stdout)
                     continue
                 t0 = time.time()
                 if cmd == 'hdr':
@@ -358,15 +382,16 @@ if __name__ == "__main__":
                 elif cmd == 'xfc':
                     count_xfs(bk)
                 else:
-                    print >> logfile, "*** Unknown command <%s>" % cmd
+                    print "*** Unknown command <%s>" % cmd
                     sys.exit(1)
                 del bk
                 if gc_mode == 1:
                     n_unreachable = gc.collect()
                     if n_unreachable:
-                        print >> logfile, "GC post cmd:", fname, "->", n_unreachable, "unreachable objects"
-                t1 = time.time()
-                print >> logfile, "\ncommand took %.2f seconds\n" % (t1-t0,)
+                        print "GC post cmd:", fname, "->", n_unreachable, "unreachable objects"
+                if not options.suppress_timing:
+                    t1 = time.time()
+                    print "\ncommand took %.2f seconds\n" % (t1-t0,)
 
         return None
 
