@@ -4,6 +4,8 @@
 import sys
 python_version = sys.version_info[:2]
 
+from xlrd import __VERSION__
+
 av = sys.argv
 if len(av) > 1 and av[1].lower() == "--egg":
     if python_version < (2, 3):
@@ -20,7 +22,7 @@ def mkargs(**kwargs):
 
 args = mkargs(
     name = 'xlrd',
-    version = '0.7.2a2',
+    version = __VERSION__,
     author = 'John Machin',
     author_email = 'sjmachin@lexicon.net',
     url = the_url,
