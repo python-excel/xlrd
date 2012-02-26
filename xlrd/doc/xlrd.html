@@ -8,7 +8,7 @@
 <h1>The xlrd Module</h1>
 <p /><p><b>A Python module for extracting data from MS Excel &#8482; spreadsheet files.
 <br /><br />
-Version 0.7.2a2 -- 2010-03-01
+Version 0.7.3 -- February/March 2012
 </b></p>
 
 <h2>General information</h2>
@@ -405,6 +405,11 @@ considered a font, but also several other display attributes.</p>
 <dd>
 <p>Information relating to a named reference, formula, macro, etc.</p>
 <p>For more information about this class, see <a href='#__init__.Name-class'><i>The Name Class</i></a>.</p>
+</dd>
+<dt><b>Note</b> (class)  [<a href='#sheet.Note-class'>#</a>]</dt>
+<dd>
+<p> Represents a user &quot;comment&quot; or &quot;note&quot;.</p>
+<p>For more information about this class, see <a href='#sheet.Note-class'><i>The Note Class</i></a>.</p>
 </dd>
 <dt><a id='__init__.open_workbook-function' name='__init__.open_workbook-function'><b>open_workbook(filename=None, 
 logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP, 
@@ -885,7 +890,7 @@ Name or index of sheet to be unloaded.
 <p /><p>Contains the data for one cell.</p>
 
 <p>WARNING: You don't call this class yourself. You access Cell objects
-via methods of the Sheet object(s) that you found in the Book object that
+via methods of the <a class="link" href="#sheet.Sheet-class"><b>Sheet</b></a> object(s) that you found in the <a class="link" href="link:#Book"><b>Book</b></a> object that
 was returned when you called xlrd.open_workbook("myfile.xls").</p>
 <p> Cell objects have three attributes: <i>ctype</i> is an int, <i>value</i>
 (which depends on <i>ctype</i>) and <i>xf_index</i>.
@@ -1142,6 +1147,8 @@ Currently, this is used only to distinguish between numbers and dates.
 <dt><b>Hyperlink</b> (class)  [<a href='#sheet.Hyperlink-class'>#</a>]</dt>
 <dd>
 <p /><p>Contains the attributes of a hyperlink.
+Hyperlink objects are accessible through Sheet.<a class="link" href="#sheet.Sheet.hyperlink_list-attribute"><b>hyperlink_list</b></a>
+and Sheet.<a class="link" href="#sheet.Sheet.hyperlink_map-attribute"><b>hyperlink_map</b></a>.
 <br />-- New in version 0.7.2
 </p>
 </dd>
@@ -1166,6 +1173,11 @@ impossible NOT to have a description created by the Excel UI.</p>
 <dt><a id='sheet.Hyperlink.lrowx-attribute' name='sheet.Hyperlink.lrowx-attribute'><b>lrowx</b></a> [<a href='#sheet.Hyperlink.lrowx-attribute'>#</a>]</dt>
 <dd>
 <p>Index of last row</p>
+</dd>
+<dt><a id='sheet.Hyperlink.quicktip-attribute' name='sheet.Hyperlink.quicktip-attribute'><b>quicktip</b></a> [<a href='#sheet.Hyperlink.quicktip-attribute'>#</a>]</dt>
+<dd>
+<p>The text of the &quot;quick tip&quot; displayed when the cursor
+hovers over the hyperlink.</p>
 </dd>
 <dt><a id='sheet.Hyperlink.target-attribute' name='sheet.Hyperlink.target-attribute'><b>target</b></a> [<a href='#sheet.Hyperlink.target-attribute'>#</a>]</dt>
 <dd>
@@ -1294,6 +1306,49 @@ Operand class.</p>
 <p>0 = Sheet macro; 1 = VisualBasic macro. Relevant only if macro == 1</p>
 </dd>
 </dl>
+<h2><a id='sheet.Note-class' name='sheet.Note-class'>The Note Class</a></h2>
+<dl>
+<dt><b>Note</b> (class)  [<a href='#sheet.Note-class'>#</a>]</dt>
+<dd>
+<p /><p> Represents a user "comment" or "note".
+Note objects are accessible through Sheet.<a class="link" href="#sheet.Sheet.cell_note_map-attribute"><b>cell_note_map</b></a>.
+<br />-- New in version 0.7.2
+</p>
+</dd>
+<dt><a id='sheet.Note.author-attribute' name='sheet.Note.author-attribute'><b>author</b></a> [<a href='#sheet.Note.author-attribute'>#</a>]</dt>
+<dd>
+<p>Author of note</p>
+</dd>
+<dt><a id='sheet.Note.col_hidden-attribute' name='sheet.Note.col_hidden-attribute'><b>col_hidden</b></a> [<a href='#sheet.Note.col_hidden-attribute'>#</a>]</dt>
+<dd>
+<p>True if the containing column is hidden</p>
+</dd>
+<dt><a id='sheet.Note.colx-attribute' name='sheet.Note.colx-attribute'><b>colx</b></a> [<a href='#sheet.Note.colx-attribute'>#</a>]</dt>
+<dd>
+<p>Column index</p>
+</dd>
+<dt><a id='sheet.Note.rich_text_runlist-attribute' name='sheet.Note.rich_text_runlist-attribute'><b>rich_text_runlist</b></a> [<a href='#sheet.Note.rich_text_runlist-attribute'>#</a>]</dt>
+<dd>
+<p>List of (offset_in_string, font_index) tuples.
+Unlike Sheet.<a class="link" href="#sheet.Sheet.rich_text_runlist_map-attribute"><b>rich_text_runlist_map</b></a>, the first offset should always be 0.
+</p></dd>
+<dt><a id='sheet.Note.row_hidden-attribute' name='sheet.Note.row_hidden-attribute'><b>row_hidden</b></a> [<a href='#sheet.Note.row_hidden-attribute'>#</a>]</dt>
+<dd>
+<p>True if the containing row is hidden</p>
+</dd>
+<dt><a id='sheet.Note.rowx-attribute' name='sheet.Note.rowx-attribute'><b>rowx</b></a> [<a href='#sheet.Note.rowx-attribute'>#</a>]</dt>
+<dd>
+<p>Row index</p>
+</dd>
+<dt><a id='sheet.Note.show-attribute' name='sheet.Note.show-attribute'><b>show</b></a> [<a href='#sheet.Note.show-attribute'>#</a>]</dt>
+<dd>
+<p>True if note is always shown</p>
+</dd>
+<dt><a id='sheet.Note.text-attribute' name='sheet.Note.text-attribute'><b>text</b></a> [<a href='#sheet.Note.text-attribute'>#</a>]</dt>
+<dd>
+<p>Text of the note</p>
+</dd>
+</dl>
 <h2><a id='formula.Operand-class' name='formula.Operand-class'>The Operand Class</a></h2>
 <dl>
 <dt><b>Operand(akind=None, avalue=None, arank=0, atext='?')</b> (class) [<a href='#formula.Operand-class'>#</a>]</dt>
@@ -1415,39 +1470,39 @@ a reference has been noticed: a 2D reference located in the "current sheet".
 <dl>
 <dt><b>Rowinfo()</b> (class) [<a href='#sheet.Rowinfo-class'>#</a>]</dt>
 <dd>
-<p>Height and default formatting information that applies to a row in a sheet.
+<p /><p>Height and default formatting information that applies to a row in a sheet.
 Derived from ROW records.
-<br /> -- New in version 0.6.1
+<br /> -- New in version 0.6.1</p>
 
-height: Height of the row, in twips. One twip == 1/20 of a point. <br />
+<p><b>height</b>: Height of the row, in twips. One twip == 1/20 of a point.</p>
 
-has_default_height: 0 = Row has custom height; 1 = Row has default height. <br />
+<p><b>has_default_height</b>: 0 = Row has custom height; 1 = Row has default height.</p>
 
-outline_level: Outline level of the row (0 to 7) <br />
+<p><b>outline_level</b>: Outline level of the row (0 to 7) </p>
 
-outline_group_starts_ends: 1 = Outline group starts or ends here (depending on where the
+<p><b>outline_group_starts_ends</b>: 1 = Outline group starts or ends here (depending on where the
 outline buttons are located, see WSBOOL record [TODO ??]),
-<i>and</i> is collapsed <br />
+<i>and</i> is collapsed </p>
 
-hidden: 1 = Row is hidden (manually, or by a filter or outline group) <br />
+<p><b>hidden</b>: 1 = Row is hidden (manually, or by a filter or outline group) </p>
 
-height_mismatch: 1 = Row height and default font height do not match <br />
+<p><b>height_mismatch</b>: 1 = Row height and default font height do not match </p>
 
-has_default_xf_index: 1 = the xf_index attribute is usable; 0 = ignore it <br />
+<p><b>has_default_xf_index</b>: 1 = the xf_index attribute is usable; 0 = ignore it </p>
 
-xf_index: Index to default XF record for empty cells in this row.
-Don't use this if has_default_xf_index == 0. <br />
+<p><b>xf_index</b>: Index to default XF record for empty cells in this row.
+Don't use this if has_default_xf_index == 0. </p>
 
-additional_space_above: This flag is set, if the upper border of at least one cell in this row
+<p><b>additional_space_above</b>: This flag is set, if the upper border of at least one cell in this row
 or if the lower border of at least one cell in the row above is
 formatted with a thick line style. Thin and medium line styles are not
-taken into account. <br />
+taken into account. </p>
 
-additional_space_below: This flag is set, if the lower border of at least one cell in this row
+<p><b>additional_space_below</b>: This flag is set, if the lower border of at least one cell in this row
 or if the upper border of at least one cell in the row below is
 formatted with a medium or thick line style. Thin line styles are not
-taken into account. <br />
-</p></dd>
+taken into account. </p>
+</dd>
 </dl>
 <h2><a id='sheet.Sheet-class' name='sheet.Sheet-class'>The Sheet Class</a></h2>
 <dl>
@@ -1459,20 +1514,31 @@ taken into account. <br />
 column index, counting from zero.
 Negative values for row/column indexes and slice positions are supported in the expected fashion.</p>
 
-<p>For information about cell types and cell values, refer to the documentation of the Cell class.</p>
+<p>For information about cell types and cell values, refer to the documentation of the <a class="link" href="#sheet.Cell-class"><b>Cell</b></a> class.</p>
 
 <p>WARNING: You don't call this class yourself. You access Sheet objects via the Book object that
 was returned when you called xlrd.open_workbook("myfile.xls").</p>
 </dd>
+<dt><a id='sheet.Sheet.book-attribute' name='sheet.Sheet.book-attribute'><b>book</b></a> [<a href='#sheet.Sheet.book-attribute'>#</a>]</dt>
+<dd>
+<p>A reference to the Book object to which this sheet belongs.
+Example usage: some_sheet.book.datemode</p>
+</dd>
 <dt><a id='sheet.Sheet.cell-method' name='sheet.Sheet.cell-method'><b>cell(rowx, colx)</b></a> [<a href='#sheet.Sheet.cell-method'>#</a>]</dt>
 <dd>
-<p>Cell object in the given row and column.</p>
+<p><a class="link" href="#sheet.Cell-class"><b>Cell</b></a> object in the given row and column.
+</p></dd>
+<dt><a id='sheet.Sheet.cell_note_map-attribute' name='sheet.Sheet.cell_note_map-attribute'><b>cell_note_map</b></a> [<a href='#sheet.Sheet.cell_note_map-attribute'>#</a>]</dt>
+<dd>
+<p /><p>A sparse mapping from (rowx, colx) to a <a class="link" href="#sheet.Note-class"><b>Note</b></a> object.
+Cells not containing a note ("comment") are not mapped.
+<br />-- New in version 0.7.2 </p>
 </dd>
 <dt><a id='sheet.Sheet.cell_type-method' name='sheet.Sheet.cell_type-method'><b>cell_type(rowx, colx)</b></a> [<a href='#sheet.Sheet.cell_type-method'>#</a>]</dt>
 <dd>
 <p>Type of the cell in the given row and column.
-Refer to the documentation of the Cell class.</p>
-</dd>
+Refer to the documentation of the <a class="link" href="#sheet.Cell-class"><b>Cell</b></a> class.
+</p></dd>
 <dt><a id='sheet.Sheet.cell_value-method' name='sheet.Sheet.cell_value-method'><b>cell_value(rowx, colx)</b></a> [<a href='#sheet.Sheet.cell_value-method'>#</a>]</dt>
 <dd>
 <p>Value of the cell in the given row and column.</p>
@@ -1480,13 +1546,13 @@ Refer to the documentation of the Cell class.</p>
 <dt><a id='sheet.Sheet.cell_xf_index-method' name='sheet.Sheet.cell_xf_index-method'><b>cell_xf_index(rowx, colx)</b></a> [<a href='#sheet.Sheet.cell_xf_index-method'>#</a>]</dt>
 <dd>
 <p>XF index of the cell in the given row and column.
-This is an index into Book.xf_list.
+This is an index into Book.<a class="link" href="link:#Book.xf_list"><b>xf_list</b></a>.
 <br /> -- New in version 0.6.1
 </p></dd>
 <dt><a id='sheet.Sheet.col-method' name='sheet.Sheet.col-method'><b>col(colx)</b></a> [<a href='#sheet.Sheet.col-method'>#</a>]</dt>
 <dd>
-<p>Returns a sequence of the Cell objects in the given column.</p>
-</dd>
+<p>Returns a sequence of the <a class="link" href="#sheet.Cell-class"><b>Cell</b></a> objects in the given column.
+</p></dd>
 <dt><a id='sheet.Sheet.col_label_ranges-attribute' name='sheet.Sheet.col_label_ranges-attribute'><b>col_label_ranges</b></a> [<a href='#sheet.Sheet.col_label_ranges-attribute'>#</a>]</dt>
 <dd>
 <p>List of address ranges of cells containing column labels.
@@ -1504,8 +1570,8 @@ for crange in thesheet.col_label_ranges:
 </p></dd>
 <dt><a id='sheet.Sheet.col_slice-method' name='sheet.Sheet.col_slice-method'><b>col_slice(colx, start_rowx=0, end_rowx=None)</b></a> [<a href='#sheet.Sheet.col_slice-method'>#</a>]</dt>
 <dd>
-<p>Returns a slice of the Cell objects in the given column.</p>
-</dd>
+<p>Returns a slice of the <a class="link" href="#sheet.Cell-class"><b>Cell</b></a> objects in the given column.
+</p></dd>
 <dt><a id='sheet.Sheet.col_types-method' name='sheet.Sheet.col_types-method'><b>col_types(colx, start_rowx=0, end_rowx=None)</b></a> [<a href='#sheet.Sheet.col_types-method'>#</a>]</dt>
 <dd>
 <p>Returns a slice of the types of the cells in the given column.</p>
@@ -1516,7 +1582,7 @@ for crange in thesheet.col_label_ranges:
 </dd>
 <dt><a id='sheet.Sheet.colinfo_map-attribute' name='sheet.Sheet.colinfo_map-attribute'><b>colinfo_map</b></a> [<a href='#sheet.Sheet.colinfo_map-attribute'>#</a>]</dt>
 <dd>
-<p>The map from a column index to a Colinfo object. Often there is an entry
+<p>The map from a column index to a <a class="link" href="#sheet.Colinfo-class"><b>Colinfo</b></a> object. Often there is an entry
 in COLINFO records for all column indexes in range(257).
 Note that xlrd ignores the entry for the non-existent
 257th column. On the other hand, there may be no entry for unused columns.
@@ -1581,15 +1647,15 @@ default font size. The algorithm how to exactly calculate the resulting
 column width is not known.<br />
 Example: The default width of 8 set in this record results in a column
 width of 8.43 using Arial font with a size of 10 points."""<br />
-For the default hierarchy, refer to the Colinfo class above.
+For the default hierarchy, refer to the <a class="link" href="#sheet.Colinfo-class"><b>Colinfo</b></a> class.
 <br /> -- New in version 0.6.1
 </p></dd>
 <dt><a id='sheet.Sheet.gcw-attribute' name='sheet.Sheet.gcw-attribute'><b>gcw</b></a> [<a href='#sheet.Sheet.gcw-attribute'>#</a>]</dt>
 <dd>
 <p>A 256-element tuple corresponding to the contents of the GCW record for this sheet.
 If no such record, treat as all bits zero.
-Applies to BIFF4-7 only. See docs of Colinfo class for discussion.</p>
-</dd>
+Applies to BIFF4-7 only. See docs of the <a class="link" href="#sheet.Colinfo-class"><b>Colinfo</b></a> class for discussion.
+</p></dd>
 <dt><a id='sheet.Sheet.has_pane_record-attribute' name='sheet.Sheet.has_pane_record-attribute'><b>has_pane_record</b></a> [<a href='#sheet.Sheet.has_pane_record-attribute'>#</a>]</dt>
 <dd>
 <p>Boolean specifying if a PANE record was present, ignore unless you're xlutils.copy</p>
@@ -1611,13 +1677,18 @@ Populated only if open_workbook(formatting_info=True).
 </dd>
 <dt><a id='sheet.Sheet.hyperlink_list-attribute' name='sheet.Sheet.hyperlink_list-attribute'><b>hyperlink_list</b></a> [<a href='#sheet.Sheet.hyperlink_list-attribute'>#</a>]</dt>
 <dd>
-<p /><p>A list of Hyperlink objects corresponding to HLINK records found
+<p /><p>A list of <a class="link" href="#sheet.Hyperlink-class"><b>Hyperlink</b></a> objects corresponding to HLINK records found
 in the worksheet.<br />-- New in version 0.7.2 </p>
 </dd>
 <dt><a id='sheet.Sheet.hyperlink_map-attribute' name='sheet.Sheet.hyperlink_map-attribute'><b>hyperlink_map</b></a> [<a href='#sheet.Sheet.hyperlink_map-attribute'>#</a>]</dt>
 <dd>
-<p /><p>A sparse mapping from (rowx, colx) to an item in Sheet.hyperlink_list.
-Cells not containing a hyperlink are not mapped.
+<p /><p>A sparse mapping from (rowx, colx) to an item in <a class="link" href="#sheet.Sheet.hyperlink_list-attribute"><b>hyperlink_list</b></a>.
+Cells not covered by a hyperlink are not mapped.
+It is possible using the Excel UI to set up a hyperlink that
+covers a larger-than-1x1 rectangle of cells.
+Hyperlink rectangles may overlap (Excel doesn't check).
+When a multiply-covered cell is clicked on, the hyperlink that is activated
+(and the one that is mapped here) is the last in hyperlink_list.
 <br />-- New in version 0.7.2 </p>
 </dd>
 <dt><a id='sheet.Sheet.merged_cells-attribute' name='sheet.Sheet.merged_cells-attribute'><b>merged_cells</b></a> [<a href='#sheet.Sheet.merged_cells-attribute'>#</a>]</dt>
@@ -1646,9 +1717,9 @@ for crange in thesheet.merged_cells:
 <dt><a id='sheet.Sheet.ncols-attribute' name='sheet.Sheet.ncols-attribute'><b>ncols</b></a> [<a href='#sheet.Sheet.ncols-attribute'>#</a>]</dt>
 <dd>
 <p>Nominal number of columns in sheet. It is 1 + the maximum column index
-found, ignoring empty cells. See also open_workbook(,,,ragged_rows=???)
-and Sheet.row_len(row_index).</p>
-</dd>
+found, ignoring trailing empty cells. See also open_workbook(ragged_rows=?)
+and Sheet.<a class="link" href="#sheet.Sheet.row_len-method"><b>row_len</b></a>(row_index).
+</p></dd>
 <dt><a id='sheet.Sheet.nrows-attribute' name='sheet.Sheet.nrows-attribute'><b>nrows</b></a> [<a href='#sheet.Sheet.nrows-attribute'>#</a>]</dt>
 <dd>
 <p>Number of rows in sheet. A row index is in range(thesheet.nrows).</p>
@@ -1660,8 +1731,8 @@ defines where in the string the font begins to be used.
 Offsets are expected to be in ascending order.
 If the first offset is not zero, the meaning is that the cell's XF's font should
 be used from offset 0.
-<br /> This is a sparse mapping. Meaning for cells that do not contain any
-rich text or cells that contain numbers, there will be no entry in the mapping.
+<br /> This is a sparse mapping. There is no entry for cells that are not formatted with
+rich text.
 <br />How to use:
 <pre>
 runlist = thesheet.rich_text_runlist_map.get((rowx, colx))
@@ -1676,8 +1747,8 @@ Populated only if open_workbook(formatting_info=True).
 </p></dd>
 <dt><a id='sheet.Sheet.row-method' name='sheet.Sheet.row-method'><b>row(rowx)</b></a> [<a href='#sheet.Sheet.row-method'>#</a>]</dt>
 <dd>
-<p>Returns a sequence of the Cell objects in the given row.</p>
-</dd>
+<p>Returns a sequence of the <a class="link" href="#sheet.Cell-class"><b>Cell</b></a> objects in the given row.
+</p></dd>
 <dt><a id='sheet.Sheet.row_label_ranges-attribute' name='sheet.Sheet.row_label_ranges-attribute'><b>row_label_ranges</b></a> [<a href='#sheet.Sheet.row_label_ranges-attribute'>#</a>]</dt>
 <dd>
 <p>List of address ranges of cells containing row labels.
@@ -1687,14 +1758,14 @@ For more details, see <i>col_label_ranges</i> above.
 <dt><a id='sheet.Sheet.row_len-method' name='sheet.Sheet.row_len-method'><b>row_len(rowx)</b></a> [<a href='#sheet.Sheet.row_len-method'>#</a>]</dt>
 <dd>
 <p>Returns the effective number of cells in the given row. For use with
-open_workbook(..., ragged_rows=True) which is likely to produce rows
-with fewer than Sheet.ncols cells.
+open_workbook(ragged_rows=True) which is likely to produce rows
+with fewer than <a class="link" href="#sheet.Sheet.ncols-attribute"><b>ncols</b></a> cells.
 <br /> -- New in version 0.7.2
 </p></dd>
 <dt><a id='sheet.Sheet.row_slice-method' name='sheet.Sheet.row_slice-method'><b>row_slice(rowx, start_colx=0, end_colx=None)</b></a> [<a href='#sheet.Sheet.row_slice-method'>#</a>]</dt>
 <dd>
-<p>Returns a slice of the Cell objects in the given row.</p>
-</dd>
+<p>Returns a slice of the <a class="link" href="#sheet.Cell-class"><b>Cell</b></a> objects in the given row.
+</p></dd>
 <dt><a id='sheet.Sheet.row_types-method' name='sheet.Sheet.row_types-method'><b>row_types(rowx, start_colx=0, end_colx=None)</b></a> [<a href='#sheet.Sheet.row_types-method'>#</a>]</dt>
 <dd>
 <p>Returns a slice of the types
@@ -1707,7 +1778,7 @@ of the cells in the given row.</p>
 </dd>
 <dt><a id='sheet.Sheet.rowinfo_map-attribute' name='sheet.Sheet.rowinfo_map-attribute'><b>rowinfo_map</b></a> [<a href='#sheet.Sheet.rowinfo_map-attribute'>#</a>]</dt>
 <dd>
-<p>The map from a row index to a Rowinfo object. Note that it is possible
+<p>The map from a row index to a <a class="link" href="#sheet.Rowinfo-class"><b>Rowinfo</b></a> object. Note that it is possible
 to have missing entries -- at least one source of XLS files doesn't
 bother writing ROW records.
 <br /> -- New in version 0.6.1. Populated only if open_workbook(formatting_info=True).
@@ -1722,7 +1793,7 @@ bother writing ROW records.
 From the OOo docs:<br />
 """Default width of the columns in 1/256 of the width of the zero
 character, using default font (first FONT record in the file)."""<br />
-For the default hierarchy, refer to the Colinfo class above.
+For the default hierarchy, refer to the <a class="link" href="#sheet.Colinfo-class"><b>Colinfo</b></a> class.
 <br /> -- New in version 0.6.1
 </p></dd>
 <dt><a id='sheet.Sheet.vert_split_first_visible-attribute' name='sheet.Sheet.vert_split_first_visible-attribute'><b>vert_split_first_visible</b></a> [<a href='#sheet.Sheet.vert_split_first_visible-attribute'>#</a>]</dt>
