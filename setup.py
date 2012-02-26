@@ -32,8 +32,8 @@ args = mkargs(
         ],
     description = 'Library for developers to extract data from Microsoft Excel (tm) spreadsheet files',
     long_description = \
-        "Extract data from new and old Excel spreadsheets on any platform. " \
-        "Pure Python (2.1 to 2.6). Strong support for Excel dates. Unicode-aware.",
+        "Extract data from Excel spreadsheets (XLS only, versions 2.0 to 2003) on any platform. " \
+        "Pure Python (2.1 to 2.7). Strong support for Excel dates. Unicode-aware.",
     platforms = ["Any platform -- don't need Windows"],
     license = 'BSD',
     keywords = ['xls', 'excel', 'spreadsheet', 'workbook'],
