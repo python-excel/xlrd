@@ -947,10 +947,7 @@ class Sheet(BaseObject):
                             if rc2 not in (XL_STRING, XL_STRING_B2):
                                 raise XLRDError("Expected STRING record; found 0x%04x" % rc2)
                         # if DEBUG: print "STRING: data=%r BIFF=%d cp=%d" % (data2, self.biff_version, bk.encoding)
-                        if self.biff_version < BIFF_FIRST_UNICODE:
-                            strg = unpack_string(data2, 0, bk.encoding or bk.derive_encoding(), lenlen=1 + int(bv > 20))
-                        else:
-                            strg = unpack_unicode(data2, 0, lenlen=2)
+                        strg = self.string_record_contents(data2)
                         self.put_cell(rowx, colx, XL_CELL_TEXT, strg, xf_index)
                         # if DEBUG: print "FORMULA strg %r" % strg
                     elif result_str[0] == '\x01':
@@ -1480,6 +1477,36 @@ class Sheet(BaseObject):
         self.update_cooked_mag_factors()
         bk._position = oldpos
         return 1
+    
+    def string_record_contents(self, data):
+        bv = self.biff_version
+        bk = self.book
+        lenlen = (bv >= 30) + 1
+        nchars_expected = unpack("<" + "BH"[lenlen - 1], data[:lenlen])[0]
+        offset = lenlen
+        if bv < 80:
+            enc = bk.encoding or bk.derive_encoding()
+        nchars_found = 0
+        result = u""
+        while 1:
+            if bv >= 80:
+                flag = ord(data[offset]) & 1
+                enc = ("latin_1", "utf_16_le")[flag]
+                offset += 1
+            chunk = unicode(data[offset:], enc)
+            result += chunk
+            nchars_found += len(chunk)
+            if nchars_found == nchars_expected:
+                return result
+            if nchars_found > nchars_expected:
+                msg = ("STRING/CONTINUE: expected %d chars, found %d" 
+                    % (nchars_expected, nchars_found))
+                raise XLRDErrror(msg)
+            rc, _unused_len, data = bk.get_record_parts()
+            if rc != XL_CONTINUE:
+                raise XLRDError(
+                    "Expected CONTINUE record; found record-type 0x%04X" % rc)
+            offset = 0
 
     def update_cooked_mag_factors(self):
         # Cached values are used ONLY for the non-active view mode.
