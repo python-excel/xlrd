@@ -36,14 +36,10 @@ class CompDocError(Exception):
 
 class DirNode(object):
 
-    def __init__(self, DID, dent, DEBUG=0):
+    def __init__(self, DID, dent, DEBUG=0, logfile=sys.stdout):
         # dent is the 128-byte directory entry
         self.DID = DID
-        # (cbufsize, self.etype, self.colour, self.left_DID, self.right_DID,
-        # self.root_DID,
-        # self.first_SID,
-        # self.tot_size) = \
-        #     unpack('<HBBiii16x4x8x8xii4x', dent[64:128])
+        self.logfile = logfile
         (cbufsize, self.etype, self.colour, self.left_DID, self.right_DID,
         self.root_DID) = \
             unpack('<HBBiii', dent[64:80])
@@ -60,12 +56,12 @@ class DirNode(object):
             self.dump(DEBUG)
 
     def dump(self, DEBUG=1):
-        print >> logfile, "DID=%d name=%r etype=%d DIDs(left=%d right=%d root=%d parent=%d kids=%r) first_SID=%d tot_size=%d" \
+        print >> self.logfile, "DID=%d name=%r etype=%d DIDs(left=%d right=%d root=%d parent=%d kids=%r) first_SID=%d tot_size=%d" \
             % (self.DID, self.name, self.etype, self.left_DID,
             self.right_DID, self.root_DID, self.parent, self.children, self.first_SID, self.tot_size)
         if DEBUG == 2:
             # cre_lo, cre_hi, mod_lo, mod_hi = tsinfo
-            print >> logfile, "timestamp info", self.tsinfo
+            print >> self.logfile, "timestamp info", self.tsinfo
 
 def _build_family_tree(dirlist, parent_DID, child_DID):
     if child_DID < 0: return
@@ -235,7 +231,7 @@ class CompDoc(object):
         did = -1
         for pos in xrange(0, len(dbytes), 128):
             did += 1
-            dirlist.append(DirNode(did, dbytes[pos:pos+128], 0))
+            dirlist.append(DirNode(did, dbytes[pos:pos+128], 0, logfile))
         self.dirlist = dirlist
         _build_family_tree(dirlist, 0, dirlist[0].root_DID) # and stand well back ...
         if DEBUG:
