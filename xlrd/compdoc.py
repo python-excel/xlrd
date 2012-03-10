@@ -23,7 +23,7 @@ import array
 
 ##
 # Magic cookie that should appear in the first 8 bytes of the file.
-SIGNATURE = "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1"
+SIGNATURE = b("\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1")
 
 EOCSID = -2
 FREESID = -1
@@ -84,7 +84,7 @@ class CompDoc(object):
         self.DEBUG = DEBUG
         if mem[0:8] != SIGNATURE:
             raise CompDocError('Not an OLE2 compound document')
-        if mem[28:30] != '\xFE\xFF':
+        if mem[28:30] != b('\xFE\xFF'):
             raise CompDocError('Expected "little-endian" marker, found %r' % mem[28:30])
         revision, version = unpack('<HH', mem[24:28])
         if DEBUG:
@@ -333,7 +333,7 @@ class CompDoc(object):
                     % (name, size, size - todo)
         # print >> self.logfile, "_get_stream(%s): seen" % name; dump_list(self.seen, 20, self.logfile)
 
-        return ''.join(sectors)
+        return b('').join(sectors)
 
     def _dir_search(self, path, storage_DID=0):
         # Return matching DirNode instance, or None

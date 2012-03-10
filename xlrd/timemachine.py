@@ -73,7 +73,14 @@ try:
     False
 except NameError:
     setattr(sys.modules['__builtin__'], 'False', 0)
+    
+if python_version < (2, 2):
+    def has_key(d, key):
+        return d.has_key(key)
 
+else:
+    def has_key(d, key):
+        return key in d
 
 def int_floor_div(x, y):
     return divmod(x, y)[0]
@@ -89,3 +96,18 @@ if python_version < (2, 3):
         for item in aseq:
             tot += item
         return tot
+
+if python_version >= (3,):
+    # Python 3
+    def b(s):
+        return s.encode('cp1252')
+    
+    def get_int_1byte(data, pos):
+        return data[pos]
+    
+else:
+    # Python 2
+    def b(s): return s
+
+    def get_int_1byte(data, pos):
+        return ord(data[pos])
