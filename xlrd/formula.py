@@ -690,9 +690,9 @@ tLT, tLE, tEQ, tGE, tGT, tNE = range(0x09, 0x0F)
 import operator as opr
 
 try:
-    from operator import floordiv
+    from operator import truediv
 except:
-    from operator import div as floordiv
+    from operator import div as truediv
 
 def nop(x):
     return x
@@ -723,7 +723,7 @@ binop_rules = {
     tAdd:   (_arith_argdict, oNUM, opr.add,  30, '+'),
     tSub:   (_arith_argdict, oNUM, opr.sub,  30, '-'),
     tMul:   (_arith_argdict, oNUM, opr.mul,  40, '*'),
-    tDiv:   (_arith_argdict, oNUM, floordiv,  40, '/'),
+    tDiv:   (_arith_argdict, oNUM, truediv,  40, '/'),
     tPower: (_arith_argdict, oNUM, _opr_pow, 50, '^',),
     tConcat:(_strg_argdict, oSTRG, opr.add,  20, '&'),
     tLT:    (_cmp_argdict, oBOOL, _opr_lt,   10, '<'),
