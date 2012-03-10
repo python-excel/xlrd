@@ -157,7 +157,6 @@ Examples (script name and glob_pattern arg omitted for brevity)
         sys.stdout.write(text)
     
     if len(sys.argv) != 5:
-        print(sys.argv)
         usage()
         sys.exit(0)
     arg_pattern = sys.argv[1] # glob pattern e.g. "foo*.xls"
