@@ -912,8 +912,9 @@ class Sheet(BaseObject):
                     fmlalen = local_unpack("<H", data[20:22])[0]
                     decompile_formula(bk, data[22:], fmlalen, FMLA_TYPE_CELL,
                         browx=rowx, bcolx=colx, blah=1, r1c1=r1c1)
-                if result_str[6:8] == "\xFF\xFF":
-                    if result_str[0]  == '\x00':
+                if result_str[6:8] == b("\xFF\xFF"):
+                    first_byte = get_int_1byte(result_str, 0)
+                    if first_byte == 0:
                         # need to read next record (STRING)
                         gotstring = 0
                         # if flags & 8:
@@ -950,19 +951,19 @@ class Sheet(BaseObject):
                         strg = self.string_record_contents(data2)
                         self.put_cell(rowx, colx, XL_CELL_TEXT, strg, xf_index)
                         # if DEBUG: print "FORMULA strg %r" % strg
-                    elif result_str[0] == '\x01':
+                    elif first_byte == 1:
                         # boolean formula result
-                        value = ord(result_str[2])
+                        value = get_int_1byte(result_str, 2)
                         self_put_cell(rowx, colx, XL_CELL_BOOLEAN, value, xf_index)
-                    elif result_str[0] == '\x02':
+                    elif first_byte == 2:
                         # Error in cell
-                        value = ord(result_str[2])
+                        value = get_int_1byte(result_str, 2)
                         self_put_cell(rowx, colx, XL_CELL_ERROR, value, xf_index)
-                    elif result_str[0] == '\x03':
+                    elif first_byte == 3:
                         # empty ... i.e. empty (zero-length) string, NOT an empty cell.
                         self_put_cell(rowx, colx, XL_CELL_TEXT, u"", xf_index)
                     else:
-                        raise XLRDError("unexpected special case (0x%02x) in FORMULA" % ord(result_str[0]))
+                        raise XLRDError("unexpected special case (0x%02x) in FORMULA" % first_byte)
                 else:
                     # it is a number
                     d = local_unpack('<d', result_str)[0]
@@ -1490,7 +1491,7 @@ class Sheet(BaseObject):
         result = u""
         while 1:
             if bv >= 80:
-                flag = ord(data[offset]) & 1
+                flag = get_int_1byte(data, offset) & 1
                 enc = ("latin_1", "utf_16_le")[flag]
                 offset += 1
             chunk = unicode(data[offset:], enc)
