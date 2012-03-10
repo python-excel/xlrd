@@ -12,6 +12,12 @@ import unittest
 
 import xlrd
 
+if sys.version_info[0] >= 3:
+    def u(s): return s
+else:
+    def u(s):
+        return s.decode('utf-8')
+
 def from_tests_dir(filename):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
 
@@ -19,15 +25,15 @@ book = xlrd.open_workbook(from_tests_dir('Formate.xls'), formatting_info=True)
 
 class TestCellContent(unittest.TestCase):
     def test_text_cells(self):
-        sheet = book.sheet_by_name('Blätt1')
-        for row, name in enumerate(['Huber', 'Äcker', 'Öcker']):
+        sheet = book.sheet_by_name(u('Blätt1'))
+        for row, name in enumerate([u('Huber'), u('Äcker'), u('Öcker')]):
             cell = sheet.cell(row, 0)
             self.assertEqual(cell.ctype, xlrd.XL_CELL_TEXT)
             self.assertEqual(cell.value, name)
             self.assertTrue(cell.xf_index > 0)
 
     def test_date_cells(self):
-        sheet = book.sheet_by_name('Blätt1')
+        sheet = book.sheet_by_name(u('Blätt1'))
         # see also 'Dates in Excel spreadsheets' in the documentation
         # convert: xldate_as_tuple(float, book.datemode) -> (year, month,
         # day, hour, minutes, seconds)
@@ -38,7 +44,7 @@ class TestCellContent(unittest.TestCase):
             self.assertTrue(cell.xf_index > 0)
 
     def test_time_cells(self):
-        sheet = book.sheet_by_name('Blätt1')
+        sheet = book.sheet_by_name(u('Blätt1'))
         # see also 'Dates in Excel spreadsheets' in the documentation
         # convert: xldate_as_tuple(float, book.datemode) -> (year, month,
         # day, hour, minutes, seconds)
@@ -49,7 +55,7 @@ class TestCellContent(unittest.TestCase):
             self.assertTrue(cell.xf_index > 0)
 
     def test_percent_cells(self):
-        sheet = book.sheet_by_name('Blätt1')
+        sheet = book.sheet_by_name(u('Blätt1'))
         for row, time in [(6, .974), (7, .124)]:
             cell = sheet.cell(row, 1)
             self.assertEqual(cell.ctype, xlrd.XL_CELL_NUMBER)
@@ -57,7 +63,7 @@ class TestCellContent(unittest.TestCase):
             self.assertTrue(cell.xf_index > 0)
 
     def test_currency_cells(self):
-        sheet = book.sheet_by_name('Blätt1')
+        sheet = book.sheet_by_name(u('Blätt1'))
         for row, time in [(8, 1000.30), (9, 1.20)]:
             cell = sheet.cell(row, 1)
             self.assertEqual(cell.ctype, xlrd.XL_CELL_NUMBER)
@@ -65,14 +71,14 @@ class TestCellContent(unittest.TestCase):
             self.assertTrue(cell.xf_index > 0)
 
     def test_get_from_merged_cell(self):
-        sheet = book.sheet_by_name('ÖÄÜ')
+        sheet = book.sheet_by_name(u('ÖÄÜ'))
         cell = sheet.cell(2, 2)
         self.assertEqual(cell.ctype, xlrd.XL_CELL_TEXT)
         self.assertEqual(cell.value, 'MERGED CELLS')
         self.assertTrue(cell.xf_index > 0)
 
     def test_ignore_diagram(self):
-        sheet = book.sheet_by_name('Blätt3')
+        sheet = book.sheet_by_name(u('Blätt3'))
         cell = sheet.cell(0, 0)
         self.assertEqual(cell.ctype, xlrd.XL_CELL_NUMBER)
         self.assertEqual(cell.value, 100)
