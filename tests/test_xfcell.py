@@ -24,20 +24,20 @@ sheet = book.sheet_by_name('PROFILEDEF')
 class TestCellValues(unittest.TestCase):
     def test_string_cell(self):
         cell = sheet.cell(0, 0)
-        self.assertEqual(cell.ctype, xlrd3.XL_CELL_TEXT)
+        self.assertEqual(cell.ctype, xlrd.XL_CELL_TEXT)
         self.assertEqual(cell.value, 'PROFIL')
         self.assertTrue(cell.has_xf)
 
     def test_number_cell(self):
         cell = sheet.cell(1, 1)
-        self.assertEqual(cell.ctype, xlrd3.XL_CELL_NUMBER)
+        self.assertEqual(cell.ctype, xlrd.XL_CELL_NUMBER)
         self.assertEqual(cell.value, 100)
         self.assertTrue(cell.has_xf)
 
     def test_calculated_cell(self):
         sheet2 = book.sheet_by_name('PROFILELEVELS')
         cell = sheet2.cell(1, 3)
-        self.assertEqual(cell.ctype, xlrd3.XL_CELL_NUMBER)
+        self.assertEqual(cell.ctype, xlrd.XL_CELL_NUMBER)
         self.assertAlmostEqual(cell.value, 265.131, places=3)
         self.assertTrue(cell.has_xf)
 
