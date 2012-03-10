@@ -53,6 +53,8 @@ if python_version >= (2, 3):
             'Intended Audience :: Developers',
             'License :: OSI Approved :: BSD License',
             'Programming Language :: Python',
+            'Programming Language :: Python :: 2',
+            'Programming Language :: Python :: 3',
             'Operating System :: OS Independent',
             'Topic :: Database',
             'Topic :: Office/Business',
