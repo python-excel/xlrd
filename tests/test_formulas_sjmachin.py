@@ -15,6 +15,11 @@ import xlrd
 def from_tests_dir(filename):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
 
+try:
+    ascii
+except NameError:
+    ascii = str
+
 book = xlrd.open_workbook(from_tests_dir('formula_test_sjmachin.xls'))
 sheet = book.sheet_by_index(0)
 
