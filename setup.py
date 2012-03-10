@@ -74,4 +74,8 @@ if python_version >= (2, 4):
         )
     args.update(args24)
 
+if python_version >= (3,):
+    from distutils.command.build_py import build_py_2to3
+    args['cmdclass'] = {'build_py': build_py_2to3}
+
 setup(**args)

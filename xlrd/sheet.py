@@ -2132,7 +2132,7 @@ class Hyperlink(BaseObject):
 # === helpers ===
 
 def unpack_RK(rk_str):
-    flags = ord(rk_str[0])
+    flags = get_int_1byte(rk_str, 0)
     if flags & 2:
         # There's a SIGNED 30-bit integer in there!
         i,  = unpack('<i', rk_str)
@@ -2142,7 +2142,7 @@ def unpack_RK(rk_str):
         return float(i)
     else:
         # It's the most significant 30 bits of an IEEE 754 64-bit FP number
-        d, = unpack('<d', '\0\0\0\0' + chr(flags & 252) + rk_str[1:4])
+        d, = unpack('<d', b('\0\0\0\0') + b(chr(flags & 252)) + rk_str[1:4])
         if flags & 1:
             return d / 100.0
         return d

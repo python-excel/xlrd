@@ -249,7 +249,9 @@ _cell_opcode_list = [
 _cell_opcode_dict = {}
 for _cell_opcode in _cell_opcode_list:
     _cell_opcode_dict[_cell_opcode] = 1
-is_cell_opcode = _cell_opcode_dict.has_key
+
+def is_cell_opcode(c):
+    return has_key(_cell_opcode_dict, c)
 
 # def fprintf(f, fmt, *vargs): f.write(fmt % vargs)
 
@@ -290,7 +292,7 @@ def unpack_unicode(data, pos, lenlen=2):
         # Avoid crash if missing.
         return u""
     pos += lenlen
-    options = ord(data[pos])
+    options = get_int_1byte(data, pos)
     pos += 1
     # phonetic = options & 0x04
     # richtext = options & 0x08
@@ -332,7 +334,7 @@ def unpack_unicode_update_pos(data, pos, lenlen=2, known_len=None):
     if not nchars and not data[pos:]:
         # Zero-length string with no options byte
         return (u"", pos)
-    options = ord(data[pos])
+    options = get_int_1byte(data, pos)
     pos += 1
     phonetic = options & 0x04
     richtext = options & 0x08

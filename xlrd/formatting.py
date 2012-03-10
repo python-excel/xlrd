@@ -458,7 +458,9 @@ def is_date_format_string(book, fmt):
     # TODO: u'[h]\\ \\h\\o\\u\\r\\s' ([h] means don't care about hours > 23)
     state = 0
     s = ''
-    ignorable = skip_char_dict.has_key
+    def ignorable(c):
+        return has_key(skip_char_dict, c)
+    
     for c in fmt:
         if state == 0:
             if c == u'"':
