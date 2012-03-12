@@ -23,6 +23,8 @@ import sys
 from timemachine import *
 
 class XLRDError(Exception):
+    """Generic exception raised for various Excel\ |trade| reader errors.
+    """
     pass
 
 ##
@@ -30,16 +32,28 @@ class XLRDError(Exception):
 # for debugging.
 
 class BaseObject(object):
+    """Parent class of all classes in the :mod:`xlrd` module. Defines a common :meth:`dump` method
+    for debugging.
 
+    :cvar _repr_these: Special representation list
+    """
     _repr_these = []
 
-    ##
-    # @param f open file object, to which the dump is written
-    # @param header text to write before the dump
-    # @param footer text to write after the dump
-    # @param indent number of leading spaces (for recursive calls)
-
     def dump(self, f=None, header=None, footer=None, indent=0):
+        """Common dump method.
+
+        :param f: Open file object, to which the dump is written
+        :type f: :class:`file` or :class:`file`-like object
+
+        :param header: Text to write before the dump
+        :type header: str
+
+        :param footer: Text to write after the dump
+        :type footer: str
+
+        :param indent: Number of indentation spaces (for recursive calls)
+        :type indent: int
+        """
         if f is None:
             f = sys.stderr
         if hasattr(self, "__slots__"):

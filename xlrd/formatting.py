@@ -1185,25 +1185,24 @@ class XFProtection(BaseObject, EqNeAttrs):
     # the cell is selected (only if the sheet is protected).
     formula_hidden = 0
 
-##
-# eXtended Formatting information for cells, rows, columns and styles.
-# <br /> -- New in version 0.6.1
-#
-# <p>Each of the 6 flags below describes the validity of
-# a specific group of attributes.
-# <br />
-# In cell XFs, flag==0 means the attributes of the parent style XF are used,
-# (but only if the attributes are valid there); flag==1 means the attributes
-# of this XF are used.<br />
-# In style XFs, flag==0 means the attribute setting is valid; flag==1 means
-# the attribute should be ignored.<br />
-# Note that the API
-# provides both "raw" XFs and "computed" XFs -- in the latter case, cell XFs
-# have had the above inheritance mechanism applied.
-# </p>
 
 class XF(BaseObject):
+    """eXtended Formatting information for cells, rows, columns and styles.
 
+    Each of the 6 flags below describes the validity of a specific group of attributes.
+
+    In cell XFs, flag==0 means the attributes of the parent style XF are used,
+    (but only if the attributes are valid there); flag==1 means the attributes
+    of this XF are used.
+
+    In style XFs, flag==0 means the attribute setting is valid; flag==1 means
+    the attribute should be ignored.
+
+    Note that the API provides both "raw" XFs and "computed" XFs -- in the latter case, cell XFs
+    have had the above inheritance mechanism applied.
+
+    .. versionadded:: 0.6.1
+    """
     ##
     # 0 = cell XF, 1 = style XF
     is_style = 0

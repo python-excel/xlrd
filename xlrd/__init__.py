@@ -179,48 +179,6 @@ import licences
 # (say) on a screen or in a PDF file, and (2) copy spreadsheet data to another
 # file without losing the ability to display/render it.</p>
 #
-# <h4>The Palette; Colour Indexes</h4>
-#
-# <p>A colour is represented in Excel as a (red, green, blue) ("RGB") tuple
-# with each component in range(256). However it is not possible to access an
-# unlimited number of colours; each spreadsheet is limited to a palette of 64 different
-# colours (24 in Excel 3.0 and 4.0, 8 in Excel 2.0). Colours are referenced by an index
-# ("colour index") into this palette.
-#
-# Colour indexes 0 to 7 represent 8 fixed built-in colours: black, white, red, green, blue,
-# yellow, magenta, and cyan.<p>
-#
-# The remaining colours in the palette (8 to 63 in Excel 5.0 and later)
-# can be changed by the user. In the Excel 2003 UI, Tools/Options/Color presents a palette
-# of 7 rows of 8 colours. The last two rows are reserved for use in charts.<br />
-# The correspondence between this grid and the assigned
-# colour indexes is NOT left-to-right top-to-bottom.<br />
-# Indexes 8 to 15 correspond to changeable
-# parallels of the 8 fixed colours -- for example, index 7 is forever cyan;
-# index 15 starts off being cyan but can be changed by the user.<br />
-#
-# The default colour for each index depends on the file version; tables of the defaults
-# are available in the source code. If the user changes one or more colours,
-# a PALETTE record appears in the XLS file -- it gives the RGB values for *all* changeable
-# indexes.<br />
-# Note that colours can be used in "number formats": "[CYAN]...." and "[COLOR8]...." refer
-# to colour index 7; "[COLOR16]...." will produce cyan
-# unless the user changes colour index 15 to something else.<br />
-#
-# <p>In addition, there are several "magic" colour indexes used by Excel:<br />
-# 0x18 (BIFF3-BIFF4), 0x40 (BIFF5-BIFF8): System window text colour for border lines
-# (used in XF, CF, and WINDOW2 records)<br />
-# 0x19 (BIFF3-BIFF4), 0x41 (BIFF5-BIFF8): System window background colour for pattern background
-# (used in XF and CF records )<br />
-# 0x43: System face colour (dialogue background colour)<br />
-# 0x4D: System window text colour for chart border lines<br />
-# 0x4E: System window background colour for chart areas<br />
-# 0x4F: Automatic colour for chart border lines (seems to be always Black)<br />
-# 0x50: System ToolTip background colour (used in note objects)<br />
-# 0x51: System ToolTip text colour (used in note objects)<br />
-# 0x7FFF: System window text colour for fonts (used in FONT and CF records)<br />
-# Note 0x7FFF appears to be the *default* colour index. It appears quite often in FONT
-# records.<br />
 #
 # <h4>Default Formatting</h4>
 #
@@ -378,61 +336,70 @@ for _bin, _bic in code_from_builtin_name.items():
     builtin_name_from_code[_bic] = _bin
 del _bin, _bic
 
-##
-#
-# Open a spreadsheet file for data extraction.
-#
-# @param filename The path to the spreadsheet file to be opened.
-#
-# @param logfile An open file to which messages and diagnostics are written.
-#
-# @param verbosity Increases the volume of trace material written to the logfile.
-#
-# @param pickleable Default is true. In Python 2.4 or earlier, setting to false
-# will cause use of array.array objects which save some memory but can't be pickled.
-# In Python 2.5, array.arrays are used unconditionally. Note: if you have large files that
-# you need to read multiple times, it can be much faster to cPickle.dump() the xlrd.Book object
-# once, and use cPickle.load() multiple times.
-# @param use_mmap Whether to use the mmap module is determined heuristically.
-# Use this arg to override the result. Current heuristic: mmap is used if it exists.
-#
-# @param file_contents ... as a string or an mmap.mmap object or some other behave-alike object.
-# If file_contents is supplied, filename will not be used, except (possibly) in messages.
-#
-# @param encoding_override Used to overcome missing or bad codepage information
-# in older-version files. Refer to discussion in the <b>Unicode</b> section above.
-# <br /> -- New in version 0.6.0
-#
-# @param formatting_info Governs provision of a reference to an XF (eXtended Format) object
-# for each cell in the worksheet.
-# <br /> Default is <i>False</i>. This is backwards compatible and saves memory.
-# "Blank" cells (those with their own formatting information but no data) are treated as empty
-# (by ignoring the file's BLANK and MULBLANK records).
-# It cuts off any bottom "margin" of rows of empty (and blank) cells and
-# any right "margin" of columns of empty (and blank) cells.
-# Only cell_value and cell_type are available.
-# <br /> <i>True</i> provides all cells, including empty and blank cells.
-# XF information is available for each cell.
-# <br /> -- New in version 0.6.1
-#
-# @param on_demand Governs whether sheets are all loaded initially or when demanded
-# by the caller. Please refer back to the section "Loading worksheets on demand" for details.
-# <br /> -- New in version 0.7.1
-#
-# @param ragged_rows False (the default) means all rows are padded out with empty cells so that all
-# rows have the same size (Sheet.ncols). True means that there are no empty cells at the ends of rows.
-# This can result in substantial memory savings if rows are of widely varying sizes. See also the
-# Sheet.row_len() method.
-# <br /> -- New in version 0.7.2
-#
-# @return An instance of the Book class.
 
 def open_workbook(filename=None,
-    logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
-    file_contents=None,
-    encoding_override=None,
-    formatting_info=False, on_demand=False, ragged_rows=False,
-    ):
+                  logfile=sys.stdout,
+                  verbosity=0,
+                  pickleable=True,
+                  use_mmap=USE_MMAP,
+                  file_contents=None,
+                  encoding_override=None,
+                  formatting_info=False,
+                  on_demand=False):
+    """Open a spreadsheet file for data extraction.
+
+    :param filename: The path to the spreadsheet file to be opened.
+    :type filename: str
+
+    :param logfile: An open file to which messages and diagnostics are written.
+    :type logfile: file
+
+    :param verbosity: Increases the volume of trace material written to the logfile.
+    :type verbosity: int
+
+    :param pickleable: Default is `True`. In Python 2.4 or earlier, setting to false will cause
+       use of array.array objects which save some memory but can't be pickled.  In Python 2.5,
+       array.arrays are used unconditionally. Note: if you have large files that you need to
+       read multiple times, it can be much faster to :meth:`cPickle.dump()` the
+       :class:`xlrd.Book` object once, and use :meth:`cPickle.load()` multiple times.
+
+    :param use_mmap: Map the spreadsheet's contents into memory, if `file_contents` is
+       `None`. Memory mapped files are used if the :mod:`mmap` module exists.
+    :type use_mmap: Boolean
+
+    :param file_contents: The spreadsheet's contents, overriding filename. filename is still useful for error messagse.
+    :type file_contents: str, :mod:`mmap.mmap` object, :class:`file`-like object or None
+
+    :param encoding_override: Used to overcome missing or bad codepage information
+       in older-version files. Refer to discussion in the <b>Unicode</b> section above.
+
+       .. versionadded:: 0.6.0
+
+    :param formatting_info: Governs provision of a reference to an XF (eXtended Format) object
+       for each cell in the worksheet.
+
+       Default is `False`. This is backwards compatible and saves memory. "Blank" cells (those
+       with their own formatting information but no data) are treated as empty (by ignoring
+       the file's BLANK and MULBLANK records). It cuts off any bottom "margin" of rows of
+       empty (and blank) cells and any right "margin" of columns of empty (and blank) cells.
+       Only cell_value and cell_type are available.
+
+       `True` provides all cells, including empty and blank cells.  Extended formatting
+       information is available for each cell.
+
+       .. versionadded:: 0.6.1
+
+    :type formatting_info: Boolean
+
+    :param on_demand: Governs whether sheets are all loaded initially or when demanded by the
+       caller. Please refer back to the section "Loading worksheets on demand" for details.
+
+       .. versionadded:: 0.7.1
+
+    :type on_demand: Boolean
+
+    :return: An instance of the :class:`Book` class.
+    """
     t0 = time.clock()
     if TOGGLE_GC:
         orig_gc_enabled = gc.isenabled()
@@ -499,107 +466,120 @@ def open_workbook(filename=None,
         bk.release_resources()
     return bk
 
-##
-# For debugging: dump the file's BIFF records in char & hex.
-# @param filename The path to the file to be dumped.
-# @param outfile An open file, to which the dump is written.
-# @param unnumbered If true, omit offsets (for meaningful diffs).
-
 def dump(filename, outfile=sys.stdout, unnumbered=False):
+    """For debugging: dump the file's BIFF records in char & hex.
+
+    :param filename: The path to the file whose contents will be dumped.
+    :type filename: str
+
+    :param outfile: An open file to which the dump is written.
+    :type outfile: :class:`file` or :class:`file`-like object
+
+    :param unnumbered: If true, omit offsets for meaningful diffs.
+    """
     bk = Book()
     bk.biff2_8_load(filename=filename, logfile=outfile, )
     biff_dump(bk.mem, bk.base, bk.stream_len, 0, outfile, unnumbered)
 
-##
-# For debugging and analysis: summarise the file's BIFF records.
-# I.e. produce a sorted file of (record_name, count).
-# @param filename The path to the file to be summarised.
-# @param outfile An open file, to which the summary is written.
 
 def count_records(filename, outfile=sys.stdout):
+    """For debugging and analysis: summarise the file's BIFF records, i.e., produce a sorted
+    file of (record_name, count) tuples.
+
+    :param filename: The path to the file to be summarised.
+    :type filename: str
+
+    :param outfile: An open file, to which the summary is written.
+    :type outfile: :class:`file` or :class:`file`-like object
+    """
     bk = Book()
     bk.biff2_8_load(filename=filename, logfile=outfile, )
     biff_count_records(bk.mem, bk.base, bk.stream_len, outfile)
 
-##
-# Information relating to a named reference, formula, macro, etc.
-# <br />  -- New in version 0.6.0
-# <br />  -- <i>Name information is <b>not</b> extracted from files older than
-# Excel 5.0 (Book.biff_version < 50)</i>
-
 class Name(BaseObject):
+    """Information relating to a named reference, formula, macros, etc.
+
+       .. versionadded:: 0.6.0
+
+       .. note:: Name information is **not** extracted from files older than Excel 5.0
+          (:attr:`Book.biff_version` < 50)
+
+    :ivar book: The parent workbook
+
+    :ivar hidden: Cell visibility flag, boolean `True` or `False`
+
+    :ivar func: Macro function type. `True` if the macro is a function macro, `False` if the
+       macro is a command macro. Only relevant if :attr:`macro` is `True`
+
+    :ivar vbasic: Macro language flag, `True` if the macro language is VisualBasic, `False` if
+       the macro language is Excel (local sheet macro). Only relevant if :attr:`.macro` is
+       `True`.
+
+    :ivar macro: Macro vs. standard name flag, `True` is a macro name, `False` is a standard
+       name.
+
+    :ivar complex: Simple vs. complex formula flag, `True` is a complex formula, `False` is a
+       simple formula. (*No examples of complex formulae have yet been sighted in the wild.*)
+
+    :ivar builtin: User-defined vs. builtin name flag. `True` indicates a builtin name, `False`
+       indicates a user-defined name. Common examples of builtin names include `Print_Area` and
+       `Print_Titles`; see the |OOodocs| for a full list.
+
+    :ivar funcgroup: Function group flag. This is relevant only if :attr:`macro` is `True`; see
+       the |OOodocs| for a full list.
+
+    :ivar binary: Formula definition flag. `True` indicates binary data, `False` indicates a
+       formula definition.(*Note: No examples have yet been sighted in the wild.*)
+
+    :ivar name_index: The :class:`Name` object's index in :attr:`Book.name_obj_list`.
+
+    :ivar name: The name string, Unicode format. If the name is a builtin (see
+       :attr:`builtin`), this is decoded per the |OOodocs|.
+
+    :ivar raw_formula: An 8-bit string.
+
+    :ivar scope: The name's scope, interpreted as follows:
+
+       +-----------------------------------+---------------------------------------------------------+
+       | -1                                | The name is global (visible in all calculation sheets). |
+       +-----------------------------------+---------------------------------------------------------+
+       | -2                                | The name belongs to a macro sheet or VBA sheet.         |
+       +-----------------------------------+---------------------------------------------------------+
+       | -3                                | The name is invalid.                                    |
+       +-----------------------------------+---------------------------------------------------------+
+       | :math:`0 <= scope < book.nsheets` | The name is local to the sheet whose index is scope.    |
+       +-----------------------------------+---------------------------------------------------------+
+
+    :ivar result: The result of evaluating the formula, if any. If no formula, or evaluation of
+       the formula encountered problems, the result is :const:`None`. Otherwise the result is a single
+       instance of the Operand class.
+    """
 
     _repr_these = ['stack']
-    book = None # parent
 
-    ##
-    # 0 = Visible; 1 = Hidden
-    hidden = 0
+    def __init__(self):
+        self.book = None
+        self.hidden = False
+        self.func = False
+        self.vbasic = False
+        self.macro = False
+        self.complex = False
+        self.builtin = False
+        self.funcgroup = False
+        self.binary = False
+        self.name_index = 0
+        self.name = u""
+        self.raw_formula = ""
+        self.scope = -1
+        self.result = None
 
-    ##
-    # 0 = Command macro; 1 = Function macro. Relevant only if macro == 1
-    func = 0
-
-    ##
-    # 0 = Sheet macro; 1 = VisualBasic macro. Relevant only if macro == 1
-    vbasic = 0
-
-    ##
-    # 0 = Standard name; 1 = Macro name
-    macro = 0
-
-    ##
-    # 0 = Simple formula; 1 = Complex formula (array formula or user defined)<br />
-    # <i>No examples have been sighted.</i>
-    complex = 0
-
-    ##
-    # 0 = User-defined name; 1 = Built-in name
-    # (common examples: Print_Area, Print_Titles; see OOo docs for full list)
-    builtin = 0
-
-    ##
-    # Function group. Relevant only if macro == 1; see OOo docs for values.
-    funcgroup = 0
-
-    ##
-    # 0 = Formula definition; 1 = Binary data<br />  <i>No examples have been sighted.</i>
-    binary = 0
-
-    ##
-    # The index of this object in book.name_obj_list
-    name_index = 0
-
-    ##
-    # A Unicode string. If builtin, decoded as per OOo docs.
-    name = u""
-
-    ##
-    # An 8-bit string.
-    raw_formula = ""
-
-    ##
-    # -1: The name is global (visible in all calculation sheets).<br />
-    # -2: The name belongs to a macro sheet or VBA sheet.<br />
-    # -3: The name is invalid.<br />
-    # 0 <= scope < book.nsheets: The name is local to the sheet whose index is scope.
-    scope = -1
-
-    ##
-    # The result of evaluating the formula, if any.
-    # If no formula, or evaluation of the formula encountered problems,
-    # the result is None. Otherwise the result is a single instance of the
-    # Operand class.
-    #
-    result = None
-
-    ##
-    # This is a convenience method for the frequent use case where the name
-    # refers to a single cell.
-    # @return An instance of the Cell class.
-    # @throws XLRDError The name is not a constant absolute reference
-    # to a single cell.
     def cell(self):
+        """This is a convenience method for the frequent use case where the name
+        refers to a single cell.
+
+        :return: An instance of the :class:`Cell` class.
+        :raises: :exc:`.XLRDError` when the name is not a constant absolute reference to a single cell.
+        """
         res = self.result
         if res:
             # result should be an instance of the Operand class
@@ -618,17 +598,19 @@ class Name(BaseObject):
             )
         raise XLRDError("Not a constant absolute reference to a single cell")
 
-    ##
-    # This is a convenience method for the use case where the name
-    # refers to one rectangular area in one worksheet.
-    # @param clipped If true (the default), the returned rectangle is clipped
-    # to fit in (0, sheet.nrows, 0, sheet.ncols) -- it is guaranteed that
-    # 0 <= rowxlo <= rowxhi <= sheet.nrows and that the number of usable rows
-    # in the area (which may be zero) is rowxhi - rowxlo; likewise for columns.
-    # @return a tuple (sheet_object, rowxlo, rowxhi, colxlo, colxhi).
-    # @throws XLRDError The name is not a constant absolute reference
-    # to a single area in a single sheet.
     def area2d(self, clipped=True):
+        """This is a convenience method for the use case where the name
+        refers to one rectangular area in one worksheet.
+
+        :param clipped: If `True` (the default), the returned rectangle is clipped to fit in
+          (0, sheet.nrows, 0, sheet.ncols). It is guaranteed that
+          :math:`0 <= rowxlo <= rowxhi <= sheet.nrows` and that the number of usable rows in
+          the area (which may be zero) is :math:`rowxhi - rowxlo`; likewise for columns.
+
+        :return: a tuple `(sheet_object, rowxlo, rowxhi, colxlo, colxhi)`
+
+        :raises: :exc:`.XLRDError` when The name is not a constant absolute reference to a single area in a single sheet.
+        """
         res = self.result
         if res:
             # result should be an instance of the Operand class
@@ -653,135 +635,136 @@ class Name(BaseObject):
             )
         raise XLRDError("Not a constant absolute reference to a single area in a single sheet")
 
-##
-# Contents of a "workbook".
-# <p>WARNING: You don't call this class yourself. You use the Book object that
-# was returned when you called xlrd.open_workbook("myfile.xls").</p>
 
 class Book(BaseObject):
+    """Contents of a spreadsheet workbook.
 
-    ##
-    # The number of worksheets present in the workbook file.
-    # This information is available even when no sheets have yet been loaded.
-    nsheets = 0
+       .. warning:: Do not construct an instance of this class directly. These objects are
+          constructed indirectly by the returned object from the :meth:`open_workbook` method.
 
-    ##
-    # Which date system was in force when this file was last saved.<br />
-    #    0 => 1900 system (the Excel for Windows default).<br />
-    #    1 => 1904 system (the Excel for Macintosh default).<br />
-    datemode = 0 # In case it's not specified in the file.
+    :ivar nsheets: The number of worksheets present in the workbook file. This information
+       is available even when sheets have not been loaded.
 
-    ##
-    # Version of BIFF (Binary Interchange File Format) used to create the file.
-    # Latest is 8.0 (represented here as 80), introduced with Excel 97.
-    # Earliest supported by this module: 2.0 (represented as 20).
-    biff_version = 0
+    :ivar datemode: The date system was in force when this file was last saved.
 
-    ##
-    # List containing a Name object for each NAME record in the workbook.
-    # <br />  -- New in version 0.6.0
-    name_obj_list = []
+       +---+------------------------------------------------+
+       | 0 | 1900 system (the Excel for Windows default).   |
+       +---+------------------------------------------------+
+       | 1 | 1904 system (the Excel for Macintosh default). |
+       +---+------------------------------------------------+
 
-    ##
-    # An integer denoting the character set used for strings in this file.
-    # For BIFF 8 and later, this will be 1200, meaning Unicode; more precisely, UTF_16_LE.
-    # For earlier versions, this is used to derive the appropriate Python encoding
-    # to be used to convert to Unicode.
-    # Examples: 1252 -> 'cp1252', 10000 -> 'mac_roman'
-    codepage = None
+    :ivar biff_version: Version of BIFF (Binary Interchange File Format) used to create the
+       file.  Latest is 8.0 (represented here as 80), introduced with Excel 97. Earliest
+       supported by this module: 2.0 (represented as 20).
 
-    ##
-    # The encoding that was derived from the codepage.
-    encoding = None
+    :ivar name_obj_list: List containing a :class:`Name` object for each NAME record in the
+       workbook.
 
-    ##
-    # A tuple containing the (telephone system) country code for:<br />
-    #    [0]: the user-interface setting when the file was created.<br />
-    #    [1]: the regional settings.<br />
-    # Example: (1, 61) meaning (USA, Australia).
-    # This information may give a clue to the correct encoding for an unknown codepage.
-    # For a long list of observed values, refer to the OpenOffice.org documentation for
-    # the COUNTRY record.
-    countries = (0, 0)
+       .. versionadded:: 0.6.0
 
-    ##
-    # What (if anything) is recorded as the name of the last user to save the file.
-    user_name = u''
+    :ivar codepage: An integer denoting the character set used for strings in this file.
+       For BIFF 8 and later, this will be 1200, meaning Unicode; more precisely, UTF_16_LE.
+       For earlier versions, this is used to derive the appropriate Python encoding to be
+       used to convert to Unicode.
 
-    ##
-    # A list of Font class instances, each corresponding to a FONT record.
-    # <br /> -- New in version 0.6.1
-    font_list = []
+       Examples: 1252 -> 'cp1252', 10000 -> 'mac_roman'
 
-    ##
-    # A list of XF class instances, each corresponding to an XF record.
-    # <br /> -- New in version 0.6.1
-    xf_list = []
+    :ivar encoding: The encoding that was derived from the codepage.
 
-    ##
-    # A list of Format objects, each corresponding to a FORMAT record, in
-    # the order that they appear in the input file.
-    # It does <i>not</i> contain builtin formats.
-    # If you are creating an output file using (for example) pyExcelerator,
-    # use this list.
-    # The collection to be used for all visual rendering purposes is format_map.
-    # <br /> -- New in version 0.6.1
-    format_list = []
+    :ivar countries: A tuple containing the (telephone system) country code.
 
-    ##
-    # The mapping from XF.format_key to Format object.
-    # <br /> -- New in version 0.6.1
-    format_map = {}
+       +-------------+-------------------------------------------------------+
+       | Tuple index | Meaning                                               |
+       +=============+=======================================================+
+       | 0           | The user-interface setting when the file was created. |
+       +-------------+-------------------------------------------------------+
+       | 1           | The regional settings.                                |
+       +-------------+-------------------------------------------------------+
 
-    ##
-    # This provides access via name to the extended format information for
-    # both built-in styles and user-defined styles.<br />
-    # It maps <i>name</i> to (<i>built_in</i>, <i>xf_index</i>), where:<br />
-    # <i>name</i> is either the name of a user-defined style,
-    # or the name of one of the built-in styles. Known built-in names are
-    # Normal, RowLevel_1 to RowLevel_7,
-    # ColLevel_1 to ColLevel_7, Comma, Currency, Percent, "Comma [0]",
-    # "Currency [0]", Hyperlink, and "Followed Hyperlink".<br />
-    # <i>built_in</i> 1 = built-in style, 0 = user-defined<br />
-    # <i>xf_index</i> is an index into Book.xf_list.<br />
-    # References: OOo docs s6.99 (STYLE record); Excel UI Format/Style
-    # <br /> -- New in version 0.6.1
-    style_name_map = {}
+       Example: (1, 61) means ("USA", "Australia").
 
-    ##
-    # This provides definitions for colour indexes. Please refer to the
-    # above section "The Palette; Colour Indexes" for an explanation
-    # of how colours are represented in Excel.<br />
-    # Colour indexes into the palette map into (red, green, blue) tuples.
-    # "Magic" indexes e.g. 0x7FFF map to None.
-    # <i>colour_map</i> is what you need if you want to render cells on screen or in a PDF
-    # file. If you are writing an output XLS file, use <i>palette_record</i>.
-    # <br /> -- New in version 0.6.1. Extracted only if open_workbook(..., formatting_info=True)
-    colour_map = {}
+       This information may give a clue to the correct encoding for an unknown codepage.
+       For a long list of observed values, refer to the OpenOffice.org documentation for the
+       COUNTRY record.
 
-    ##
-    # If the user has changed any of the colours in the standard palette, the XLS
-    # file will contain a PALETTE record with 56 (16 for Excel 4.0 and earlier)
-    # RGB values in it, and this list will be e.g. [(r0, b0, g0), ..., (r55, b55, g55)].
-    # Otherwise this list will be empty. This is what you need if you are
-    # writing an output XLS file. If you want to render cells on screen or in a PDF
-    # file, use colour_map.
-    # <br /> -- New in version 0.6.1. Extracted only if open_workbook(..., formatting_info=True)
-    palette_record = []
+    :ivar user_name: The last user to save the spreadsheet, if written.
 
-    ##
-    # Time in seconds to extract the XLS image as a contiguous string (or mmap equivalent).
-    load_time_stage_1 = -1.0
+    :ivar font_list: A list of Font class instances, each corresponding to a FONT record.
 
-    ##
-    # Time in seconds to parse the data from the contiguous string (or mmap equivalent).
-    load_time_stage_2 = -1.0
+       .. versionadded:: 0.6.1
+
+    :ivar xf_list: A list of :class:`.XF` instances, each corresponding to an XF record.
+
+       .. versionadded:: 0.6.1
+
+    :ivar format_list: A list of Format objects, each corresponding to a FORMAT record, in
+       the order that they appear in the input file. It does *not* contain builtin formats.
+
+       .. note:: If you are creating an output file using (for example) pyExcelerator, use this
+          list. The collection to be used for all visual rendering purposes is format_map.
+
+       .. versionadded:: 0.6.1
+
+    :ivar format_map: The mapping from :attr:`XF.format_key` to a :class:`Format` object.
+
+       .. versionadded:: 0.6.1
+
+    :ivar style_name_map: This provides access via name to the extended format information for
+       both built-in styles and user-defined styles, mapping `name` to `(built_in, xf_index)`,
+       where:
+
+       +------------+---------------------------------------------------------------------+
+       | `name`     | The name of a user-defined style or the name of one of the built-in |
+       |            | styles. Known built-in names are Normal, RowLevel_1 to RowLevel_7,  |
+       |            | ColLevel_1 to ColLevel_7, Comma, Currency, Percent, "Comma [0]",    |
+       |            | "Currency [0]", Hyperlink, and "Followed Hyperlink".                |
+       +------------+---------------------------------------------------------------------+
+       | `built_in` | 1 = built-in style, 0 = user-defined                                |
+       +------------+---------------------------------------------------------------------+
+       | `xf_index` | An index into :attr:`Book.xf_list`.                                 |
+       +------------+---------------------------------------------------------------------+
+
+       References: |OOodocs| s6.99 (STYLE record); Excel UI Format/Style
+
+       .. versionadded:: 0.6.1
+
+    :ivar colour_map: This provides definitions for colour indexes, but only if
+       :meth:`open_workbook`'s :attr:`formatting_info` argument is `True` when the spreadsheet
+       is read. Please refer to the :ref:`palette_and_colours` for an explanation of how
+       colours are represented in Excel.
+
+       Colour indexes into the palette map into (red, green, blue) tuples. "Magic" indexes
+       e.g. 0x7FFF map to None.  :attr:`colour_map` is what you need if you want to render
+       cells on screen or in a PDF file. If you are writing an output XLS file, use
+       :attr:`palette_record`.
+
+       .. versionadded:: version 0.6.1
+
+    :ivar palette_record: If the user has changed any of the colours in the standard palette,
+       the XLS file will contain a PALETTE record with 56 (16 for Excel 4.0 and earlier) RGB
+       values in it, and this list will be e.g. `[(r0, b0, g0), ..., (r55, b55, g55)]`.
+
+       :attr:`palette_record` will only contain data if :meth:`open_workbook`'s
+       :attr:`formatting_info` argument is `True` when the spreadsheet is read **and** the user
+       changed one of the standard colours.
+
+       Otherwise this list will be empty.
+
+       This is what you need if you are writing an output XLS file. If you want to render cells on screen or in a PDF
+       file, use colour_map.
+
+       .. versionadded:: 0.6.1
+
+    :ivar load_time_stage_1: Time in seconds to extract the XLS image as a contiguous string (or mmap equivalent).
+
+    :ivar load_time_stage_2: Time in seconds to parse the data from the contiguous string (or mmap equivalent).
+    """
 
     ##
     # @return A list of all sheets in the book.
     # All sheets not already loaded will be loaded.
     def sheets(self):
-        for sheetx in xrange(self.nsheets):
+        for sheetx in range(self.nsheets):
             if not self._sheet_list[sheetx]:
                 self.get_sheet(sheetx)
         return self._sheet_list[:]
