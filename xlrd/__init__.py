@@ -745,7 +745,8 @@ class Book(BaseObject):
     # <i>built_in</i> 1 = built-in style, 0 = user-defined<br />
     # <i>xf_index</i> is an index into Book.xf_list.<br />
     # References: OOo docs s6.99 (STYLE record); Excel UI Format/Style
-    # <br /> -- New in version 0.6.1
+    # <br /> -- New in version 0.6.1; since 0.7.4, extracted only if
+    # open_workbook(..., formatting_info=True)
     style_name_map = {}
 
     ##

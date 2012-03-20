@@ -621,6 +621,8 @@ def palette_epilogue(book):
         print >> book.logfile, "\nColour indexes used:\n%r\n" % used
 
 def handle_style(book, data):
+    if not book.formatting_info:
+        return
     blah = DEBUG or book.verbosity >= 2
     bv = book.biff_version
     flag_and_xfx, built_in_id, level = unpack('<HBB', data[:4])
@@ -642,16 +644,23 @@ def handle_style(book, data):
             name += str(level + 1)
     else:
         # user-defined style
+        built_in = 0
+        built_in_id = 0
+        level = 0
         if bv >= 80:
-            name = unpack_unicode(data, 2, lenlen=2)
+            try:
+                name = unpack_unicode(data, 2, lenlen=2)
+            except UnicodeDecodeError:
+                print >> book.logfile, \
+                    "STYLE: built_in=%d xf_index=%d built_in_id=%d level=%d" \
+                    % (built_in, xf_index, built_in_id, level)
+                print >> book.logfile, "raw bytes:", repr(data[2:])
+                raise
         else:
             name = unpack_string(data, 2, book.encoding, lenlen=1)
         if blah and not name:
             print >> book.logfile, \
                 "WARNING *** A user-defined style has a zero-length name"
-        built_in = 0
-        built_in_id = 0
-        level = 0
     book.style_name_map[name] = (built_in, xf_index)
     if blah:
         print >> book.logfile, \
