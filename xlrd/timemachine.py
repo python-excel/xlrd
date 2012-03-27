@@ -100,7 +100,7 @@ if python_version < (2, 3):
 if python_version >= (3,):
     # Python 3
     def b(s):
-        return s.encode('cp1252')
+        return s.encode('latin1')
     
     def get_int_1byte(data, pos):
         return data[pos]
@@ -111,3 +111,6 @@ else:
 
     def get_int_1byte(data, pos):
         return ord(data[pos])
+
+byte_0 = b('\x00')
+byte_empty = b('')
