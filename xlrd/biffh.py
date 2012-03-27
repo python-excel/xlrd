@@ -559,9 +559,15 @@ def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout, unnumbered=False):
                 '??? hex_char_dump: ofs=%d dlen=%d base=%d -> endpos=%d pos=%d endsub=%d substrg=%r\n',
                 ofs, dlen, base, endpos, pos, endsub, substrg)
             break
-        hexd = ''.join(["%02x " % ord(c) for c in substrg])
+        if PY3:
+            hexd = ''.join(["%02x " % c for c in substrg])
+        else:
+            hexd = ''.join(["%02x " % ord(c) for c in substrg])
+        
         chard = ''
         for c in substrg:
+            if PY3:
+                c = chr(c)
             if c == '\0':
                 c = '~'
             elif not (' ' <= c <= '~'):
@@ -569,6 +575,7 @@ def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout, unnumbered=False):
             chard += c
         if numbered:
             num_prefix = "%5d: " %  (base+pos-ofs)
+        
         fprintf(fout, "%s     %-48s %s\n", num_prefix, hexd, chard)
         pos = endsub
 
