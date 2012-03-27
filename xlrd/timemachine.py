@@ -113,4 +113,4 @@ else:
         return ord(data[pos])
 
 byte_0 = b('\x00')
-byte_empty = b('')
+bytes_empty = b('')

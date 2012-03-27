@@ -1923,7 +1923,7 @@ class Sheet(BaseObject):
                 expected_bytes -= nb
             assert expected_bytes == 0
             enc = self.book.encoding or self.book.derive_encoding()
-            o.text = unicode(''.join(pieces), enc)
+            o.text = unicode(bytes_empty.join(pieces), enc)
             o.rich_text_runlist = [(0, 0)]
             o.show = 0
             o.row_hidden = 0
