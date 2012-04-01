@@ -1,17 +1,17 @@
-# -*- coding: cp1252 -*-
+# -*- coding: ascii -*-
 
-__VERSION__ = "0.7.4a"
+__VERSION__ = "0.7.4"
 
-# <p>Copyright © 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright (c) 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
 import licences
 
 ##
-# <p><b>A Python module for extracting data from MS Excel ™ spreadsheet files.
+# <p><b>A Python module for extracting data from MS Excel (TM) spreadsheet files.
 # <br /><br />
-# Version 0.7.4a -- March 2012
+# Version 0.7.4 -- April 2012
 # </b></p>
 #
 # <h2>General information</h2>
