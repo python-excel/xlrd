@@ -1088,7 +1088,7 @@ class Sheet(BaseObject):
                 txo = self.handle_txo(data)
                 if txo and saved_obj_id:
                     txos[saved_obj_id] = txo
-                    saved_obj_is = None
+                    saved_obj_id = None
             elif rc == XL_NOTE:
                 self.handle_note(data, txos)
             elif rc == XL_FEAT11:
