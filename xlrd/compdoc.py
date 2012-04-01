@@ -81,6 +81,7 @@ class CompDoc(object):
 
     def __init__(self, mem, logfile=sys.stdout, DEBUG=0):
         self.logfile = logfile
+        self.DEBUG = DEBUG
         if mem[0:8] != SIGNATURE:
             raise CompDocError('Not an OLE2 compound document')
         if mem[28:30] != '\xFE\xFF':
@@ -166,9 +167,9 @@ class CompDoc(object):
                 if DEBUG and actual_MSATX_sectors > expected_MSATX_sectors:
                     print >> logfile, "[1]===>>>", mem_data_secs, nent, SAT_sectors_reqd, expected_MSATX_sectors, actual_MSATX_sectors
                 offset = 512 + sec_size * sid
-                news = list(unpack(fmt, mem[offset:offset+sec_size]))
-                sid = news.pop()
-                MSAT.extend(news)
+                MSAT.extend(unpack(fmt, mem[offset:offset+sec_size]))
+                sid = MSAT.pop() # last sector id is sid of next sector in the chain
+                
         if DEBUG and actual_MSATX_sectors != expected_MSATX_sectors:
             print >> logfile, "[2]===>>>", mem_data_secs, nent, SAT_sectors_reqd, expected_MSATX_sectors, actual_MSATX_sectors
         if DEBUG:
@@ -182,7 +183,9 @@ class CompDoc(object):
         dump_again = 0
         for msidx in xrange(len(MSAT)):
             msid = MSAT[msidx]
-            if msid == FREESID:
+            if msid in (FREESID, EOCSID):
+                # Specification: the MSAT array may be padded with trailing FREESID entries.
+                # Toleration: a FREESID or EOCSID entry anywhere in the MSAT array will be ignored.
                 continue
             if msid >= mem_data_secs:
                 if not trunc_warned:
@@ -194,8 +197,8 @@ class CompDoc(object):
                 MSAT[msidx] = EVILSID
                 dump_again = 1
                 continue
-            elif msid < -1:
-                raise CompdocError("MSAT: invalid sector id: %d" % msid)
+            elif msid < -2:
+                raise CompDocError("MSAT: invalid sector id: %d" % msid)
             if seen[msid]:
                 raise CompDocError("MSAT extension corruption: seen[%d] == %d" % (msid, seen[msid]))
             seen[msid] = 2
@@ -203,8 +206,7 @@ class CompDoc(object):
             if DEBUG and actual_SAT_sectors > SAT_sectors_reqd:
                 print >> logfile, "[3]===>>>", mem_data_secs, nent, SAT_sectors_reqd, expected_MSATX_sectors, actual_MSATX_sectors, actual_SAT_sectors, msid
             offset = 512 + sec_size * msid
-            news = list(unpack(fmt, mem[offset:offset+sec_size]))
-            self.SAT.extend(news)
+            self.SAT.extend(unpack(fmt, mem[offset:offset+sec_size]))
 
         if DEBUG:
             print >> logfile, "SAT: len =", len(self.SAT)
@@ -386,7 +388,13 @@ class CompDoc(object):
             raise CompDocError("%r stream length (%d bytes) > file data size (%d bytes)"
                 % (qname, d.totsize, self.mem_data_len))
         if d.tot_size >= self.min_size_std_stream:
-            return self._locate_stream(self.mem, 512, self.SAT, self.sec_size, d.first_SID, d.tot_size, qname, d.DID+6)
+            result = self._locate_stream(
+                self.mem, 512, self.SAT, self.sec_size, d.first_SID, 
+                d.tot_size, qname, d.DID+6)
+            if self.DEBUG:
+                print >> self.logfile, "\nseen"
+                dump_list(self.seen, 20, self.logfile)
+            return result
         else:
             return (
                 self._get_stream(
@@ -395,7 +403,6 @@ class CompDoc(object):
                 0,
                 d.tot_size
                 )
-        return (None, 0, 0) # not found
 
     def _locate_stream(self, mem, base, sat, sec_size, start_sid, expected_stream_size, qname, seen_id):
         # print >> self.logfile, "_locate_stream", base, sec_size, start_sid, expected_stream_size
