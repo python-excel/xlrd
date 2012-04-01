@@ -44,6 +44,13 @@ if __name__ == "__main__":
 
     import xlrd
     import sys, time, glob, traceback, pprint, gc
+    
+    try:
+        object
+    except NameError:
+        # Python 2.1
+        class object:
+            pass
 
     class LogHandler(object):
 
