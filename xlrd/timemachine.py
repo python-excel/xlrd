@@ -99,7 +99,7 @@ if python_version < (2, 3):
 
 if python_version >= (3,):
     # Python 3
-    def b(s):
+    def BYTES_LITERAL(s):
         return s.encode('latin1')
     
     def get_int_1byte(data, pos):
@@ -107,10 +107,10 @@ if python_version >= (3,):
     
 else:
     # Python 2
-    def b(s): return s
+    def BYTES_LITERAL(s): return s
 
     def get_int_1byte(data, pos):
         return ord(data[pos])
 
-byte_0 = b('\x00')
-bytes_empty = b('')
+byte_0 = BYTES_LITERAL('\x00')
+bytes_empty = BYTES_LITERAL('')

@@ -912,7 +912,7 @@ class Sheet(BaseObject):
                     fmlalen = local_unpack("<H", data[20:22])[0]
                     decompile_formula(bk, data[22:], fmlalen, FMLA_TYPE_CELL,
                         browx=rowx, bcolx=colx, blah=1, r1c1=r1c1)
-                if result_str[6:8] == b("\xFF\xFF"):
+                if result_str[6:8] == BYTES_LITERAL("\xFF\xFF"):
                     first_byte = get_int_1byte(result_str, 0)
                     if first_byte == 0:
                         # need to read next record (STRING)
@@ -1024,7 +1024,7 @@ class Sheet(BaseObject):
             elif rc == XL_GCW:
                 if not fmt_info: continue # useless w/o COLINFO
                 assert data_len == 34
-                assert data[0:2] == b("\x20\x00")
+                assert data[0:2] == BYTES_LITERAL("\x20\x00")
                 iguff = unpack("<8i", data[2:34])
                 gcw = []
                 for bits in iguff:
@@ -1582,7 +1582,7 @@ class Sheet(BaseObject):
             fprintf(self.logfile, "New cell_attr %r at (%r, %r)\n", cell_attr, rowx, colx)
         if not self.book.xf_list:
             for xfx in xrange(16):
-                self.insert_new_BIFF20_xf(cell_attr=b("\x40\x00\x00"), style=xfx < 15)
+                self.insert_new_BIFF20_xf(cell_attr=BYTES_LITERAL("\x40\x00\x00"), style=xfx < 15)
         xfx = self.insert_new_BIFF20_xf(cell_attr=cell_attr)
         return xfx
 
@@ -1708,8 +1708,8 @@ class Sheet(BaseObject):
         record_size = len(data)
         h = Hyperlink()
         h.frowx, h.lrowx, h.fcolx, h.lcolx, guid0, dummy, options = unpack('<HHHH16s4si', data[:32])
-        assert guid0 == b("\xD0\xC9\xEA\x79\xF9\xBA\xCE\x11\x8C\x82\x00\xAA\x00\x4B\xA9\x0B")
-        assert dummy == b("\x02\x00\x00\x00")
+        assert guid0 == BYTES_LITERAL("\xD0\xC9\xEA\x79\xF9\xBA\xCE\x11\x8C\x82\x00\xAA\x00\x4B\xA9\x0B")
+        assert dummy == BYTES_LITERAL("\x02\x00\x00\x00")
         if DEBUG: print >> self.logfile, "options: %08X" % options
         offset = 32
 
@@ -1731,7 +1731,7 @@ class Sheet(BaseObject):
             clsid, = unpack('<16s', data[offset:offset + 16])
             if DEBUG: print >> self.logfile, "clsid=%r" %clsid
             offset += 16
-            if clsid == b("\xE0\xC9\xEA\x79\xF9\xBA\xCE\x11\x8C\x82\x00\xAA\x00\x4B\xA9\x0B"):
+            if clsid == BYTES_LITERAL("\xE0\xC9\xEA\x79\xF9\xBA\xCE\x11\x8C\x82\x00\xAA\x00\x4B\xA9\x0B"):
                 #          E0H C9H EAH 79H F9H BAH CEH 11H 8CH 82H 00H AAH 00H 4BH A9H 0BH
                 # URL Moniker
                 h.type = u'url'
@@ -1751,7 +1751,7 @@ class Sheet(BaseObject):
                 if DEBUG: print >> self.logfile, "extra=%r" % extra_data
                 if DEBUG: print >> self.logfile, "nbytes=%d true_nbytes=%d extra_nbytes=%d" % (nbytes, true_nbytes, extra_nbytes)
                 assert extra_nbytes in (24, 0)
-            elif clsid == b("\x03\x03\x00\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46"):
+            elif clsid == BYTES_LITERAL("\x03\x03\x00\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46"):
                 # file moniker
                 h.type = u'local file'
                 uplevels, nbytes = unpack("<Hi", data[offset:offset + 6])
@@ -1802,7 +1802,7 @@ class Sheet(BaseObject):
         assert self.hyperlink_list
         h = self.hyperlink_list[-1]
         assert (frowx, lrowx, fcolx, lcolx) == (h.frowx, h.lrowx, h.fcolx, h.lcolx)
-        assert data[-2:] == b('\x00\x00')
+        assert data[-2:] == BYTES_LITERAL('\x00\x00')
         h.quicktip = unicode(data[10:-2], 'utf_16_le')
 
     def handle_msodrawingetc(self, recid, data_len, data):
@@ -2153,7 +2153,7 @@ def unpack_RK(rk_str):
         return float(i)
     else:
         # It's the most significant 30 bits of an IEEE 754 64-bit FP number
-        d, = unpack('<d', b('\0\0\0\0') + b(chr(flags & 252)) + rk_str[1:4])
+        d, = unpack('<d', BYTES_LITERAL('\0\0\0\0') + BYTES_LITERAL(chr(flags & 252)) + rk_str[1:4])
         if flags & 1:
             return d / 100.0
         return d
