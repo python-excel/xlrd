@@ -806,7 +806,7 @@ class Sheet(BaseObject):
                 rowx, colx, xf_index = local_unpack('<HHH', data[0:6])
                 if bv < BIFF_FIRST_UNICODE:
                     strg, pos = unpack_string_update_pos(data, 6, bk.encoding or bk.derive_encoding(), lenlen=2)
-                    nrt = ord(data[pos])
+                    nrt = get_int_1byte(data, pos)
                     pos += 1
                     runlist = []
                     for _unused in xrange(nrt):
@@ -1560,7 +1560,7 @@ class Sheet(BaseObject):
                 if true_xfx is not None:
                     xfx = true_xfx
                 else:
-                    xfx = ord(cell_attr[0]) & 0x3F
+                    xfx = get_int_1byte(cell_attr, 0) & 0x3F
                 if xfx == 0x3F:
                     if self._ixfe is None:
                         raise XLRDError("BIFF2 cell record has XF index 63 but no preceding IXFE record.")
@@ -1573,7 +1573,7 @@ class Sheet(BaseObject):
             # Have either Excel 2.0, or broken 2.1 w/o XF records -- same effect.
             self.biff_version = self.book.biff_version = 20
         #### check that XF slot in cell_attr is zero
-        xfx_slot = ord(cell_attr[0]) & 0x3F
+        xfx_slot = get_int_1byte(cell_attr, 0) & 0x3F
         assert xfx_slot == 0
         xfx = self._cell_attr_to_xfx.get(cell_attr)
         if xfx is not None:
@@ -1975,7 +1975,7 @@ class Sheet(BaseObject):
             assert rc2 == XL_CONTINUE
             if OBJ_MSO_DEBUG:
                 hex_char_dump(data2, 0, data2_len, base=0, fout=self.logfile)
-            nb = ord(data2[0]) # 0 means latin1, 1 means utf_16_le
+            nb = get_int_1byte(data2, 0) # 0 means latin1, 1 means utf_16_le
             nchars = data2_len - 1
             if nb:
                 assert nchars % 2 == 0

@@ -1423,7 +1423,7 @@ def decompile_formula(bk, fmla, fmlalen,
         stack = [unk_opnd]
 
     while 0 <= pos < fmlalen:
-        op = ord(data[pos])
+        op = get_int_1byte(data, pos)
         opcode = op & 0x1f
         optype = (op & 0x60) >> 5
         if optype:
@@ -1903,7 +1903,7 @@ def dump_formula(bk, data, fmlalen, bv, reldelta, blah=0, isname=0):
     any_err = 0
     spush = stack.append
     while 0 <= pos < fmlalen:
-        op = ord(data[pos])
+        op = get_int_1byte(data, pos)
         opcode = op & 0x1f
         optype = (op & 0x60) >> 5
         if optype:
@@ -1958,7 +1958,7 @@ def dump_formula(bk, data, fmlalen, bv, reldelta, blah=0, isname=0):
                 if blah: print >> bk.logfile, "   subop=%02xh subname=t%s sz=%d nc=%02xh" % (subop, subname, sz, nc)
             elif opcode == 0x17: # tStr
                 if bv <= 70:
-                    nc = ord(data[pos+1])
+                    nc = get_int_1byte(data, pos+1)
                     strg = data[pos+2:pos+2+nc] # left in 8-bit encoding
                     sz = nc + 2
                 else:
