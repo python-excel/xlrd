@@ -10,6 +10,7 @@ xlrd/formula.py
 xlrd/licences.py
 xlrd/sheet.py
 xlrd/timemachine.py
+xlrd/version.txt
 xlrd/xldate.py
 xlrd/doc/compdoc.html
 xlrd/doc/xlrd.html
