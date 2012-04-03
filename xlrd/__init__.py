@@ -1,6 +1,7 @@
 # -*- coding: ascii -*-
+from os import path
 
-__VERSION__ = "0.7.4"
+__VERSION__ = open(path.join(path.dirname(__file__), 'version.txt')).read().strip()
 
 # <p>Copyright (c) 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a

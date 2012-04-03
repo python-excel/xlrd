@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: ascii -*-
 
+from os import path
 import sys
 python_version = sys.version_info[:2]
 
@@ -20,7 +21,7 @@ def mkargs(**kwargs):
 
 args = mkargs(
     name = 'xlrd',
-    version = '0.7.4',
+    version = open(path.join(path.dirname(__file__), 'xlrd', 'version.txt')).read().strip(),
     author = 'John Machin',
     author_email = 'sjmachin@lexicon.net',
     url = the_url,
