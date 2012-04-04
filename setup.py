@@ -61,6 +61,7 @@ if python_version >= (2, 4):
                 'doc/*.htm*',
                 # 'doc/*.txt',
                 'examples/*.*',
+                'version.txt',
                 ],
 
             },
