@@ -1931,7 +1931,8 @@ class Sheet(BaseObject):
         o.author, endpos = unpack_unicode_update_pos(data, 8, lenlen=2)
         # There is a random/undefined byte after the author string (not counted in the
         # string length).
-        assert endpos == data_len - 1
+        # Issue 4 on github: Google Spreadsheet doesn't write the undefined byte.
+        assert (data_len - endpos) in (0, 1)
         if OBJ_MSO_DEBUG:
             o.dump(self.logfile, header="=== Note ===", footer= " ")
         txo = txos.get(o._object_id)
