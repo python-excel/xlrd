@@ -16,12 +16,17 @@ else:
 
 the_url = 'http://www.lexicon.net/sjmachin/xlrd.htm'
 
+# Get version number without importing the whole package.
+sys.path.insert(0, path.join(path.dirname(__file__), 'xlrd'))
+from info import __VERSION__
+sys.path.pop(0)
+
 def mkargs(**kwargs):
     return kwargs
 
 args = mkargs(
     name = 'xlrd',
-    version = open(path.join(path.dirname(__file__), 'xlrd', 'version.txt')).read().strip(),
+    version = __VERSION__,
     author = 'John Machin',
     author_email = 'sjmachin@lexicon.net',
     url = the_url,
@@ -61,7 +66,6 @@ if python_version >= (2, 4):
                 'doc/*.htm*',
                 # 'doc/*.txt',
                 'examples/*.*',
-                'version.txt',
                 ],
 
             },
