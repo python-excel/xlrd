@@ -1,17 +1,7 @@
-# -*- coding: cp1252 -*-
-# <p>Copyright © 2005-2010 Stephen John Machin, Lingfo Pty Ltd</p>
+# -*- coding: ascii -*-
+# <p>Copyright (c) 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This script is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
-
-# 2010-03-01 SJM Changes for ragged_rows functionality
-# 2009-04-27 SJM Integrated on_demand patch by Armando Serrano Lombillo
-# 2008-08-03 SJM Omit counts of FORMAT/FONT/XF records when formatting_info is false
-# 2008-02-08 SJM Force formatting_info=1 for xfc command
-# 2007-12-05 SJM Fixed usage of deprecated/removed Book.raw_xf_list
-# 2007-10-13 SJM Added "fonts" command
-# 2007-06-10 SJM Removed reference to removed "trimming" option-value.
-# 2007-06-10 SJM Added documentation of commands.
-# 2007-06-10 SJM Changed cmds: dump -> biff_dump, count_records -> biff_count.
 
 cmd_doc = """
 Commands:
@@ -72,6 +62,9 @@ if __name__ == "__main__":
     null_cell = xlrd.empty_cell
 
     def show_row(bk, sh, rowx, colrange, printit):
+        if bk.ragged_rows:
+            colrange = range(sh.row_len(rowx))
+        if not colrange: return
         if printit: print
         if bk.formatting_info:
             for colx, ty, val, cxfx in get_row_data(bk, sh, rowx, colrange):
@@ -119,6 +112,7 @@ if __name__ == "__main__":
         print "Number of data sheets: %d" % bk.nsheets
         print "Pickleable: %d; Use mmap: %d; Formatting: %d; On demand: %d" \
             % (bk.pickleable, bk.use_mmap, bk.formatting_info, bk.on_demand)
+        print "Ragged rows: %d; Use lxml: %d" % (bk.ragged_rows, options.lxml)
         if bk.formatting_info:
             print "FORMATs: %d, FONTs: %d, XFs: %d" \
                 % (len(bk.format_list), len(bk.font_list), len(bk.xf_list))
@@ -222,16 +216,10 @@ if __name__ == "__main__":
             nrows, ncols = sh.nrows, sh.ncols
             print "sheet %d: name = %r; nrows = %d; ncols = %d" % \
                 (shx, sh.name, sh.nrows, sh.ncols)
-            if nrows and ncols:
-                # Attempt to access the RHS corners
-                sh.row_types(0)[ncols-1]
-                sh.row_values(0)[ncols-1]
-                sh.row_types(nrows-1)[ncols-1]
-                sh.row_values(nrows-1)[ncols-1]
             # Access all xfindexes to force gathering stats
             type_stats = [0, 0, 0, 0, 0, 0, 0]
-            for colx in xrange(ncols):
-                for rowx in xrange(nrows):
+            for rowx in xrange(nrows):
+                for colx in xrange(sh.row_len(rowx)):
                     xfx = sh.cell_xf_index(rowx, colx)
                     assert xfx >= 0
                     cty = sh.cell_type(rowx, colx)
@@ -296,6 +284,10 @@ if __name__ == "__main__":
             "-r", "--ragged-rows",
             action="store_true", default=0,
             help="open_workbook(..., ragged_rows=True)")
+        oparser.add_option(
+            "--lxml",
+            action="store_true", default=0,
+            help="use lxml.etree instead of cElementTree")
         options, args = oparser.parse_args(cmd_args)
         if len(args) == 1 and args[0] in ("version", ):
             pass
@@ -327,6 +319,10 @@ if __name__ == "__main__":
         gc_mode = options.gc
         if gc_mode:
             gc.disable()
+        if options.lxml:
+            import lxml.etree as etree
+        else:
+            etree = None
         for pattern in args[1:]:
             for fname in glob.glob(pattern):
                 print "\n=== File: %s ===" % fname
@@ -349,19 +345,22 @@ if __name__ == "__main__":
                         formatting_info=fmt_opt,
                         on_demand=options.on_demand,
                         ragged_rows=options.ragged_rows,
+                        etree=etree,
                         )
                     t1 = time.time()
                     if not options.suppress_timing:
                         print "Open took %.2f seconds" % (t1-t0,)
                 except xlrd.XLRDError:
-                    print "*** Open failed: %s: %s" % sys.exc_info()[:2]
+                    e0, e1 = sys.exc_info()[:2]
+                    print "*** Open failed: %s: %s" % (e0.__name__, e1)
                     continue
                 except KeyboardInterrupt:
                     print "*** KeyboardInterrupt ***"
                     traceback.print_exc(file=sys.stdout)
                     sys.exit(1)
                 except:
-                    print "*** Open failed ***"
+                    e0, e1 = sys.exc_info()[:2]
+                    print "*** Open failed: %s: %s" % (e0.__name__, e1)
                     traceback.print_exc(file=sys.stdout)
                     continue
                 t0 = time.time()
