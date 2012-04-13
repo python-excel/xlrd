@@ -12,6 +12,8 @@ import xlrd
 import sys
 import glob
 
+from xlrd import formula
+
 def scope_as_string(book, scope):
     if 0 <= scope < book.nsheets:
         return "sheet #%d (%r)" % (scope, book.sheet_names()[scope])
@@ -98,16 +100,16 @@ def show_name_object(book, nobj, show_contents=0, f=sys.stdout):
     if kind >= 0:
         # A scalar, or unknown ... you've seen all there is to see.
         pass
-    elif kind == xlrd.oREL:
+    elif kind == formula.oREL:
         # A list of Ref3D objects representing *relative* ranges
         for i in xrange(len(value)):
             ref3d = value[i]
-            print >> f, "Range %d: %r ==> %s"% (i, ref3d.coords, xlrd.rangename3drel(book, ref3d))
-    elif kind == xlrd.oREF:
+            print >> f, "Range %d: %r ==> %s"% (i, ref3d.coords, formula.rangename3drel(book, ref3d))
+    elif kind == formula.oREF:
         # A list of Ref3D objects
         for i in xrange(len(value)):
             ref3d = value[i]
-            print >> f, "Range %d: %r ==> %s"% (i, ref3d.coords, xlrd.rangename3d(book, ref3d))
+            print >> f, "Range %d: %r ==> %s"% (i, ref3d.coords, formula.rangename3d(book, ref3d))
             if not show_contents:
                 continue
             datemode = book.datemode
