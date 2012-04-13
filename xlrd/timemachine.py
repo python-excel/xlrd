@@ -96,21 +96,3 @@ if python_version < (2, 3):
         for item in aseq:
             tot += item
         return tot
-
-if python_version >= (3,):
-    # Python 3
-    def BYTES_LITERAL(s):
-        return s.encode('latin1')
-    
-    def get_int_1byte(data, pos):
-        return data[pos]
-    
-else:
-    # Python 2
-    def BYTES_LITERAL(s): return s
-
-    def get_int_1byte(data, pos):
-        return ord(data[pos])
-
-byte_0 = BYTES_LITERAL('\x00')
-bytes_empty = BYTES_LITERAL('')
