@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: ascii -*-
 
 from os import path
 import sys

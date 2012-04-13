@@ -1,4 +1,3 @@
-# -*- coding: ascii -*-
 from os import path
 
 from info import __VERSION__
