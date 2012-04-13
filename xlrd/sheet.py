@@ -806,7 +806,7 @@ class Sheet(BaseObject):
                 rowx, colx, xf_index = local_unpack('<HHH', data[0:6])
                 if bv < BIFF_FIRST_UNICODE:
                     strg, pos = unpack_string_update_pos(data, 6, bk.encoding or bk.derive_encoding(), lenlen=2)
-                    nrt = get_int_1byte(data, pos)
+                    nrt = BYTES_ORD(data[pos])
                     pos += 1
                     runlist = []
                     for _unused in xrange(nrt):
@@ -913,7 +913,7 @@ class Sheet(BaseObject):
                     decompile_formula(bk, data[22:], fmlalen, FMLA_TYPE_CELL,
                         browx=rowx, bcolx=colx, blah=1, r1c1=r1c1)
                 if result_str[6:8] == BYTES_LITERAL("\xFF\xFF"):
-                    first_byte = get_int_1byte(result_str, 0)
+                    first_byte = BYTES_ORD(result_str[0])
                     if first_byte == 0:
                         # need to read next record (STRING)
                         gotstring = 0
@@ -953,11 +953,11 @@ class Sheet(BaseObject):
                         # if DEBUG: print "FORMULA strg %r" % strg
                     elif first_byte == 1:
                         # boolean formula result
-                        value = get_int_1byte(result_str, 2)
+                        value = BYTES_ORD(result_str[2])
                         self_put_cell(rowx, colx, XL_CELL_BOOLEAN, value, xf_index)
                     elif first_byte == 2:
                         # Error in cell
-                        value = get_int_1byte(result_str, 2)
+                        value = BYTES_ORD(result_str[2])
                         self_put_cell(rowx, colx, XL_CELL_ERROR, value, xf_index)
                     elif first_byte == 3:
                         # empty ... i.e. empty (zero-length) string, NOT an empty cell.
@@ -1459,7 +1459,7 @@ class Sheet(BaseObject):
                     attr_names = ("show_formulas", "show_grid_lines", "show_sheet_headers",
                         "panes_are_frozen", "show_zero_values")
                     for attr, char in zip(attr_names, data[0:5]):
-                        setattr(self, attr, int(char != byte_0))
+                        setattr(self, attr, int(char != BYTES_X00))
                     (self.first_visible_rowx, self.first_visible_colx,
                     self.automatic_grid_line_colour,
                     ) = unpack("<HHB", data[5:10])
@@ -1491,7 +1491,7 @@ class Sheet(BaseObject):
         result = u""
         while 1:
             if bv >= 80:
-                flag = get_int_1byte(data, offset) & 1
+                flag = BYTES_ORD(data[offset]) & 1
                 enc = ("latin_1", "utf_16_le")[flag]
                 offset += 1
             chunk = unicode(data[offset:], enc)
@@ -1560,7 +1560,7 @@ class Sheet(BaseObject):
                 if true_xfx is not None:
                     xfx = true_xfx
                 else:
-                    xfx = get_int_1byte(cell_attr, 0) & 0x3F
+                    xfx = BYTES_ORD(cell_attr[0]) & 0x3F
                 if xfx == 0x3F:
                     if self._ixfe is None:
                         raise XLRDError("BIFF2 cell record has XF index 63 but no preceding IXFE record.")
@@ -1573,7 +1573,7 @@ class Sheet(BaseObject):
             # Have either Excel 2.0, or broken 2.1 w/o XF records -- same effect.
             self.biff_version = self.book.biff_version = 20
         #### check that XF slot in cell_attr is zero
-        xfx_slot = get_int_1byte(cell_attr, 0) & 0x3F
+        xfx_slot = BYTES_ORD(cell_attr[0]) & 0x3F
         assert xfx_slot == 0
         xfx = self._cell_attr_to_xfx.get(cell_attr)
         if xfx is not None:
@@ -1913,7 +1913,7 @@ class Sheet(BaseObject):
                 expected_bytes -= nb
             assert expected_bytes == 0
             enc = self.book.encoding or self.book.derive_encoding()
-            o.text = unicode(bytes_empty.join(pieces), enc)
+            o.text = unicode(BYTES_NULL.join(pieces), enc)
             o.rich_text_runlist = [(0, 0)]
             o.show = 0
             o.row_hidden = 0
@@ -1965,7 +1965,7 @@ class Sheet(BaseObject):
             assert rc2 == XL_CONTINUE
             if OBJ_MSO_DEBUG:
                 hex_char_dump(data2, 0, data2_len, base=0, fout=self.logfile)
-            nb = get_int_1byte(data2, 0) # 0 means latin1, 1 means utf_16_le
+            nb = BYTES_ORD(data2[0]) # 0 means latin1, 1 means utf_16_le
             nchars = data2_len - 1
             if nb:
                 assert nchars % 2 == 0
@@ -2133,7 +2133,7 @@ class Hyperlink(BaseObject):
 # === helpers ===
 
 def unpack_RK(rk_str):
-    flags = get_int_1byte(rk_str, 0)
+    flags = BYTES_ORD(rk_str[0])
     if flags & 2:
         # There's a SIGNED 30-bit integer in there!
         i,  = unpack('<i', rk_str)
