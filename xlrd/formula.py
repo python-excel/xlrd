@@ -2049,6 +2049,9 @@ def dump_formula(bk, data, fmlalen, bv, reldelta, blah=0, isname=0):
 # sheet component as empty, just like Excel etc.
 
 def rownamerel(rowx, rowxrel, browx=None, r1c1=0):
+    # if no base rowx is provided, we have to return r1c1
+    if browx is None:
+        r1c1 = True
     if not rowxrel:
         if r1c1:
             return "R%d" % (rowx+1)
@@ -2060,6 +2063,9 @@ def rownamerel(rowx, rowxrel, browx=None, r1c1=0):
     return "%d" % ((browx + rowx) % 65536 + 1)
 
 def colnamerel(colx, colxrel, bcolx=None, r1c1=0):
+    # if no base colx is provided, we have to return r1c1
+    if bcolx is None:
+        r1c1 = True
     if not colxrel:
         if r1c1:
             return "C%d" % (colx + 1)
