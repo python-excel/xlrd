@@ -15,7 +15,10 @@ else:
 
 the_url = 'http://www.lexicon.net/sjmachin/xlrd.htm'
 
-# Get version number without importing the whole package.
+# Get version number without importing xlrd/__init__
+# (this horrificness is needed while using 2to3 for
+#  python 3 compatibility, it should go away once
+#  we stop using that.)
 sys.path.insert(0, path.join(path.dirname(__file__), 'xlrd'))
 from info import __VERSION__
 sys.path.pop(0)
