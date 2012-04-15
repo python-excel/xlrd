@@ -19,6 +19,8 @@ the_url = 'http://www.lexicon.net/sjmachin/xlrd.htm'
 # (this horrificness is needed while using 2to3 for
 #  python 3 compatibility, it should go away once
 #  we stop using that.)
+
+__file__ = path.abspath(sys.argv[0])
 sys.path.insert(0, path.join(path.dirname(__file__), 'xlrd'))
 from info import __VERSION__
 sys.path.pop(0)
