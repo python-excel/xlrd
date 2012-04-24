@@ -15,26 +15,20 @@ from biffh import error_text_from_code, XLRDError, XL_CELL_BLANK, XL_CELL_TEXT, 
 from formatting import is_date_format_string, Format, XF
 from sheet import Sheet
 
-def fill_in_standard_formats(bk): #### pre-integration kludge
-    std_format_code_types = xlrd.formatting.std_format_code_types
-    for x in std_format_code_types.keys():
-        if not bk.format_map.has_key(x):
-            ty = std_format_code_types[x]
-            fmt_str = xlrd.formatting.std_format_strings.get(x)
-            fmtobj = xlrd.formatting.Format(x, ty, fmt_str)
-            bk.format_map[x] = fmtobj
-
 DLF = sys.stdout # Default Log File
 
 ET = None
-ET_not_default = True
+ET_has_iterparse = False
 
-def ensure_elementtree_imported(etree):
-    global ET, ET_not_default
-    if etree:
-        ET = etree # use caller-provided module
-        ET_not_default = True
-    elif ET is None or ET_not_default:
+def ensure_elementtree_imported(verbosity, logfile):
+    global ET, ET_has_iterparse
+    if ET is not None:
+        return
+    if "IronPython" in sys.version:
+        import xml.etree.ElementTree as ET
+        #### 2.7.2.1: fails later with 
+        #### NotImplementedError: iterparse is not supported on IronPython. (CP #31923)
+    else:
         try: import xml.etree.cElementTree as ET
         except ImportError:
             try: import cElementTree as ET
@@ -46,16 +40,21 @@ def ensure_elementtree_imported(etree):
                         try: import elementtree.ElementTree as ET
                         except ImportError:
                             raise Exception("Failed to import an ElementTree implementation")
-        ET_not_default = False
-
-    if DEBUG:
+    if hasattr(ET, 'iterparse'):
+        _dummy_stream = BYTES_IO(BYTES_NULL)
+        try:
+            ET.iterparse(_dummy_stream)
+            ET_has_iterparse = True
+        except NotImplementedError:
+            pass
+    if verbosity:
         etree_version = repr([
             (item, getattr(ET, item))
             for item in ET.__dict__.keys()
             if item.lower().replace('_', '') == 'version'
             ])
-        print >> sys.stderr, ET.__file__, ET.__name__, etree_version, hasattr(ET, 'iterparse')
-
+        print >> logfile, ET.__file__, ET.__name__, etree_version, ET_has_iterparse
+        
 def split_tag(tag):
     pos = tag.rfind('}') + 1
     if pos >= 2:
@@ -73,6 +72,26 @@ for _x in xrange(26):
 for _x in "123456789":
     _UPPERCASE_1_REL_INDEX[_x] = 0
 del _x
+
+def cell_name_to_rowx_colx(cell_name, letter_value=_UPPERCASE_1_REL_INDEX):
+    # Extract column index from cell name
+    # A<row number> => 0, Z =>25, AA => 26, XFD => 16383
+    colx = 0
+    charx = -1
+    try:
+        for c in cell_name:
+            charx += 1
+            lv = letter_value[c]
+            if lv:
+                colx = colx * 26 + lv
+            else: # start of row number; can't be '0'
+                colx = colx - 1
+                assert 0 <= colx < X12_MAX_COLS
+                break
+    except KeyError:
+        raise Exception('Unexpected character %r in cell name %r' % (c, cell_name))
+    rowx = int(cell_name[charx:]) - 1
+    return rowx, colx
 
 error_code_from_text = {}
 for _code, _text in error_text_from_code.items():
@@ -211,7 +230,6 @@ _defined_name_attribute_map = (
     ("",                    "stack",        None,            ),
     )
 
-
 def make_name_access_maps(bk):
     name_and_scope_map = {} # (name.lower(), scope): Name_object
     name_map = {}           # name.lower() : list of Name_objects (sorted in scope order)
@@ -242,12 +260,12 @@ def make_name_access_maps(bk):
 class X12General(object):
 
     def process_stream(self, stream, heading=None):
-        if self.dump and heading is not None:
+        if self.verbosity >= 2 and heading is not None:
             fprintf(self.logfile, "\n=== %s ===\n", heading)
         self.tree = ET.parse(stream)
         getmethod = self.tag2meth.get
         for elem in self.tree.getiterator():
-            if self.dump >= 2:
+            if self.verbosity >= 3:
                 self.dump_elem(elem)
             meth = getmethod(elem.tag)
             if meth:
@@ -268,10 +286,10 @@ class X12General(object):
 
 class X12Book(X12General):
 
-    def __init__(self, bk, logfile=DLF, dump=False):
+    def __init__(self, bk, logfile=DLF, verbosity=False):
         self.bk = bk
         self.logfile = logfile
-        self.dump = dump
+        self.verbosity = verbosity
         self.bk.nsheets = 0
         self.bk.props = {}
         self.relid2path = {}
@@ -287,13 +305,13 @@ class X12Book(X12General):
         }
 
     def process_coreprops(self, stream):
-        if self.dump:
+        if self.verbosity >= 2:
             fprintf(self.logfile, "\n=== coreProps ===\n")
         self.tree = ET.parse(stream)
         getmenu = self.core_props_menu.get
         props = {}
         for elem in self.tree.getiterator():
-            if self.dump >= 2:
+            if self.verbosity >= 3:
                 self.dump_elem(elem)
             menu = getmenu(elem.tag)
             if menu:
@@ -302,12 +320,12 @@ class X12Book(X12General):
                 props[attr] = value
         self.bk.user_name = props.get('last_modified_by') or props.get('creator')
         self.bk.props = props
-        if self.dump:
+        if self.verbosity >= 2:
             fprintf(self.logfile, "props: %r\n", props)
         self.finish_off()
 
     def process_rels(self, stream):
-        if self.dump:
+        if self.verbosity >= 2:
             fprintf(self.logfile, "\n=== Relationships ===\n")
         tree = ET.parse(stream)
         r_tag = U_PKGREL + 'Relationship'
@@ -315,7 +333,7 @@ class X12Book(X12General):
             rid = elem.get('Id')
             target = elem.get('Target')
             reltype = elem.get('Type').split('/')[-1]
-            if self.dump:
+            if self.verbosity >= 2:
                 self.dumpout('Id=%r Type=%r Target=%r', rid, reltype, target)
             self.relid2reltype[rid] = reltype
             # self.relid2path[rid] = 'xl/' + target
@@ -326,7 +344,7 @@ class X12Book(X12General):
 
     def do_defined_name(self, elem):
         #### UNDER CONSTRUCTION ####
-        if 0 and self.dump:
+        if 0 and self.verbosity >= 3:
             self.dump_elem(elem)
         nobj = Name()
         bk = self.bk
@@ -341,7 +359,7 @@ class X12Book(X12General):
             nobj.scope = -1 # global
         if nobj.name.startswith(u"_xlnm."):
             nobj.builtin = 1
-        if self.dump:
+        if self.verbosity >= 2:
             nobj.dump(header='=== Name object ===')
 
     def do_defined_names(self, elem):
@@ -358,12 +376,12 @@ class X12Book(X12General):
         name = unescape(unicode(elem.get('name')))
         reltype = self.relid2reltype[rid]
         target = self.relid2path[rid]
-        if self.dump:
+        if self.verbosity >= 2:
             self.dumpout(
                 'sheetx=%d sheetId=%r rid=%r type=%r name=%r',
                 sheetx, sheetId, rid, reltype, name)
         if reltype != 'worksheet':
-            if self.dump:
+            if self.verbosity >= 2:
                 self.dumpout('Ignoring sheet of type %r (name=%r)', reltype, name)
             return
         bk._sheet_visibility.append(True)
@@ -379,7 +397,7 @@ class X12Book(X12General):
 
     def do_workbookpr(self, elem):
         datemode = cnv_xsd_boolean(elem.get('date1904'))
-        if self.dump:
+        if self.verbosity >= 2:
             self.dumpout('datemode=%r', datemode)
         self.bk.datemode = datemode
 
@@ -392,17 +410,17 @@ class X12Book(X12General):
 
 class X12SST(X12General):
 
-    def __init__(self, bk, logfile=DLF, dump=False):
+    def __init__(self, bk, logfile=DLF, verbosity=0):
         self.bk = bk
         self.logfile = logfile
-        self.dump = dump
-        if hasattr(ET, 'iterparse'):
+        self.verbosity = verbosity
+        if ET_has_iterparse:
             self.process_stream = self.process_stream_iterparse
         else:
             self.process_stream = self.process_stream_findall
             
     def process_stream_iterparse(self, stream, heading=None):
-        if self.dump and heading is not None:
+        if self.verbosity >= 2 and heading is not None:
             fprintf(self.logfile, "\n=== %s ===\n", heading)
         si_tag = U_SSML12 + 'si'
         elemno = -1
@@ -410,20 +428,20 @@ class X12SST(X12General):
         for event, elem in ET.iterparse(stream):
             if elem.tag != si_tag: continue
             elemno = elemno + 1
-            if self.dump >= 2:
+            if self.verbosity >= 3:
                 fprintf(self.logfile, "element #%d\n", elemno)
                 self.dump_elem(elem)
             result = get_text_from_si_or_is(self, elem)
             sst.append(result)                
             elem.clear() # destroy all child elements
-        if self.dump:
+        if self.verbosity >= 2:
             self.dumpout('Entries in SST: %d', len(sst))
-        if self.dump >= 3:
+        if self.verbosity >= 3:
             for x, s in enumerate(sst):
                 print "SST x=%d s=%r" % (x, s)
 
     def process_stream_findall(self, stream, heading=None):
-        if self.dump and heading is not None:
+        if self.verbosity >= 2 and heading is not None:
             fprintf(self.logfile, "\n=== %s ===\n", heading)
         self.tree = ET.parse(stream)
         si_tag = U_SSML12 + 'si'
@@ -431,20 +449,20 @@ class X12SST(X12General):
         sst = self.bk._sharedstrings
         for elem in self.tree.findall(si_tag):
             elemno = elemno + 1
-            if self.dump >= 2:
+            if self.verbosity >= 3:
                 fprintf(self.logfile, "element #%d\n", elemno)
                 self.dump_elem(elem)
             result = get_text_from_si_or_is(self, elem)
             sst.append(result)
-        if self.dump:
+        if self.verbosity >= 2:
             self.dumpout('Entries in SST: %d', len(sst))
 
 class X12Styles(X12General):
 
-    def __init__(self, bk, logfile=DLF, dump=False):
+    def __init__(self, bk, logfile=DLF, verbosity=0):
         self.bk = bk
         self.logfile = logfile
-        self.dump = dump
+        self.verbosity = verbosity
         self.xf_counts = [0, 0]
         self.xf_type = None
         self.fmt_is_date = {}
@@ -467,12 +485,12 @@ class X12Styles(X12General):
         self.fmt_is_date[numFmtId] = is_date
         fmt_obj = Format(numFmtId, is_date + 2, formatCode)
         self.bk.format_map[numFmtId] = fmt_obj
-        if 0 and self.dump:
+        if self.verbosity >= 3:
             self.dumpout('numFmtId=%d formatCode=%r is_date=%d', numFmtId, formatCode, is_date)
 
     def do_xf(self, elem):
         if self.xf_type != 1:
-            # ignoring style XFs for the moment
+            #### ignoring style XFs for the moment
             return
         xfx = self.xf_counts[self.xf_type]
         self.xf_counts[self.xf_type] = xfx + 1
@@ -483,7 +501,7 @@ class X12Styles(X12General):
         xf.format_key = numFmtId
         is_date = self.fmt_is_date.get(numFmtId, 0)
         self.bk._xf_index_to_xl_type_map[xfx] = is_date + 2
-        if 0 and self.dump:
+        if self.verbosity >= 3:
             self.dumpout(
                 'xfx=%d numFmtId=%d',
                 xfx, numFmtId,
@@ -500,20 +518,20 @@ class X12Styles(X12General):
 
 class X12Sheet(X12General):
 
-    def __init__(self, sheet, logfile=DLF, dump=False):
+    def __init__(self, sheet, logfile=DLF, verbosity=0):
         self.sheet = sheet
         self.logfile = logfile
-        self.dump = dump
+        self.verbosity = verbosity
         self.rowx = -1 # We may need to count them.
         self.bk = sheet.book
         self.sst = self.bk._sharedstrings
         self.warned_no_cell_name = 0
         self.warned_no_row_num = 0
-        if hasattr(ET, 'iterparse'):
+        if ET_has_iterparse:
             self.process_stream = self.own_process_stream
 
     def own_process_stream(self, stream, heading=None):
-        if self.dump and heading is not None:
+        if self.verbosity >= 2 and heading is not None:
             fprintf(self.logfile, "\n=== %s ===\n", heading)
         getmethod = self.tag2meth.get
         row_tag = U_SSML12 + "row"
@@ -522,14 +540,29 @@ class X12Sheet(X12General):
             if elem.tag == row_tag:
                 self_do_row(elem)
                 elem.clear() # destroy all child elements (cells)
+            elif elem.tag == U_SSML12 + "dimension":
+                self.do_dimension(elem)
         self.finish_off()
+        
+    def do_dimension(self, elem):
+        ref = elem.get('ref') # example: "A1:Z99" or just "A1"
+        if ref:
+            # print >> self.logfile, "dimension: ref=%r" % ref
+            last_cell_ref = ref.split(':')[-1] # example: "Z99"
+            rowx, colx = cell_name_to_rowx_colx(last_cell_ref)
+            self.sheet._dimnrows = rowx + 1
+            self.sheet._dimncols = colx + 1
 
     def do_row(self, row_elem):
+    
+        def bad_child_tag(child_tag):
+             raise Exception('cell type %s has unexpected child <%s> at rowx=%r colx=%r' % (cell_type, child_tag, rowx, colx))
+ 
         row_number = row_elem.get('r')
         if row_number is None: # Yes, it's optional.
             self.rowx += 1
             explicit_row_number = 0
-            if self.dump and not self.warned_no_row_num:
+            if self.verbosity and not self.warned_no_row_num:
                 self.dumpout("no row number; assuming rowx=%d", self.rowx)
                 self.warned_no_row_num = 1
         else:
@@ -538,7 +571,7 @@ class X12Sheet(X12General):
         assert 0 <= self.rowx < X12_MAX_ROWS
         rowx = self.rowx
         colx = -1
-        if 0 and self.dump:
+        if self.verbosity >= 3:
             self.dumpout("<row> row_number=%r rowx=%d explicit=%d",
                 row_number, self.rowx, explicit_row_number)
         letter_value = _UPPERCASE_1_REL_INDEX
@@ -546,7 +579,7 @@ class X12Sheet(X12General):
             cell_name = cell_elem.get('r')
             if cell_name is None: # Yes, it's optional.
                 colx += 1
-                if self.dump and not self.warned_no_cell_name:
+                if self.verbosity and not self.warned_no_cell_name:
                     self.dumpout("no cellname; assuming rowx=%d colx=%d", rowx, colx)
                     self.warned_no_cell_name = 1
             else:
@@ -600,8 +633,7 @@ class X12Sheet(X12General):
                         # formula not expected here, but gnumeric does it.
                         formula = child.text
                     else:
-                        print "rowx=%r colx=%r" % (rowx, colx)
-                        raise Exception('unexpected tag %r' % child_tag)
+                        bad_child_tag(child_tag)
                 if not tvalue:
                     # <c r="A1" t="s"/>
                     if self.bk.formatting_info:
@@ -620,7 +652,7 @@ class X12Sheet(X12General):
                     elif child_tag == F_TAG:
                         formula = cooked_text(self, child)
                     else:
-                        raise Exception('unexpected tag %r' % child_tag)
+                        bad_child_tag(child_tag)
                 # assert tvalue is not None and formula is not None
                 # Yuk. Fails with file created by gnumeric -- no tvalue!
                 self.sheet.put_cell(rowx, colx, XL_CELL_TEXT, tvalue, xf_index)
@@ -636,7 +668,7 @@ class X12Sheet(X12General):
                     elif child_tag == F_TAG:
                         formula = cooked_text(self, child)
                     else:
-                        raise Exception('unexpected tag %r' % child_tag)
+                        bad_child_tag(child_tag)
                 self.sheet.put_cell(rowx, colx, XL_CELL_BOOLEAN, int(tvalue), xf_index)
             elif cell_type == "e":
                 # e = error
@@ -648,7 +680,7 @@ class X12Sheet(X12General):
                     elif child_tag == F_TAG:
                         formula = cooked_text(self, child)
                     else:
-                        raise Exception('unexpected tag %r' % child_tag)
+                        bad_child_tag(child_tag)
                 value = error_code_from_text[tvalue]
                 self.sheet.put_cell(rowx, colx, XL_CELL_ERROR, value, xf_index)
             elif cell_type == "inlineStr":
@@ -661,7 +693,7 @@ class X12Sheet(X12General):
                     if child_tag == IS_TAG:
                         tvalue = get_text_from_si_or_is(self, child)
                     else:
-                        raise Exception('unexpected tag %r' % child_tag)
+                        bad_child_tag(child_tag)
                 assert tvalue is not None
                 self.sheet.put_cell(rowx, colx, XL_CELL_TEXT, tvalue, xf_index)
             else:
@@ -683,23 +715,29 @@ def getzflo(zipfile, member_path):
 
 def open_workbook_2007_xml(
     zf,
-    contents,
+    component_names,
     logfile=sys.stdout,
     verbosity=0,
     pickleable=1,
+    use_mmap=0,
     formatting_info=0,
     on_demand=0,
     ragged_rows=0,
-    etree=None,
     ):
-    ensure_elementtree_imported(etree)
+    ensure_elementtree_imported(verbosity, logfile)
     bk = Book()
     bk.logfile = logfile
     bk.verbosity = verbosity
     bk.pickleable = pickleable
     bk.formatting_info = formatting_info
-    bk.use_mmap = 0
+    if formatting_info:
+        raise NotImplementedError("formatting_info=True not yet implemented")
+    bk.use_mmap = False #### Not supported initially
     bk.on_demand = on_demand
+    if on_demand:
+        if verbosity:
+            print >> bk.logfile, "WARNING *** on_demand=True not yet implemented; falling back to False"
+        bk.on_demand = False
     bk.ragged_rows = ragged_rows
 
     x12book = X12Book(bk, logfile, verbosity)
@@ -710,15 +748,12 @@ def open_workbook_2007_xml(
     x12book.process_stream(zflo, 'Workbook')
     del zflo
     props_name = 'docProps/core.xml'
-    if props_name in contents:
+    if props_name in component_names:
         zflo = getzflo(zf, props_name)
         x12book.process_coreprops(zflo)
 
-    x12sty = X12Styles(bk, logfile,
-        dump=verbosity,
-        # dump=1,
-        )
-    if 'xl/styles.xml' in contents:
+    x12sty = X12Styles(bk, logfile, verbosity)
+    if 'xl/styles.xml' in component_names:
         zflo = getzflo(zf, 'xl/styles.xml')
         x12sty.process_stream(zflo, 'styles')
         del zflo
@@ -728,7 +763,7 @@ def open_workbook_2007_xml(
 
     sst_fname = 'xl/sharedStrings.xml'
     x12sst = X12SST(bk, logfile, verbosity)
-    if sst_fname in contents:
+    if sst_fname in component_names:
         zflo = getzflo(zf, sst_fname)
         x12sst.process_stream(zflo, 'SST')
         del zflo

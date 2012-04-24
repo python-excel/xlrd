@@ -112,7 +112,7 @@ if __name__ == "__main__":
         print "Number of data sheets: %d" % bk.nsheets
         print "Pickleable: %d; Use mmap: %d; Formatting: %d; On demand: %d" \
             % (bk.pickleable, bk.use_mmap, bk.formatting_info, bk.on_demand)
-        print "Ragged rows: %d; Use lxml: %d" % (bk.ragged_rows, options.lxml)
+        print "Ragged rows: %d" % bk.ragged_rows
         if bk.formatting_info:
             print "FORMATs: %d, FONTs: %d, XFs: %d" \
                 % (len(bk.format_list), len(bk.font_list), len(bk.xf_list))
@@ -284,10 +284,6 @@ if __name__ == "__main__":
             "-r", "--ragged-rows",
             action="store_true", default=0,
             help="open_workbook(..., ragged_rows=True)")
-        oparser.add_option(
-            "--lxml",
-            action="store_true", default=0,
-            help="use lxml.etree instead of cElementTree")
         options, args = oparser.parse_args(cmd_args)
         if len(args) == 1 and args[0] in ("version", ):
             pass
@@ -319,10 +315,6 @@ if __name__ == "__main__":
         gc_mode = options.gc
         if gc_mode:
             gc.disable()
-        if options.lxml:
-            import lxml.etree as etree
-        else:
-            etree = None
         for pattern in args[1:]:
             for fname in glob.glob(pattern):
                 print "\n=== File: %s ===" % fname
@@ -345,7 +337,6 @@ if __name__ == "__main__":
                         formatting_info=fmt_opt,
                         on_demand=options.on_demand,
                         ragged_rows=options.ragged_rows,
-                        etree=etree,
                         )
                     t1 = time.time()
                     if not options.suppress_timing:

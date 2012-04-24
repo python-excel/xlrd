@@ -381,7 +381,6 @@ def open_workbook(filename=None,
     formatting_info=False,
     on_demand=False,
     ragged_rows=False,
-    etree=None,
     ):
     peeksz = 4
     if file_contents:
@@ -407,10 +406,10 @@ def open_workbook(filename=None,
                 logfile=logfile,
                 verbosity=verbosity,
                 pickleable=pickleable,
+                use_mmap=mmap,
                 formatting_info=formatting_info,
                 on_demand=on_demand,
                 ragged_rows=ragged_rows,
-                etree=etree,
                 )
             return bk
         if 'xl/workbook.bin' in component_names:
