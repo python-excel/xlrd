@@ -2100,6 +2100,9 @@ def cellnameabs(rowx, colx, r1c1=0):
 def cellnamerel(rowx, colx, rowxrel, colxrel, browx=None, bcolx=None, r1c1=0):
     if not rowxrel and not colxrel:
         return cellnameabs(rowx, colx, r1c1)
+    if (rowxrel and browx is None) or (colxrel and bcolx is None):
+        # must flip the whole cell into R1C1 mode
+        r1c1 = True
     c = colnamerel(colx, colxrel, bcolx, r1c1)
     r = rownamerel(rowx, rowxrel, browx, r1c1)
     if r1c1:
@@ -2126,6 +2129,10 @@ def rangename2d(rlo, rhi, clo, chi, r1c1=0):
     return "%s:%s" % (cellnameabs(rlo, clo, r1c1), cellnameabs(rhi-1, chi-1, r1c1))
 
 def rangename2drel((rlo, rhi, clo, chi), (rlorel, rhirel, clorel, chirel), browx=None, bcolx=None, r1c1=0):
+    if (rlorel or rhirel) and browx is None:
+        r1c1 = True
+    if (clorel or chirel) and bcolx is None:
+        r1c1 = True
     return "%s:%s" % (
         cellnamerel(rlo,   clo,   rlorel, clorel, browx, bcolx, r1c1),
         cellnamerel(rhi-1, chi-1, rhirel, chirel, browx, bcolx, r1c1)
