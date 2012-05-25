@@ -1846,16 +1846,21 @@ class Sheet(BaseObject):
 
     def handle_obj(self, data):
         if self.biff_version < 80:
-            return
+            return None
         o = MSObj()
         data_len = len(data)
         pos = 0
         if OBJ_MSO_DEBUG:
-            fprintf(self.logfile, "... OBJ record ...\n")
+            fprintf(self.logfile, "... OBJ record len=%d...\n", data_len)
         while pos < data_len:
             ft, cb = unpack('<HH', data[pos:pos+4])
             if OBJ_MSO_DEBUG:
-                hex_char_dump(data, pos, cb, base=0, fout=self.logfile)
+                fprintf(self.logfile, "pos=%d ft=0x%04X cb=%d\n", pos, ft, cb)
+                hex_char_dump(data, pos, cb + 4, base=0, fout=self.logfile)
+            if pos == 0 and not (ft == 0x15 and cb == 18):
+                if self.verbosity:
+                    fprintf(self.logfile, "*** WARNING Ignoring antique or corrupt OBJECT record\n")
+                return None
             if ft == 0x15: # ftCmo ... s/b first
                 assert pos == 0
                 o.type, o.id, option_flags = unpack('<HHH', data[pos+4:pos+10])
