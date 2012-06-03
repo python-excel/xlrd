@@ -1873,14 +1873,19 @@ class Sheet(BaseObject):
                     (14, 0x4000, 'autoline'),
                     ))
             elif ft == 0x00:
-                assert cb == 0
-                assert pos + 4 == data_len
+                if data[pos:data_len] == BYTES_X00 * (data_len - pos):
+                    # ignore "optional reserved" data at end of record
+                    break
+                msg = "Unexpected data at end of OBJECT record"
+                fprintf(self.logfile, "*** ERROR %s\n" % msg)
+                hex_char_dump(data, pos, data_len - pos, base=0, fout=self.logfile)
+                raise XLRDError(msg)
             elif ft == 0x0C: # Scrollbar
                 values = unpack('<5H', data[pos+8:pos+18])
                 for value, tag in zip(values, ('value', 'min', 'max', 'inc', 'page')):
                     setattr(o, 'scrollbar_' + tag, value)
             elif ft == 0x0D: # "Notes structure" [used for cell comments]
-                ############## not documented in Excel 97 dev kit
+                # not documented in Excel 97 dev kit
                 if OBJ_MSO_DEBUG: fprintf(self.logfile, "*** OBJ record has ft==0x0D 'notes' structure\n")
             elif ft == 0x13: # list box data
                 if o.autofilter: # non standard exit. NOT documented
@@ -1890,7 +1895,7 @@ class Sheet(BaseObject):
             pos += cb + 4
         else:
             # didn't break out of while loop
-            assert pos == data_len
+            pass
         if OBJ_MSO_DEBUG:
             o.dump(self.logfile, header="=== MSOBj ===", footer= " ")
         return o
