@@ -305,7 +305,7 @@ import licences
 
 import sys, zipfile, pprint
 import timemachine
-from biffh import XLRDError, biff_text_from_num, error_text_from_code, XL_CELL_BLANK, XL_CELL_TEXT, XL_CELL_BOOLEAN, XL_CELL_ERROR, XL_CELL_EMPTY, XL_CELL_DATE, XL_CELL_DATE
+from biffh import XLRDError, biff_text_from_num, error_text_from_code, XL_CELL_BLANK, XL_CELL_TEXT, XL_CELL_BOOLEAN, XL_CELL_ERROR, XL_CELL_EMPTY, XL_CELL_DATE, XL_CELL_DATE, XL_CELL_NUMBER
 from formula import * # is constrained by __all__
 from book import colname #### TODO #### formula also has `colname` (restricted to 256 cols)
 from sheet import empty_cell
