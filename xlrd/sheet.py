@@ -1873,7 +1873,7 @@ class Sheet(BaseObject):
                     (14, 0x4000, 'autoline'),
                     ))
             elif ft == 0x00:
-                if data[pos:data_len] == BYTES_X00 * (data_len - pos):
+                if data[pos:data_len] == '\x00' * (data_len - pos):
                     # ignore "optional reserved" data at end of record
                     break
                 msg = "Unexpected data at end of OBJECT record"
