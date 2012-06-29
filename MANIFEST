@@ -4,6 +4,7 @@ HISTORY.html
 scripts/runxlrd.py
 xlrd/__init__.py
 xlrd/biffh.py
+xlrd/book.py
 xlrd/compdoc.py
 xlrd/formatting.py
 xlrd/formula.py
