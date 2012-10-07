@@ -1501,7 +1501,7 @@ class Sheet(BaseObject):
             if nchars_found > nchars_expected:
                 msg = ("STRING/CONTINUE: expected %d chars, found %d" 
                     % (nchars_expected, nchars_found))
-                raise XLRDErrror(msg)
+                raise XLRDError(msg)
             rc, _unused_len, data = bk.get_record_parts()
             if rc != XL_CONTINUE:
                 raise XLRDError(
