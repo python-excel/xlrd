@@ -249,7 +249,9 @@ _cell_opcode_list = [
 _cell_opcode_dict = {}
 for _cell_opcode in _cell_opcode_list:
     _cell_opcode_dict[_cell_opcode] = 1
-is_cell_opcode = _cell_opcode_dict.has_key
+
+def is_cell_opcode(c):
+    return has_key(_cell_opcode_dict, c)
 
 # def fprintf(f, fmt, *vargs): f.write(fmt % vargs)
 
@@ -290,7 +292,7 @@ def unpack_unicode(data, pos, lenlen=2):
         # Avoid crash if missing.
         return u""
     pos += lenlen
-    options = ord(data[pos])
+    options = BYTES_ORD(data[pos])
     pos += 1
     # phonetic = options & 0x04
     # richtext = options & 0x08
@@ -332,7 +334,7 @@ def unpack_unicode_update_pos(data, pos, lenlen=2, known_len=None):
     if not nchars and not data[pos:]:
         # Zero-length string with no options byte
         return (u"", pos)
-    options = ord(data[pos])
+    options = BYTES_ORD(data[pos])
     pos += 1
     phonetic = options & 0x04
     richtext = options & 0x08
@@ -557,9 +559,15 @@ def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout, unnumbered=False):
                 '??? hex_char_dump: ofs=%d dlen=%d base=%d -> endpos=%d pos=%d endsub=%d substrg=%r\n',
                 ofs, dlen, base, endpos, pos, endsub, substrg)
             break
-        hexd = ''.join(["%02x " % ord(c) for c in substrg])
+        if PY3:
+            hexd = ''.join(["%02x " % c for c in substrg])
+        else:
+            hexd = ''.join(["%02x " % ord(c) for c in substrg])
+        
         chard = ''
         for c in substrg:
+            if PY3:
+                c = chr(c)
             if c == '\0':
                 c = '~'
             elif not (' ' <= c <= '~'):
@@ -567,6 +575,7 @@ def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout, unnumbered=False):
             chard += c
         if numbered:
             num_prefix = "%5d: " %  (base+pos-ofs)
+        
         fprintf(fout, "%s     %-48s %s\n", num_prefix, hexd, chard)
         pos = endsub
 
@@ -580,7 +589,7 @@ def biff_dump(mem, stream_offset, stream_len, base=0, fout=sys.stdout, unnumbere
     while stream_end - pos >= 4:
         rc, length = unpack('<HH', mem[pos:pos+4])
         if rc == 0 and length == 0:
-            if mem[pos:] == '\0' * (stream_end - pos):
+            if mem[pos:] == BYTES_X00 * (stream_end - pos):
                 dummies = stream_end - pos
                 savpos = pos
                 pos = stream_end
@@ -623,7 +632,7 @@ def biff_count_records(mem, stream_offset, stream_len, fout=sys.stdout):
     while stream_end - pos >= 4:
         rc, length = unpack('<HH', mem[pos:pos+4])
         if rc == 0 and length == 0:
-            if mem[pos:] == '\0' * (stream_end - pos):
+            if mem[pos:] == BYTES_X00 * (stream_end - pos):
                 break
             recname = "<Dummy (zero)>"
         else:

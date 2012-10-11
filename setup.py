@@ -53,6 +53,8 @@ if python_version >= (2, 3):
             'Intended Audience :: Developers',
             'License :: OSI Approved :: BSD License',
             'Programming Language :: Python',
+            'Programming Language :: Python :: 2',
+            'Programming Language :: Python :: 3',
             'Operating System :: OS Independent',
             'Topic :: Database',
             'Topic :: Office/Business',
@@ -73,5 +75,9 @@ if python_version >= (2, 4):
             },
         )
     args.update(args24)
+
+if python_version >= (3,):
+    from distutils.command.build_py import build_py_2to3
+    args['cmdclass'] = {'build_py': build_py_2to3}
 
 setup(**args)
