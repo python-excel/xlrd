@@ -1502,7 +1502,7 @@ class Sheet(BaseObject):
             if nchars_found > nchars_expected:
                 msg = ("STRING/CONTINUE: expected %d chars, found %d" 
                     % (nchars_expected, nchars_found))
-                raise XLRDErrror(msg)
+                raise XLRDError(msg)
             rc, _unused_len, data = bk.get_record_parts()
             if rc != XL_CONTINUE:
                 raise XLRDError(
@@ -1847,16 +1847,21 @@ class Sheet(BaseObject):
 
     def handle_obj(self, data):
         if self.biff_version < 80:
-            return
+            return None
         o = MSObj()
         data_len = len(data)
         pos = 0
         if OBJ_MSO_DEBUG:
-            fprintf(self.logfile, "... OBJ record ...\n")
+            fprintf(self.logfile, "... OBJ record len=%d...\n", data_len)
         while pos < data_len:
             ft, cb = unpack('<HH', data[pos:pos+4])
             if OBJ_MSO_DEBUG:
-                hex_char_dump(data, pos, cb, base=0, fout=self.logfile)
+                fprintf(self.logfile, "pos=%d ft=0x%04X cb=%d\n", pos, ft, cb)
+                hex_char_dump(data, pos, cb + 4, base=0, fout=self.logfile)
+            if pos == 0 and not (ft == 0x15 and cb == 18):
+                if self.verbosity:
+                    fprintf(self.logfile, "*** WARNING Ignoring antique or corrupt OBJECT record\n")
+                return None
             if ft == 0x15: # ftCmo ... s/b first
                 assert pos == 0
                 o.type, o.id, option_flags = unpack('<HHH', data[pos+4:pos+10])
@@ -1869,14 +1874,19 @@ class Sheet(BaseObject):
                     (14, 0x4000, 'autoline'),
                     ))
             elif ft == 0x00:
-                assert cb == 0
-                assert pos + 4 == data_len
+                if data[pos:data_len] == BYTES_X00 * (data_len - pos):
+                    # ignore "optional reserved" data at end of record
+                    break
+                msg = "Unexpected data at end of OBJECT record"
+                fprintf(self.logfile, "*** ERROR %s\n" % msg)
+                hex_char_dump(data, pos, data_len - pos, base=0, fout=self.logfile)
+                raise XLRDError(msg)
             elif ft == 0x0C: # Scrollbar
                 values = unpack('<5H', data[pos+8:pos+18])
                 for value, tag in zip(values, ('value', 'min', 'max', 'inc', 'page')):
                     setattr(o, 'scrollbar_' + tag, value)
             elif ft == 0x0D: # "Notes structure" [used for cell comments]
-                ############## not documented in Excel 97 dev kit
+                # not documented in Excel 97 dev kit
                 if OBJ_MSO_DEBUG: fprintf(self.logfile, "*** OBJ record has ft==0x0D 'notes' structure\n")
             elif ft == 0x13: # list box data
                 if o.autofilter: # non standard exit. NOT documented
@@ -1886,7 +1896,7 @@ class Sheet(BaseObject):
             pos += cb + 4
         else:
             # didn't break out of while loop
-            assert pos == data_len
+            pass
         if OBJ_MSO_DEBUG:
             o.dump(self.logfile, header="=== MSOBj ===", footer= " ")
         return o

@@ -6,7 +6,7 @@
 
 from timemachine import *
 from biffh import *
-from struct import unpack
+import struct; unpack = struct.unpack
 import sys
 import time
 import sheet
@@ -1060,12 +1060,14 @@ class Book(BaseObject):
         # if DEBUG: print "---> handle_obj type=%d id=0x%08x" % (obj_type, obj_id)
 
     def handle_supbook(self, data):
+        # aka EXTERNALBOOK in OOo docs
         self._supbook_types.append(None)
         blah = DEBUG or self.verbosity >= 2
-        if 0:
+        if blah:
             print >> self.logfile, "SUPBOOK:"
             hex_char_dump(data, 0, len(data), fout=self.logfile)
         num_sheets = unpack("<H", data[0:2])[0]
+        if blah: print >> self.logfile, "num_sheets = %d" % num_sheets
         sbn = self._supbook_count
         self._supbook_count += 1
         if data[2:4] == BYTES_LITERAL("\x01\x04"):
@@ -1089,9 +1091,19 @@ class Book(BaseObject):
         if blah: print >> self.logfile, "SUPBOOK[%d]: url = %r" % (sbn, url)
         sheet_names = []
         for x in range(num_sheets):
-            shname, pos = unpack_unicode_update_pos(data, pos, lenlen=2)
+            try:
+                shname, pos = unpack_unicode_update_pos(data, pos, lenlen=2)
+            except struct.error:
+                # #### FIX ME ####
+                # Should implement handling of CONTINUE record(s) ...
+                if self.verbosity:
+                    print >> self.logfile, (
+                        "*** WARNING: unpack failure in sheet %d of %d in SUPBOOK record for file %r" 
+                        % (x, num_sheets, url)
+                        )
+                break
             sheet_names.append(shname)
-            if blah: print >> self.logfile, "    sheet %d: %r" % (x, shname)
+            if blah: print >> self.logfile, "  sheetx=%d namelen=%d name=%r (next pos=%d)" % (x, len(shname), shname, pos)
 
     def handle_sheethdr(self, data):
         # This a BIFF 4W special.
