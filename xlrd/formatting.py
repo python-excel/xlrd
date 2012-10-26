@@ -668,8 +668,7 @@ def handle_style(book, data):
             % (built_in, xf_index, built_in_id, level, name), file=book.logfile)
 
 def check_colour_indexes_in_obj(book, obj, orig_index):
-    alist = obj.__dict__.items()
-    alist.sort()
+    alist = sorted(obj.__dict__.items())
     for attr, nobj in alist:
         if hasattr(nobj, 'dump'):
             check_colour_indexes_in_obj(book, nobj, orig_index)
