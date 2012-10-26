@@ -5,7 +5,7 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 
 DEBUG = 0
 
@@ -108,7 +108,7 @@ U_CP = "{http://schemas.openxmlformats.org/package/2006/metadata/core-properties
 U_DC = "{http://purl.org/dc/elements/1.1/}"
 U_DCTERMS = "{http://purl.org/dc/terms/}"
 XML_SPACE_ATTR = "{http://www.w3.org/XML/1998/namespace}space"
-XML_WHITESPACE = u"\t\n \r"
+XML_WHITESPACE = "\t\n \r"
 X12_MAX_ROWS = 2 ** 20
 X12_MAX_COLS = 2 ** 14
 V_TAG = U_SSML12 + 'v' # cell child: value
@@ -119,7 +119,7 @@ def unescape(s,
     subber=re.compile(r'_x[0-9A-Fa-f]{4,4}_', re.UNICODE).sub,
     repl=lambda mobj: unichr(int(mobj.group(0)[2:6], 16)),
     ):
-    if u"_" in s:
+    if "_" in s:
         return subber(repl, s)
     return s
 
@@ -138,7 +138,7 @@ if python_version < (2, 2):
     def cooked_text(self, elem):
         t = elem.text
         if t is None:
-            return u''
+            return ''
         if elem.get(XML_SPACE_ATTR) != 'preserve':
             t = strip_xml_ws(t)
         return unicode(unescape(t))
@@ -147,7 +147,7 @@ else:
     def cooked_text(self, elem):
         t = elem.text
         if t is None:
-            return u''
+            return ''
         if elem.get(XML_SPACE_ATTR) != 'preserve':
             t = t.strip(XML_WHITESPACE)
         return unicode(unescape(t))
@@ -168,7 +168,7 @@ def get_text_from_si_or_is(self, elem, r_tag=U_SSML12+'r', t_tag=U_SSML12 +'t'):
                     t = cooked_text(self, tnode)
                     if t:
                         accum.append(t)
-    return u''.join(accum)
+    return ''.join(accum)
 
 def map_attributes(amap, elem, obj):
     for xml_attr, obj_attr, cnv_func_or_const in amap:
@@ -181,7 +181,7 @@ def map_attributes(amap, elem, obj):
         setattr(obj, obj_attr, cooked_value)
 
 def cnv_ST_Xstring(s):
-    if s is None: return u""
+    if s is None: return ""
     return unicode(s)
 
 def cnv_xsd_unsignedInt(s):
@@ -359,7 +359,7 @@ class X12Book(X12General):
         map_attributes(_defined_name_attribute_map, elem, nobj)
         if nobj.scope is None:
             nobj.scope = -1 # global
-        if nobj.name.startswith(u"_xlnm."):
+        if nobj.name.startswith("_xlnm."):
             nobj.builtin = 1
         if self.verbosity >= 2:
             nobj.dump(header='=== Name object ===')
