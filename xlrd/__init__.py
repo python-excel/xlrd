@@ -410,7 +410,7 @@ def open_workbook(filename=None,
             logfile.write('ZIP component_names:\n')
             pprint.pprint(component_names, logfile)
         if 'xl/workbook.xml' in component_names:
-            import xlsx
+            from . import xlsx
             bk = xlsx.open_workbook_2007_xml(
                 zf,
                 component_names,
@@ -429,7 +429,7 @@ def open_workbook(filename=None,
             raise XLRDError('Openoffice.org ODS file; not supported')
         raise XLRDError('ZIP file contents not a known type of workbook')
 
-    import book
+    from . import book
     bk = book.open_workbook_xls(
         filename=filename,
         logfile=logfile,
@@ -451,8 +451,8 @@ def open_workbook(filename=None,
 # @param unnumbered If true, omit offsets (for meaningful diffs).
 
 def dump(filename, outfile=sys.stdout, unnumbered=False):
-    from book import Book
-    from biffh import biff_dump
+    from .book import Book
+    from .biffh import biff_dump
     bk = Book()
     bk.biff2_8_load(filename=filename, logfile=outfile, )
     biff_dump(bk.mem, bk.base, bk.stream_len, 0, outfile, unnumbered)
@@ -464,8 +464,8 @@ def dump(filename, outfile=sys.stdout, unnumbered=False):
 # @param outfile An open file, to which the summary is written.
 
 def count_records(filename, outfile=sys.stdout):
-    from book import Book
-    from biffh import biff_count_records
+    from .book import Book
+    from .biffh import biff_count_records
     bk = Book()
     bk.biff2_8_load(filename=filename, logfile=outfile, )
     biff_count_records(bk.mem, bk.base, bk.stream_len, outfile)
