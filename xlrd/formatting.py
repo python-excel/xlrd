@@ -483,16 +483,16 @@ def is_date_format_string(book, fmt):
     if book.verbosity >= 4:
         print("is_date_format_string: reduced format is %r" % s, file=book.logfile)
     s = fmt_bracketed_sub('', s)
-    if non_date_formats.has_key(s):
+    if s in non_date_formats:
         return False
     state = 0
     separator = ";"
     got_sep = 0
     date_count = num_count = 0
     for c in s:
-        if date_char_dict.has_key(c):
+        if c in date_char_dict:
             date_count += date_char_dict[c]
-        elif num_char_dict.has_key(c):
+        elif c in num_char_dict:
             num_count += num_char_dict[c]
         elif c == separator:
             got_sep = 1
@@ -612,7 +612,7 @@ def palette_epilogue(book):
         cx = font.colour_index
         if cx == 0x7fff: # system window text colour
             continue
-        if book.colour_map.has_key(cx):
+        if cx in book.colour_map:
             book.colour_indexes_used[cx] = 1
         elif book.verbosity:
             print("Size of colour table:", len(book.colour_map), file=book.logfile)
@@ -674,7 +674,7 @@ def check_colour_indexes_in_obj(book, obj, orig_index):
         if hasattr(nobj, 'dump'):
             check_colour_indexes_in_obj(book, nobj, orig_index)
         elif attr.find('colour_index') >= 0:
-            if book.colour_map.has_key(nobj):
+            if nobj in book.colour_map:
                 book.colour_indexes_used[nobj] = 1
                 continue
             oname = obj.__class__.__name__
@@ -683,7 +683,7 @@ def check_colour_indexes_in_obj(book, obj, orig_index):
 
 def fill_in_standard_formats(book):
     for x in std_format_code_types.keys():
-        if not book.format_map.has_key(x):
+        if x not in book.format_map:
             ty = std_format_code_types[x]
             # Note: many standard format codes (mostly CJK date formats) have
             # format strings that vary by locale; xlrd does not (yet)
@@ -955,7 +955,7 @@ def handle_xf(self, data):
             msg = "WARNING *** XF[%d] is a style XF but parent_style_index is 0x%04x, not 0x0fff\n"
             fprintf(self.logfile, msg, xf.xf_index, xf.parent_style_index)
         check_colour_indexes_in_obj(self, xf, xf.xf_index)
-    if not self.format_map.has_key(xf.format_key):
+    if xf.format_key not in self.format_map:
         msg = "WARNING *** XF[%d] unknown (raw) format key (%d, 0x%04x)\n"
         if self.verbosity:
             fprintf(self.logfile, msg,
@@ -980,7 +980,7 @@ def xf_epilogue(self):
 
     for xfx in xrange(num_xfs):
         xf = self.xf_list[xfx]
-        if not self.format_map.has_key(xf.format_key):
+        if xf.format_key not in self.format_map:
             msg = "ERROR *** XF[%d] unknown format key (%d, 0x%04x)\n"
             fprintf(self.logfile, msg,
                     xf.xf_index, xf.format_key, xf.format_key)

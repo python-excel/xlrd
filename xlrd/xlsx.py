@@ -240,7 +240,7 @@ def make_name_access_maps(bk):
         nobj = bk.name_obj_list[namex]
         name_lcase = nobj.name.lower()
         key = (name_lcase, nobj.scope)
-        if name_and_scope_map.has_key(key):
+        if key in name_and_scope_map:
             msg = 'Duplicate entry %r in name_and_scope_map' % (key, )
             if 0:
                 raise XLRDError(msg)
@@ -248,7 +248,7 @@ def make_name_access_maps(bk):
                 if bk.verbosity:
                     print(msg, file=bk.logfile)
         name_and_scope_map[key] = nobj
-        if name_map.has_key(name_lcase):
+        if name_lcase in name_map:
             name_map[name_lcase].append((nobj.scope, nobj))
         else:
             name_map[name_lcase] = [(nobj.scope, nobj)]

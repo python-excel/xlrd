@@ -1414,7 +1414,7 @@ class Sheet(BaseObject):
                             % (first_colx, last_colx), file=self.logfile)
                         continue
                     for colx in xrange(first_colx, last_colx+1):
-                        if self.colinfo_map.has_key(colx):
+                        if colx in self.colinfo_map:
                             c = self.colinfo_map[colx]
                         else:
                             c = Colinfo()
@@ -1445,7 +1445,7 @@ class Sheet(BaseObject):
                         offset = 4 + 3 * (colx - first_colx)
                         cell_attr = data[offset:offset+3]
                         xf_index = self.fixed_BIFF2_xfindex(cell_attr, rowx=-1, colx=colx)
-                        if self.colinfo_map.has_key(colx):
+                        if colx in self.colinfo_map:
                             c = self.colinfo_map[colx]
                         else:
                             c = Colinfo()
@@ -1592,7 +1592,7 @@ class Sheet(BaseObject):
         book.xf_list.append(xf)
         if blah:
             xf.dump(self.logfile, header="=== Faked XF %d ===" % xfx, footer="======")
-        if not book.format_map.has_key(xf.format_key):
+        if xf.format_key not in book.format_map:
             if xf.format_key:
                 msg = "ERROR *** XF[%d] unknown format key (%d, 0x%04x)\n"
                 fprintf(self.logfile, msg,
