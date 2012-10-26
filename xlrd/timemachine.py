@@ -31,6 +31,7 @@ if python_version >= (3, 0): # Might work on 3.0 but absolutely no support!
     EXCEL_TEXT_TYPES = (str, bytes, bytearray) # xlwt: isinstance(obj, EXCEL_TEXT_TYPES)
     REPR = ascii
     xrange = range
+    unicode = lambda b, enc: b.decode(enc)
 else:
     BYTES_LITERAL = lambda x: x
     UNICODE_LITERAL = lambda x: x.decode('latin1')
