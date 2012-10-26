@@ -46,7 +46,7 @@ class DirNode(object):
         (self.first_SID, self.tot_size) = \
             unpack('<ii', dent[116:124])
         if cbufsize == 0:
-            self.name = u''
+            self.name = UNICODE_LITERAL('')
         else:
             self.name = unicode(dent[0:cbufsize-2], 'utf_16_le') # omit the trailing U+0000
         self.children = [] # filled in later
