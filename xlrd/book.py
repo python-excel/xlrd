@@ -4,7 +4,7 @@
 # <p>This module is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
-from __future__ import unicode_literals, print_function
+from __future__ import print_function
 
 from .timemachine import *
 from .biffh import *
@@ -43,7 +43,7 @@ SUPBOOK_UNK, SUPBOOK_INTERNAL, SUPBOOK_EXTERNAL, SUPBOOK_ADDIN, SUPBOOK_DDEOLE =
 
 SUPPORTED_VERSIONS = (80, 70, 50, 45, 40, 30, 21, 20)
 
-code_from_builtin_name = {
+_code_from_builtin_name = {
     "Consolidate_Area": "\x00",
     "Auto_Open":        "\x01",
     "Auto_Close":       "\x02",
@@ -60,9 +60,13 @@ code_from_builtin_name = {
     "_FilterDatabase":  "\x0D",
     }
 builtin_name_from_code = {}
-for _bin, _bic in code_from_builtin_name.items():
+code_from_builtin_name = {}
+for _bin, _bic in _code_from_builtin_name.items():
+    _bin = UNICODE_LITERAL(_bin)
+    _bic = UNICODE_LITERAL(_bic)
+    code_from_builtin_name[_bin] = _bic
     builtin_name_from_code[_bic] = _bin
-del _bin, _bic
+del _bin, _bic, _code_from_builtin_name
 
 def open_workbook_xls(filename=None,
     logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
@@ -209,7 +213,7 @@ class Name(BaseObject):
 
     ##
     # A Unicode string. If builtin, decoded as per OOo docs.
-    name = ""
+    name = UNICODE_LITERAL("")
 
     ##
     # An 8-bit string.
@@ -343,7 +347,7 @@ class Book(BaseObject):
 
     ##
     # What (if anything) is recorded as the name of the last user to save the file.
-    user_name = ''
+    user_name = UNICODE_LITERAL('')
 
     ##
     # A list of Font class instances, each corresponding to a FONT record.
@@ -615,13 +619,14 @@ class Book(BaseObject):
             cd = compdoc.CompDoc(self.filestr, logfile=self.logfile)
             if USE_FANCY_CD:
                 for qname in ['Workbook', 'Book']:
-                    self.mem, self.base, self.stream_len = cd.locate_named_stream(qname)
+                    self.mem, self.base, self.stream_len = \
+                                cd.locate_named_stream(UNICODE_LITERAL(qname))
                     if self.mem: break
                 else:
                     raise XLRDError("Can't find workbook in OLE2 compound document")
             else:
                 for qname in ['Workbook', 'Book']:
-                    self.mem = cd.get_named_stream(qname)
+                    self.mem = cd.get_named_stream(UNICODE_LITERAL(qname))
                     if self.mem: break
                 else:
                     raise XLRDError("Can't find workbook in OLE2 compound document")
@@ -705,7 +710,7 @@ class Book(BaseObject):
 
     def fake_globals_get_sheet(self): # for BIFF 4.0 and earlier
         formatting.initialise_book(self)
-        fake_sheet_name = 'Sheet 1'
+        fake_sheet_name = UNICODE_LITERAL('Sheet 1')
         self._sheet_names = [fake_sheet_name]
         self._sh_abs_posn = [0]
         self._sheet_visibility = [0] # one sheet, visible
@@ -1339,7 +1344,7 @@ def expand_cell_address(inrow, incol):
 
 def colname(colx, _A2Z="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
     assert colx >= 0
-    name = ''
+    name = UNICODE_LITERAL('')
     while 1:
         quot, rem = divmod(colx, 26)
         name = _A2Z[rem] + name
@@ -1385,7 +1390,7 @@ def unpack_SST_table(datatab, nstrings):
         if options & 0x04: # phonetic
             phosz = local_unpack('<i', data[pos:pos+4])[0]
             pos += 4
-        accstrg = ''
+        accstrg = UNICODE_LITERAL('')
         charsgot = 0
         while 1:
             charsneed = nchars - charsgot
