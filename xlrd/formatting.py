@@ -24,13 +24,13 @@
 
 DEBUG = 0
 import copy, re
-from timemachine import *
-from biffh import BaseObject, unpack_unicode, unpack_string, \
+from struct import unpack
+from .timemachine import *
+from .biffh import BaseObject, unpack_unicode, unpack_string, \
     upkbits, upkbitsL, fprintf, \
     FUN, FDT, FNU, FGE, FTX, XL_CELL_NUMBER, XL_CELL_DATE, \
     XL_FORMAT, XL_FORMAT2, \
     XLRDError
-from struct import unpack
 
 excel_default_palette_b5 = (
     (  0,   0,   0), (255, 255, 255), (255,   0,   0), (  0, 255,   0),

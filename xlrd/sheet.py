@@ -27,12 +27,12 @@
 # 2007-07-11 SJM Allow for BIFF2/3-style FORMAT record in BIFF4/8 file
 # 2007-04-22 SJM Remove experimental "trimming" facility.
 
-from biffh import *
-from timemachine import *
 from struct import unpack, calcsize
-from formula import dump_formula, decompile_formula, rangename2d, FMLA_TYPE_CELL, FMLA_TYPE_SHARED
-from formatting import nearest_colour_index, Format
 import time
+from .biffh import *
+from .timemachine import *
+from .formula import dump_formula, decompile_formula, rangename2d, FMLA_TYPE_CELL, FMLA_TYPE_SHARED
+from .formatting import nearest_colour_index, Format
 
 DEBUG = 0
 OBJ_MSO_DEBUG = 0

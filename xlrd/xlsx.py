@@ -9,11 +9,11 @@ DEBUG = 0
 
 import sys, zipfile, pprint
 import re
-from timemachine import *
-from book import Book, Name
-from biffh import error_text_from_code, XLRDError, XL_CELL_BLANK, XL_CELL_TEXT, XL_CELL_BOOLEAN, XL_CELL_ERROR
-from formatting import is_date_format_string, Format, XF
-from sheet import Sheet
+from .timemachine import *
+from .book import Book, Name
+from .biffh import error_text_from_code, XLRDError, XL_CELL_BLANK, XL_CELL_TEXT, XL_CELL_BOOLEAN, XL_CELL_ERROR
+from .formatting import is_date_format_string, Format, XF
+from .sheet import Sheet
 
 DLF = sys.stdout # Default Log File
 

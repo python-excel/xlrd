@@ -18,7 +18,7 @@
 from __future__ import nested_scopes
 import sys
 from struct import unpack
-from timemachine import *
+from .timemachine import *
 import array
 
 ##

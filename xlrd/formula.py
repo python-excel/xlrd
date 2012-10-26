@@ -13,8 +13,8 @@
 from __future__ import nested_scopes
 import copy
 from struct import unpack
-from timemachine import *
-from biffh import unpack_unicode_update_pos, unpack_string_update_pos, \
+from .timemachine import *
+from .biffh import unpack_unicode_update_pos, unpack_string_update_pos, \
     XLRDError, hex_char_dump, error_text_from_code, BaseObject
 
 __all__ = [

@@ -4,16 +4,16 @@
 # <p>This module is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
-from timemachine import *
-from biffh import *
+from .timemachine import *
+from .biffh import *
 import struct; unpack = struct.unpack
 import sys
 import time
 import sheet
 import compdoc
-from xldate import xldate_as_tuple, XLDateError
-from formula import *
-import formatting
+from .xldate import xldate_as_tuple, XLDateError
+from .formula import *
+from . import formatting
 if sys.version.startswith("IronPython"):
     # print >> sys.stderr, "...importing encodings"
     import encodings

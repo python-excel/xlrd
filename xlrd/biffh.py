@@ -20,7 +20,7 @@ DEBUG = 0
 
 from struct import unpack
 import sys
-from timemachine import *
+from .timemachine import *
 
 class XLRDError(Exception):
     pass

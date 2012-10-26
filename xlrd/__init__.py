@@ -1,12 +1,12 @@
 from os import path
 
-from info import __VERSION__
+from .info import __VERSION__
 
 # <p>Copyright (c) 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
-import licences
+from . import licences
 
 ##
 # <p><b>A Python module for extracting data from MS Excel (TM) spreadsheet files.
@@ -304,8 +304,8 @@ import licences
 ##
 
 import sys, zipfile, pprint
-import timemachine
-from biffh import (
+from . import timemachine
+from .biffh import (
     XLRDError,
     biff_text_from_num,
     error_text_from_code,
@@ -317,10 +317,10 @@ from biffh import (
     XL_CELL_DATE,
     XL_CELL_NUMBER
     )
-from formula import * # is constrained by __all__
-from book import Book, colname #### TODO #### formula also has `colname` (restricted to 256 cols)
-from sheet import empty_cell
-from xldate import XLDateError, xldate_as_tuple
+from .formula import * # is constrained by __all__
+from .book import Book, colname #### TODO #### formula also has `colname` (restricted to 256 cols)
+from .sheet import empty_cell
+from .xldate import XLDateError, xldate_as_tuple
 
 if sys.version.startswith("IronPython"):
     # print >> sys.stderr, "...importing encodings"
