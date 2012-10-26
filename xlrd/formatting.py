@@ -22,7 +22,7 @@
 # 2007-09-08 SJM Work around corrupt STYLE record
 # 2007-07-11 SJM Allow for BIFF2/3-style FORMAT record in BIFF4/8 file
 
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 
 DEBUG = 0
 import copy, re
@@ -221,7 +221,7 @@ class Font(BaseObject, EqNeAttrs):
     italic = 0
     ##
     # The name of the font. Example: u"Arial"
-    name = u""
+    name = ""
     ##
     # 1 = Characters are struck out.
     struck_out = 0
@@ -261,7 +261,7 @@ def handle_font(book, data):
     k = len(book.font_list)
     if k == 4:
         f = Font()
-        f.name = u'Dummy Font'
+        f.name = 'Dummy Font'
         f.font_index = k
         book.font_list.append(f)
         k += 1
@@ -343,7 +343,7 @@ class Format(BaseObject, EqNeAttrs):
     type = FUN
     ##
     # The format string
-    format_str = u''
+    format_str = ''
 
     def __init__(self, format_key, ty, format_str):
         self.format_key = format_key
@@ -416,29 +416,29 @@ for lo, hi, ty in fmt_code_ranges:
         std_format_code_types[x] = ty
 del lo, hi, ty, x
 
-date_chars = u'ymdhs' # year, month/minute, day, hour, second
+date_chars = 'ymdhs' # year, month/minute, day, hour, second
 date_char_dict = {}
 for _c in date_chars + date_chars.upper():
     date_char_dict[_c] = 5
 del _c, date_chars
 
 skip_char_dict = {}
-for _c in u'$-+/(): ':
+for _c in '$-+/(): ':
     skip_char_dict[_c] = 1
 
 num_char_dict = {
-    u'0': 5,
-    u'#': 5,
-    u'?': 5,
+    '0': 5,
+    '#': 5,
+    '?': 5,
     }
 
 non_date_formats = {
-    u'0.00E+00':1,
-    u'##0.0E+0':1,
-    u'General' :1,
-    u'GENERAL' :1, # OOo Calc 1.1.4 does this.
-    u'general' :1,  # pyExcelerator 0.6.3 does this.
-    u'@'       :1,
+    '0.00E+00':1,
+    '##0.0E+0':1,
+    'General' :1,
+    'GENERAL' :1, # OOo Calc 1.1.4 does this.
+    'general' :1,  # pyExcelerator 0.6.3 does this.
+    '@'       :1,
     }
 
 fmt_bracketed_sub = re.compile(r'\[[^]]*\]').sub
@@ -465,16 +465,16 @@ def is_date_format_string(book, fmt):
     
     for c in fmt:
         if state == 0:
-            if c == u'"':
+            if c == '"':
                 state = 1
-            elif c in ur"\_*":
+            elif c in r"\_*":
                 state = 2
             elif ignorable(c):
                 pass
             else:
                 s += c
         elif state == 1:
-            if c == u'"':
+            if c == '"':
                 state = 0
         elif state == 2:
             # Ignore char after backslash, underscore or asterisk
@@ -755,7 +755,7 @@ def handle_xf(self, data):
             (16, 0x007f0000,  'left_colour_index'),
             (23, 0x3f800000,  'right_colour_index'),
             (30, 0x40000000,  'diag_down'),
-            (31, 0x80000000L, 'diag_up'),
+            (31, 0x80000000, 'diag_up'),
             ))
         upkbits(xf.border, pkd_brdbkg2, (
             (0,  0x0000007F, 'top_colour_index'),
@@ -764,7 +764,7 @@ def handle_xf(self, data):
             (21, 0x01E00000, 'diag_line_style'),
             ))
         upkbitsL(xf.background, pkd_brdbkg2, (
-            (26, 0xFC000000L, 'fill_pattern'),
+            (26, 0xFC000000, 'fill_pattern'),
             ))
         upkbits(xf.background, pkd_brdbkg3, (
             (0, 0x007F, 'pattern_colour_index'),
@@ -805,7 +805,7 @@ def handle_xf(self, data):
             ))
         upkbitsL(xf.border, pkd_brdbkg1, (
             (22, 0x01C00000,  'bottom_line_style'),
-            (25, 0xFE000000L, 'bottom_colour_index'),
+            (25, 0xFE000000, 'bottom_colour_index'),
             ))
         upkbits(xf.border, pkd_brdbkg2, (
             ( 0, 0x00000007, 'top_line_style'),
@@ -856,7 +856,7 @@ def handle_xf(self, data):
             (16, 0x00070000,  'bottom_line_style'),
             (19, 0x00F80000,  'bottom_colour_index'),
             (24, 0x07000000,  'right_line_style'),
-            (27, 0xF8000000L, 'right_colour_index'),
+            (27, 0xF8000000, 'right_colour_index'),
             ))
     elif bv == 30:
         unpack_fmt = '<BBBBHHI'
@@ -898,7 +898,7 @@ def handle_xf(self, data):
             (16, 0x00070000,  'bottom_line_style'),
             (19, 0x00F80000,  'bottom_colour_index'),
             (24, 0x07000000,  'right_line_style'),
-            (27, 0xF8000000L, 'right_colour_index'),
+            (27, 0xF8000000, 'right_colour_index'),
             ))
         xf.alignment.vert_align = 2 # bottom
         xf.alignment.rotation = 0
