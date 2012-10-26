@@ -27,7 +27,7 @@
 # 2007-07-11 SJM Allow for BIFF2/3-style FORMAT record in BIFF4/8 file
 # 2007-04-22 SJM Remove experimental "trimming" facility.
 
-from __future__ import unicode_literals, print_function
+from __future__ import print_function
 
 from struct import unpack, calcsize
 import time
@@ -1484,7 +1484,7 @@ class Sheet(BaseObject):
         if bv < 80:
             enc = bk.encoding or bk.derive_encoding()
         nchars_found = 0
-        result = ""
+        result = UNICODE_LITERAL("")
         while 1:
             if bv >= 80:
                 flag = BYTES_ORD(data[offset]) & 1
@@ -1597,7 +1597,7 @@ class Sheet(BaseObject):
                 msg = "ERROR *** XF[%d] unknown format key (%d, 0x%04x)\n"
                 fprintf(self.logfile, msg,
                         xf.xf_index, xf.format_key, xf.format_key)
-            fmt = Format(xf.format_key, FUN, "General")
+            fmt = Format(xf.format_key, FUN, UNICODE_LITERAL("General"))
             book.format_map[xf.format_key] = fmt
             book.format_list.append(fmt)
         cellty_from_fmtty = {
@@ -1730,7 +1730,7 @@ class Sheet(BaseObject):
             if clsid == BYTES_LITERAL("\xE0\xC9\xEA\x79\xF9\xBA\xCE\x11\x8C\x82\x00\xAA\x00\x4B\xA9\x0B"):
                 #          E0H C9H EAH 79H F9H BAH CEH 11H 8CH 82H 00H AAH 00H 4BH A9H 0BH
                 # URL Moniker
-                h.type = 'url'
+                h.type = UNICODE_LITERAL('url')
                 nbytes = unpack('<L', data[offset:offset + 4])[0]
                 offset += 4
                 h.url_or_path = unicode(data[offset:offset + nbytes], 'UTF-16le')
@@ -1749,7 +1749,7 @@ class Sheet(BaseObject):
                 assert extra_nbytes in (24, 0)
             elif clsid == BYTES_LITERAL("\x03\x03\x00\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46"):
                 # file moniker
-                h.type = 'local file'
+                h.type = UNICODE_LITERAL('local file')
                 uplevels, nbytes = unpack("<Hi", data[offset:offset + 6])
                 offset += 6
                 shortpath = "..\\" * uplevels + data[offset:offset + nbytes - 1] #### BYTES, not unicode
@@ -1774,12 +1774,12 @@ class Sheet(BaseObject):
             else:
                 print("*** unknown clsid %r" % clsid, file=self.logfile)
         elif options & 0x163 == 0x103: # UNC
-            h.type = 'unc'
+            h.type = UNICODE_LITERAL('unc')
             h.url_or_path, offset = get_nul_terminated_unicode(data, offset)
         elif options & 0x16B == 8:
-            h.type = 'workbook'
+            h.type = UNICODE_LITERAL('workbook')
         else:
-            h.type = 'unknown'
+            h.type = UNICODE_LITERAL('unknown')
             
         if options & 0x8: # has textmark
             h.textmark, offset = get_nul_terminated_unicode(data, offset)
@@ -1924,7 +1924,7 @@ class Sheet(BaseObject):
             o.show = 0
             o.row_hidden = 0
             o.col_hidden = 0
-            o.author = ''
+            o.author = UNICODE_LITERAL('')
             o._object_id = None
             self.cell_note_map[o.rowx, o.colx] = o        
             return
@@ -1965,7 +1965,7 @@ class Sheet(BaseObject):
             (15, 0x8000, 'secret_edit'),
             ))
         totchars = 0
-        o.text = ''
+        o.text = UNICODE_LITERAL('')
         while totchars < cchText:
             rc2, data2_len, data2 = self.book.get_record_parts()
             assert rc2 == XL_CONTINUE
@@ -2064,7 +2064,7 @@ class MSTxo(BaseObject):
 class Note(BaseObject):
     ##
     # Author of note
-    author = ''
+    author = UNICODE_LITERAL('')
     ##
     # True if the containing column is hidden
     col_hidden = 0 
@@ -2086,7 +2086,7 @@ class Note(BaseObject):
     show = 0
     ##
     # Text of the note
-    text = ''
+    text = UNICODE_LITERAL('')
 
 ##
 # <p>Contains the attributes of a hyperlink.
