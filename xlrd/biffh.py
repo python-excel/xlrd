@@ -290,7 +290,7 @@ def unpack_unicode(data, pos, lenlen=2):
     if not nchars:
         # Ambiguous whether 0-length string should have an "options" byte.
         # Avoid crash if missing.
-        return u""
+        return UNICODE_LITERAL("")
     pos += lenlen
     options = BYTES_ORD(data[pos])
     pos += 1
@@ -333,7 +333,7 @@ def unpack_unicode_update_pos(data, pos, lenlen=2, known_len=None):
         pos += lenlen
     if not nchars and not data[pos:]:
         # Zero-length string with no options byte
-        return (u"", pos)
+        return (UNICODE_LITERAL(""), pos)
     options = BYTES_ORD(data[pos])
     pos += 1
     phonetic = options & 0x04

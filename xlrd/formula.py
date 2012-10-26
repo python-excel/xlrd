@@ -2128,7 +2128,9 @@ def rangename2d(rlo, rhi, clo, chi, r1c1=0):
         return cellnameabs(rlo, clo, r1c1)
     return "%s:%s" % (cellnameabs(rlo, clo, r1c1), cellnameabs(rhi-1, chi-1, r1c1))
 
-def rangename2drel((rlo, rhi, clo, chi), (rlorel, rhirel, clorel, chirel), browx=None, bcolx=None, r1c1=0):
+def rangename2drel(rlo_rhi_clo_chi, rlorel_rhirel_clorel_chirel, browx=None, bcolx=None, r1c1=0):
+    rlo, rhi, clo, chi = rlo_rhi_clo_chi
+    rlorel, rhirel, clorel, chirel = rlorel_rhirel_clorel_chirel
     if (rlorel or rhirel) and browx is None:
         r1c1 = True
     if (clorel or chirel) and bcolx is None:
@@ -2185,7 +2187,9 @@ def sheetrange(book, slo, shi):
         shdesc += ":" + quotedsheetname(shnames, shi-1)
     return shdesc
 
-def sheetrangerel(book, (slo, shi), (slorel, shirel)):
+def sheetrangerel(book, srange, srangerel):
+    slo, shi = sheetrange
+    slorel, shirel = srangerel
     if not slorel and not shirel:
         return sheetrange(book, slo, shi)
     assert (slo == 0 == shi-1) and slorel and shirel

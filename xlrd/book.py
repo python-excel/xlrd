@@ -4,13 +4,15 @@
 # <p>This module is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
+from __future__ import unicode_literals
+
 from .timemachine import *
 from .biffh import *
 import struct; unpack = struct.unpack
 import sys
 import time
-import sheet
-import compdoc
+from . import sheet
+from . import compdoc
 from .xldate import xldate_as_tuple, XLDateError
 from .formula import *
 from . import formatting
@@ -42,20 +44,20 @@ SUPBOOK_UNK, SUPBOOK_INTERNAL, SUPBOOK_EXTERNAL, SUPBOOK_ADDIN, SUPBOOK_DDEOLE =
 SUPPORTED_VERSIONS = (80, 70, 50, 45, 40, 30, 21, 20)
 
 code_from_builtin_name = {
-    u"Consolidate_Area": u"\x00",
-    u"Auto_Open":        u"\x01",
-    u"Auto_Close":       u"\x02",
-    u"Extract":          u"\x03",
-    u"Database":         u"\x04",
-    u"Criteria":         u"\x05",
-    u"Print_Area":       u"\x06",
-    u"Print_Titles":     u"\x07",
-    u"Recorder":         u"\x08",
-    u"Data_Form":        u"\x09",
-    u"Auto_Activate":    u"\x0A",
-    u"Auto_Deactivate":  u"\x0B",
-    u"Sheet_Title":      u"\x0C",
-    u"_FilterDatabase":  u"\x0D",
+    "Consolidate_Area": "\x00",
+    "Auto_Open":        "\x01",
+    "Auto_Close":       "\x02",
+    "Extract":          "\x03",
+    "Database":         "\x04",
+    "Criteria":         "\x05",
+    "Print_Area":       "\x06",
+    "Print_Titles":     "\x07",
+    "Recorder":         "\x08",
+    "Data_Form":        "\x09",
+    "Auto_Activate":    "\x0A",
+    "Auto_Deactivate":  "\x0B",
+    "Sheet_Title":      "\x0C",
+    "_FilterDatabase":  "\x0D",
     }
 builtin_name_from_code = {}
 for _bin, _bic in code_from_builtin_name.items():
@@ -207,7 +209,7 @@ class Name(BaseObject):
 
     ##
     # A Unicode string. If builtin, decoded as per OOo docs.
-    name = u""
+    name = ""
 
     ##
     # An 8-bit string.
@@ -341,7 +343,7 @@ class Book(BaseObject):
 
     ##
     # What (if anything) is recorded as the name of the last user to save the file.
-    user_name = u''
+    user_name = ''
 
     ##
     # A list of Font class instances, each corresponding to a FONT record.
@@ -612,13 +614,13 @@ class Book(BaseObject):
         else:
             cd = compdoc.CompDoc(self.filestr, logfile=self.logfile)
             if USE_FANCY_CD:
-                for qname in [u'Workbook', u'Book']:
+                for qname in ['Workbook', 'Book']:
                     self.mem, self.base, self.stream_len = cd.locate_named_stream(qname)
                     if self.mem: break
                 else:
                     raise XLRDError("Can't find workbook in OLE2 compound document")
             else:
-                for qname in [u'Workbook', u'Book']:
+                for qname in ['Workbook', 'Book']:
                     self.mem = cd.get_named_stream(qname)
                     if self.mem: break
                 else:
@@ -703,7 +705,7 @@ class Book(BaseObject):
 
     def fake_globals_get_sheet(self): # for BIFF 4.0 and earlier
         formatting.initialise_book(self)
-        fake_sheet_name = u'Sheet 1'
+        fake_sheet_name = 'Sheet 1'
         self._sheet_names = [fake_sheet_name]
         self._sh_abs_posn = [0]
         self._sheet_visibility = [0] # one sheet, visible
@@ -1338,7 +1340,7 @@ def expand_cell_address(inrow, incol):
 
 def colname(colx, _A2Z="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
     assert colx >= 0
-    name = u''
+    name = ''
     while 1:
         quot, rem = divmod(colx, 26)
         name = _A2Z[rem] + name
@@ -1384,7 +1386,7 @@ def unpack_SST_table(datatab, nstrings):
         if options & 0x04: # phonetic
             phosz = local_unpack('<i', data[pos:pos+4])[0]
             pos += 4
-        accstrg = u''
+        accstrg = ''
         charsgot = 0
         while 1:
             charsneed = nchars - charsgot
