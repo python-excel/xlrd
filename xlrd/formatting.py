@@ -22,6 +22,8 @@
 # 2007-09-08 SJM Work around corrupt STYLE record
 # 2007-07-11 SJM Allow for BIFF2/3-style FORMAT record in BIFF4/8 file
 
+from __future__ import print_function
+
 DEBUG = 0
 import copy, re
 from struct import unpack
@@ -149,8 +151,8 @@ def nearest_colour_index(colour_map, rgb, debug=0):
             if metric == 0:
                 break
     if 0 and debug:
-        print "nearest_colour_index for %r is %r -> %r; best_metric is %d" \
-            % (rgb, best_colourx, colour_map[best_colourx], best_metric)
+        print("nearest_colour_index for %r is %r -> %r; best_metric is %d" \
+            % (rgb, best_colourx, colour_map[best_colourx], best_metric))
     return best_colourx
 
 ##
@@ -479,7 +481,7 @@ def is_date_format_string(book, fmt):
             state = 0
         assert 0 <= state <= 2
     if book.verbosity >= 4:
-        print >> book.logfile, "is_date_format_string: reduced format is %r" % s
+        print("is_date_format_string: reduced format is %r" % s, file=book.logfile)
     s = fmt_bracketed_sub('', s)
     if non_date_formats.has_key(s):
         return False
@@ -598,7 +600,7 @@ def handle_palette(book, data):
         book.colour_map[8+i] = new_rgb
         if blah:
             if new_rgb != old_rgb:
-                print >> book.logfile, "%2d: %r -> %r" % (i, old_rgb, new_rgb)
+                print("%2d: %r -> %r" % (i, old_rgb, new_rgb), file=book.logfile)
 
 def palette_epilogue(book):
     # Check colour indexes in fonts etc.
@@ -613,14 +615,13 @@ def palette_epilogue(book):
         if book.colour_map.has_key(cx):
             book.colour_indexes_used[cx] = 1
         elif book.verbosity:
-            print >> book.logfile, "Size of colour table:", len(book.colour_map)
-            print >> book.logfile, \
-                "*** Font #%d (%r): colour index 0x%04x is unknown" \
-                % (font.font_index, font.name, cx)
+            print("Size of colour table:", len(book.colour_map), file=book.logfile)
+            print("*** Font #%d (%r): colour index 0x%04x is unknown" \
+                % (font.font_index, font.name, cx), file=book.logfile)
     if book.verbosity >= 1:
         used = book.colour_indexes_used.keys()
         used.sort()
-        print >> book.logfile, "\nColour indexes used:\n%r\n" % used
+        print("\nColour indexes used:\n%r\n" % used, file=book.logfile)
 
 def handle_style(book, data):
     if not book.formatting_info:
@@ -653,21 +654,18 @@ def handle_style(book, data):
             try:
                 name = unpack_unicode(data, 2, lenlen=2)
             except UnicodeDecodeError:
-                print >> book.logfile, \
-                    "STYLE: built_in=%d xf_index=%d built_in_id=%d level=%d" \
-                    % (built_in, xf_index, built_in_id, level)
-                print >> book.logfile, "raw bytes:", repr(data[2:])
+                print("STYLE: built_in=%d xf_index=%d built_in_id=%d level=%d" \
+                    % (built_in, xf_index, built_in_id, level), file=book.logfile)
+                print("raw bytes:", repr(data[2:]), file=book.logfile)
                 raise
         else:
             name = unpack_string(data, 2, book.encoding, lenlen=1)
         if blah and not name:
-            print >> book.logfile, \
-                "WARNING *** A user-defined style has a zero-length name"
+            print("WARNING *** A user-defined style has a zero-length name", file=book.logfile)
     book.style_name_map[name] = (built_in, xf_index)
     if blah:
-        print >> book.logfile, \
-            "STYLE: built_in=%d xf_index=%d built_in_id=%d level=%d name=%r" \
-            % (built_in, xf_index, built_in_id, level, name)
+        print("STYLE: built_in=%d xf_index=%d built_in_id=%d level=%d name=%r" \
+            % (built_in, xf_index, built_in_id, level, name), file=book.logfile)
 
 def check_colour_indexes_in_obj(book, obj, orig_index):
     alist = obj.__dict__.items()
@@ -680,9 +678,8 @@ def check_colour_indexes_in_obj(book, obj, orig_index):
                 book.colour_indexes_used[nobj] = 1
                 continue
             oname = obj.__class__.__name__
-            print >> book.logfile, \
-                "*** xf #%d : %s.%s =  0x%04x (unknown)" \
-                % (orig_index, oname, attr, nobj)
+            print("*** xf #%d : %s.%s =  0x%04x (unknown)" \
+                % (orig_index, oname, attr, nobj), file=book.logfile)
 
 def fill_in_standard_formats(book):
     for x in std_format_code_types.keys():

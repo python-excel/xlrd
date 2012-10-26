@@ -5,6 +5,8 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+from __future__ import print_function
+
 DEBUG = 0
 
 import sys, zipfile, pprint
@@ -53,7 +55,7 @@ def ensure_elementtree_imported(verbosity, logfile):
             for item in ET.__dict__.keys()
             if item.lower().replace('_', '') == 'version'
             ])
-        print >> logfile, ET.__file__, ET.__name__, etree_version, ET_has_iterparse
+        print(ET.__file__, ET.__name__, etree_version, ET_has_iterparse, file=logfile)
         
 def split_tag(tag):
     pos = tag.rfind('}') + 1
@@ -244,7 +246,7 @@ def make_name_access_maps(bk):
                 raise XLRDError(msg)
             else:
                 if bk.verbosity:
-                    print >> bk.logfile, msg
+                    print(msg, file=bk.logfile)
         name_and_scope_map[key] = nobj
         if name_map.has_key(name_lcase):
             name_map[name_lcase].append((nobj.scope, nobj))
@@ -438,7 +440,7 @@ class X12SST(X12General):
             self.dumpout('Entries in SST: %d', len(sst))
         if self.verbosity >= 3:
             for x, s in enumerate(sst):
-                print "SST x=%d s=%r" % (x, s)
+                print("SST x=%d s=%r" % (x, s))
 
     def process_stream_findall(self, stream, heading=None):
         if self.verbosity >= 2 and heading is not None:
@@ -736,7 +738,7 @@ def open_workbook_2007_xml(
     bk.on_demand = on_demand
     if on_demand:
         if verbosity:
-            print >> bk.logfile, "WARNING *** on_demand=True not yet implemented; falling back to False"
+            print("WARNING *** on_demand=True not yet implemented; falling back to False", file=bk.logfile)
         bk.on_demand = False
     bk.ragged_rows = ragged_rows
 

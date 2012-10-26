@@ -16,6 +16,8 @@
 # 2007-09-08 SJM Avoid crash when zero-length Unicode string missing options byte.
 # 2007-04-22 SJM Remove experimental "trimming" facility.
 
+from __future__ import print_function
+
 DEBUG = 0
 
 from struct import unpack
@@ -50,7 +52,7 @@ class BaseObject(object):
             alist = self.__dict__.items()
         alist.sort()
         pad = " " * indent
-        if header is not None: print >> f, header
+        if header is not None: print(header, file=f)
         list_type = type([])
         dict_type = type({})
         for attr, value in alist:
@@ -61,10 +63,10 @@ class BaseObject(object):
             elif attr not in self._repr_these and (
                 isinstance(value, list_type) or isinstance(value, dict_type)
                 ):
-                print >> f, "%s%s: %s, len = %d" % (pad, attr, type(value), len(value))
+                print("%s%s: %s, len = %d" % (pad, attr, type(value), len(value)), file=f)
             else:
-                print >> f, "%s%s: %r" % (pad, attr, value)
-        if footer is not None: print >> f, footer
+                print("%s%s: %r" % (pad, attr, value), file=f)
+        if footer is not None: print(footer, file=f)
 
 FUN, FDT, FNU, FGE, FTX = range(5) # unknown, date, number, general, text
 DATEFORMAT = FDT
@@ -257,9 +259,9 @@ def is_cell_opcode(c):
 
 def fprintf(f, fmt, *vargs):
     if fmt.endswith('\n'):
-        print >> f, fmt[:-1] % vargs
+        print(fmt[:-1] % vargs, file=f)
     else:
-        print >> f, fmt % vargs,
+        print(fmt % vargs, end=' ', file=f)
 
 def upkbits(tgt_obj, src, manifest, local_setattr=setattr):
     for n, mask, attr in manifest:
@@ -647,7 +649,7 @@ def biff_count_records(mem, stream_offset, stream_len, fout=sys.stdout):
     slist = tally.items()
     slist.sort()
     for recname, count in slist:
-        print >> fout, "%8d %s" % (count, recname)
+        print("%8d %s" % (count, recname), file=fout)
 
 encoding_from_codepage = {
     1200 : 'utf_16_le',
