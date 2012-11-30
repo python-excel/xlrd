@@ -400,7 +400,7 @@ def open_workbook(filename=None,
         f = open(filename, "rb")
         peek = f.read(peeksz)
         f.close()
-    if peek == timemachine.BYTES_LITERAL("PK\x03\x04"): # a ZIP file
+    if peek == b"PK\x03\x04": # a ZIP file
         if file_contents:
             zf = zipfile.ZipFile(timemachine.BYTES_IO(file_contents))
         else:

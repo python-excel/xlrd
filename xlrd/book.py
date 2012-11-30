@@ -802,7 +802,7 @@ class Book(BaseObject):
             # If we don't have a codec that can decode ASCII into Unicode,
             # we're well & truly stuffed -- let the punter know ASAP.
             try:
-                _unused = unicode(BYTES_LITERAL('trial'), self.encoding)
+                _unused = unicode(b'trial', self.encoding)
             except:
                 ei = sys.exc_info()[:2]
                 fprintf(self.logfile,
@@ -1077,14 +1077,14 @@ class Book(BaseObject):
         if blah: print("num_sheets = %d" % num_sheets, file=self.logfile)
         sbn = self._supbook_count
         self._supbook_count += 1
-        if data[2:4] == BYTES_LITERAL("\x01\x04"):
+        if data[2:4] == b"\x01\x04":
             self._supbook_types[-1] = SUPBOOK_INTERNAL
             self._supbook_locals_inx = self._supbook_count - 1
             if blah:
                 print("SUPBOOK[%d]: internal 3D refs; %d sheets" % (sbn, num_sheets), file=self.logfile)
                 print("    _all_sheets_map", self._all_sheets_map, file=self.logfile)
             return
-        if data[0:4] == BYTES_LITERAL("\x01\x00\x01\x3A"):
+        if data[0:4] == b"\x01\x00\x01\x3A":
             self._supbook_types[-1] = SUPBOOK_ADDIN
             self._supbook_addins_inx = self._supbook_count - 1
             if blah: print("SUPBOOK[%d]: add-in functions" % sbn, file=self.logfile)

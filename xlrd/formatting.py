@@ -630,7 +630,7 @@ def handle_style(book, data):
     bv = book.biff_version
     flag_and_xfx, built_in_id, level = unpack('<HBB', data[:4])
     xf_index = flag_and_xfx & 0x0fff
-    if (data == BYTES_LITERAL("\0\0\0\0")
+    if (data == b"\0\0\0\0"
     and "Normal" not in book.style_name_map):
         # Erroneous record (doesn't have built-in bit set).
         # Example file supplied by Jeff Bell.
