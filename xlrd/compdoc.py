@@ -327,7 +327,7 @@ class CompDoc(object):
                     % (name, size, size - todo), file=self.logfile)
         # print >> self.logfile, "_get_stream(%s): seen" % name; dump_list(self.seen, 20, self.logfile)
 
-        return BYTES_NULL.join(sectors)
+        return b''.join(sectors)
 
     def _dir_search(self, path, storage_DID=0):
         # Return matching DirNode instance, or None
@@ -440,7 +440,7 @@ class CompDoc(object):
             return (mem, start_pos, expected_stream_size)
         slices.append((start_pos, end_pos))
         # print >> self.logfile, "+++>>> %d fragments" % len(slices)
-        return (BYTES_NULL.join([mem[start_pos:end_pos] for start_pos, end_pos in slices]), 0, expected_stream_size)
+        return (b''.join([mem[start_pos:end_pos] for start_pos, end_pos in slices]), 0, expected_stream_size)
 
 # ==========================================================================================
 def x_dump_line(alist, stride, f, dpos, equal=0):

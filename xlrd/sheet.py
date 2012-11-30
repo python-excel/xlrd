@@ -1455,7 +1455,7 @@ class Sheet(BaseObject):
                     attr_names = ("show_formulas", "show_grid_lines", "show_sheet_headers",
                         "panes_are_frozen", "show_zero_values")
                     for attr, char in zip(attr_names, data[0:5]):
-                        setattr(self, attr, int(char != BYTES_X00))
+                        setattr(self, attr, int(char != b'\0'))
                     (self.first_visible_rowx, self.first_visible_colx,
                     self.automatic_grid_line_colour,
                     ) = unpack("<HHB", data[5:10])
@@ -1870,7 +1870,7 @@ class Sheet(BaseObject):
                     (14, 0x4000, 'autoline'),
                     ))
             elif ft == 0x00:
-                if data[pos:data_len] == BYTES_X00 * (data_len - pos):
+                if data[pos:data_len] == b'\0' * (data_len - pos):
                     # ignore "optional reserved" data at end of record
                     break
                 msg = "Unexpected data at end of OBJECT record"
@@ -1919,7 +1919,7 @@ class Sheet(BaseObject):
                 expected_bytes -= nb
             assert expected_bytes == 0
             enc = self.book.encoding or self.book.derive_encoding()
-            o.text = unicode(BYTES_NULL.join(pieces), enc)
+            o.text = unicode(b''.join(pieces), enc)
             o.rich_text_runlist = [(0, 0)]
             o.show = 0
             o.row_hidden = 0

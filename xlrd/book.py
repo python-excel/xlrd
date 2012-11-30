@@ -217,7 +217,7 @@ class Name(BaseObject):
 
     ##
     # An 8-bit string.
-    raw_formula = BYTES_NULL
+    raw_formula = b''
 
     ##
     # -1: The name is global (visible in all calculation sheets).<br />
@@ -549,8 +549,8 @@ class Book(BaseObject):
         self.palette_record = []
         self.xf_list = []
         self.style_name_map = {}
-        self.mem = BYTES_NULL
-        self.filestr = BYTES_NULL
+        self.mem = b''
+        self.filestr = b''
 
     def biff2_8_load(self, filename=None, file_contents=None,
         logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
@@ -635,7 +635,7 @@ class Book(BaseObject):
             if self.mem is not self.filestr:
                 if hasattr(self.filestr, "close"):
                     self.filestr.close()
-                self.filestr = BYTES_NULL
+                self.filestr = b''
         self._position = self.base
         if DEBUG:
             print("mem: %s, base: %d, len: %d" % (type(self.mem), self.base, self.stream_len), file=self.logfile)
@@ -675,7 +675,7 @@ class Book(BaseObject):
         mem = self.mem
         code, length = unpack('<HH', mem[pos:pos+4])
         if code != reqd_record:
-            return (None, 0, BYTES_NULL)
+            return (None, 0, b'')
         pos += 4
         data = mem[pos:pos+length]
         self._position = pos + length
@@ -1266,7 +1266,7 @@ class Book(BaseObject):
             bof_error(
                 'Invalid length (%d) for BOF record type 0x%04x'
                 % (length, opcode))
-        padding = BYTES_X00 * max(0, boflen[opcode] - length)
+        padding = b'\0' * max(0, boflen[opcode] - length)
         data = self.read(self._position, length);
         if DEBUG: print("\ngetbof(): data=%r" % data, file=self.logfile)
         if len(data) < length:

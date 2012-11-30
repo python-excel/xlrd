@@ -591,7 +591,7 @@ def biff_dump(mem, stream_offset, stream_len, base=0, fout=sys.stdout, unnumbere
     while stream_end - pos >= 4:
         rc, length = unpack('<HH', mem[pos:pos+4])
         if rc == 0 and length == 0:
-            if mem[pos:] == BYTES_X00 * (stream_end - pos):
+            if mem[pos:] == b'\0' * (stream_end - pos):
                 dummies = stream_end - pos
                 savpos = pos
                 pos = stream_end
@@ -634,7 +634,7 @@ def biff_count_records(mem, stream_offset, stream_len, fout=sys.stdout):
     while stream_end - pos >= 4:
         rc, length = unpack('<HH', mem[pos:pos+4])
         if rc == 0 and length == 0:
-            if mem[pos:] == BYTES_X00 * (stream_end - pos):
+            if mem[pos:] == b'\0' * (stream_end - pos):
                 break
             recname = "<Dummy (zero)>"
         else:

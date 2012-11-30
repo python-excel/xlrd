@@ -43,7 +43,7 @@ def ensure_elementtree_imported(verbosity, logfile):
                         except ImportError:
                             raise Exception("Failed to import an ElementTree implementation")
     if hasattr(ET, 'iterparse'):
-        _dummy_stream = BYTES_IO(BYTES_NULL)
+        _dummy_stream = BYTES_IO(b'')
         try:
             ET.iterparse(_dummy_stream)
             ET_has_iterparse = True

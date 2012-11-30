@@ -21,9 +21,6 @@ if python_version >= (3, 0): # Might work on 3.0 but absolutely no support!
     BYTES_LITERAL = lambda x: x.encode('latin1')
     UNICODE_LITERAL = lambda x: x
     BYTES_ORD = lambda byte: byte
-    BYTES_NULL = bytes(0)   # b''
-    BYTES_X00  = bytes(1)   # b'\x00'
-    BYTES_X01  = bytes([1]) # b'\x01'
     from io import BytesIO as BYTES_IO
     def fprintf(f, fmt, *vargs):
         fmt = fmt.replace("%r", "%a")
@@ -36,9 +33,6 @@ else:
     BYTES_LITERAL = lambda x: x
     UNICODE_LITERAL = lambda x: x.decode('latin1')
     BYTES_ORD = ord
-    BYTES_NULL = ''
-    BYTES_X00  = '\x00'
-    BYTES_X01  = '\x01'
     from cStringIO import StringIO as BYTES_IO
     def fprintf(f, fmt, *vargs):
         f.write(fmt % vargs)
