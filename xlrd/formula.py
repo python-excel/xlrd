@@ -2186,7 +2186,7 @@ def sheetrange(book, slo, shi):
     return shdesc
 
 def sheetrangerel(book, srange, srangerel):
-    slo, shi = sheetrange
+    slo, shi = srange
     slorel, shirel = srangerel
     if not slorel and not shirel:
         return sheetrange(book, slo, shi)
