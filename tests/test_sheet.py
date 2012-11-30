@@ -11,7 +11,7 @@ import unittest
 
 import xlrd
 
-def from_tests_dir(filename):
+def from_this_dir(filename):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
 
 SHEETINDEX = 0
@@ -22,7 +22,7 @@ ROW_ERR = NROWS + 10
 COL_ERR = NCOLS + 10
 
 class TestSheet(unittest.TestCase):
-    book = xlrd.open_workbook(from_tests_dir('profiles.xls'), formatting_info=True)
+    book = xlrd.open_workbook(from_this_dir('profiles.xls'), formatting_info=True)
     sheetnames = ['PROFILEDEF', 'AXISDEF', 'TRAVERSALCHAINAGE', 'AXISDATUMLEVELS', 'PROFILELEVELS']
 
     def check_sheet_function(self, function):

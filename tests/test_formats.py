@@ -18,10 +18,10 @@ else:
     def u(s):
         return s.decode('utf-8')
 
-def from_tests_dir(filename):
+def from_this_dir(filename):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
 
-book = xlrd.open_workbook(from_tests_dir('Formate.xls'), formatting_info=True)
+book = xlrd.open_workbook(from_this_dir('Formate.xls'), formatting_info=True)
 
 class TestCellContent(unittest.TestCase):
     def test_text_cells(self):
