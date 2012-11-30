@@ -253,7 +253,7 @@ for _cell_opcode in _cell_opcode_list:
     _cell_opcode_dict[_cell_opcode] = 1
 
 def is_cell_opcode(c):
-    return has_key(_cell_opcode_dict, c)
+    return c in  _cell_opcode_dict
 
 # def fprintf(f, fmt, *vargs): f.write(fmt % vargs)
 

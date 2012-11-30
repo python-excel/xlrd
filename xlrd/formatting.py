@@ -461,7 +461,7 @@ def is_date_format_string(book, fmt):
     state = 0
     s = ''
     def ignorable(c):
-        return has_key(skip_char_dict, c)
+        return c in skip_char_dict
     
     for c in fmt:
         if state == 0:

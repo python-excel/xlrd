@@ -395,7 +395,7 @@ for _x in [0x07, 0x08, 0x0A, 0x0B, 0x1C, 0x1D, 0x2F]:
     _error_opcodes[_x] = 1
 
 def is_error_opcode(c):
-    return has_key(_error_opcodes, c)
+    return c in _error_opcodes
 
 tRangeFuncs = (min, max, min, max, min, max)
 tIsectFuncs = (max, min, max, min, max, min)

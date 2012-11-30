@@ -78,14 +78,6 @@ try:
 except NameError:
     setattr(sys.modules['__builtin__'], 'False', 0)
     
-if python_version < (2, 2):
-    def has_key(d, key):
-        return d.has_key(key)
-
-else:
-    def has_key(d, key):
-        return key in d
-
 def int_floor_div(x, y):
     return divmod(x, y)[0]
 
