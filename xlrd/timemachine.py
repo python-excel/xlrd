@@ -15,7 +15,6 @@ import sys
 python_version = sys.version_info[:2] # e.g. version 2.4 -> (2, 4)
 
 CAN_PICKLE_ARRAY = python_version >= (2, 5)
-CAN_SUBCLASS_BUILTIN = python_version >= (2, 2)
 
 if python_version >= (3, 0):
     # Python 3

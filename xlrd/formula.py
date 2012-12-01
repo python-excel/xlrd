@@ -623,11 +623,6 @@ class Operand(object):
         return "Operand(kind=%s, value=%r, text=%r)" \
             % (kind_text, self.value, self.text)
 
-if CAN_SUBCLASS_BUILTIN:
-    _ref3d_base = tuple
-else: # pragma: no cover
-    _ref3d_base = object
-
 ##
 # <p>Represents an absolute or relative 3-dimensional reference to a box
 # of one or more cells.<br />
@@ -661,7 +656,7 @@ else: # pragma: no cover
 # a reference has been noticed: a 2D reference located in the "current sheet".
 # <br /> This will appear as coords = (0, 1, ...) and relflags = (1, 1, ...).
 
-class Ref3D(_ref3d_base):
+class Ref3D(tuple):
 
     def __init__(self, atuple):
         self.coords = atuple[0:6]
