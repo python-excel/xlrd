@@ -50,7 +50,7 @@ class BaseObject(object):
                 alist.append((attr, getattr(self, attr)))
         else:
             alist = self.__dict__.items()
-        alist.sort()
+        alist = sorted(alist)
         pad = " " * indent
         if header is not None: print(header, file=f)
         list_type = type([])
@@ -642,8 +642,7 @@ def biff_count_records(mem, stream_offset, stream_len, fout=sys.stdout):
         else:
             tally[recname] = 1
         pos += length + 4
-    slist = tally.items()
-    slist.sort()
+    slist = sorted(tally.items())
     for recname, count in slist:
         print("%8d %s" % (count, recname), file=fout)
 
