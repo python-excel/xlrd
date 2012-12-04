@@ -1752,7 +1752,7 @@ class Sheet(BaseObject):
                 h.type = UNICODE_LITERAL('local file')
                 uplevels, nbytes = unpack("<Hi", data[offset:offset + 6])
                 offset += 6
-                shortpath = "..\\" * uplevels + data[offset:offset + nbytes - 1] #### BYTES, not unicode
+                shortpath = b"..\\" * uplevels + data[offset:offset + nbytes - 1] #### BYTES, not unicode
                 if DEBUG: print("uplevels=%d shortpath=%r" % (uplevels, shortpath), file=self.logfile)
                 offset += nbytes
                 offset += 24 # OOo: "unknown byte sequence"
