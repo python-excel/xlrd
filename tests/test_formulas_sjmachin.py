@@ -34,7 +34,7 @@ class TestFormulas(unittest.TestCase):
         return ascii(sheet.col_values(col)[row])
 
     def test_is_opened(self):
-        self.assertIsNotNone(book)
+        self.assertTrue(book is not None)
 
     def test_cell_B2(self):
         self.assertEqual(self.get_value(1, 1), r"'\u041c\u041e\u0421\u041a\u0412\u0410 \u041c\u043e\u0441\u043a\u0432\u0430'")
