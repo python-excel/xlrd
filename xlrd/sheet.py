@@ -1614,7 +1614,7 @@ class Sheet(BaseObject):
         return xfx
 
     def fake_XF_from_BIFF20_cell_attr(self, cell_attr, style=0):
-        from formatting import XF, XFAlignment, XFBorder, XFBackground, XFProtection
+        from .formatting import XF, XFAlignment, XFBorder, XFBackground, XFProtection
         xf = XF()
         xf.alignment = XFAlignment()
         xf.alignment.indent_level = 0
