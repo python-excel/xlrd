@@ -116,5 +116,15 @@ class TestSheet(unittest.TestCase):
         sheet = self.book.sheet_by_index(SHEETINDEX)
         self.check_col_slice(sheet.row_values)
 
+class TestSheetRagged(unittest.TestCase):
+    def test_read_ragged(self):
+        book = xlrd.open_workbook(from_this_dir('ragged.xls'), ragged_rows=True)
+        sheet = book.sheet_by_index(0)
+        self.assertEqual(sheet.row_len(0), 3)
+        self.assertEqual(sheet.row_len(1), 2)
+        self.assertEqual(sheet.row_len(2), 1)
+        self.assertEqual(sheet.row_len(3), 4)
+        self.assertEqual(sheet.row_len(4), 4)
+
 if __name__=='__main__':
     unittest.main()
