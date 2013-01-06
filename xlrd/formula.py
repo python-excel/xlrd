@@ -625,7 +625,7 @@ class Operand(object):
 
 if CAN_SUBCLASS_BUILTIN:
     _ref3d_base = tuple
-else:
+else: # pragma: no cover
     _ref3d_base = object
 
 ##
