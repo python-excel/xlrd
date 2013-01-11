@@ -750,9 +750,10 @@ class Book(BaseObject):
                 6: 'Visual Basic module',
                 }.get(sheet_type, 'UNKNOWN')
 
-            fprintf(self.logfile,
-                "NOTE *** Ignoring non-worksheet data named %r (type 0x%02x = %s)\n",
-                sheet_name, sheet_type, descr)
+            if DEBUG or self.verbosity >= 1:
+                fprintf(self.logfile,
+                    "NOTE *** Ignoring non-worksheet data named %r (type 0x%02x = %s)\n",
+                    sheet_name, sheet_type, descr)
         else:
             snum = len(self._sheet_names)
             self._all_sheets_map.append(snum)
