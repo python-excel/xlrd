@@ -4,7 +4,7 @@
 # Implements the minimal functionality required
 # to extract a "Workbook" or "Book" stream (as one big string)
 # from an OLE2 Compound Document file.
-# <p>Copyright © 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright ï¿½ 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
@@ -386,7 +386,7 @@ class CompDoc(object):
             return (None, 0, 0)
         if d.tot_size > self.mem_data_len:
             raise CompDocError("%r stream length (%d bytes) > file data size (%d bytes)"
-                % (qname, d.totsize, self.mem_data_len))
+                % (qname, d.tot_size, self.mem_data_len))
         if d.tot_size >= self.min_size_std_stream:
             result = self._locate_stream(
                 self.mem, 512, self.SAT, self.sec_size, d.first_SID, 
