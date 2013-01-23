@@ -45,8 +45,10 @@ if __name__ == "__main__":
             pass
     
     try:
+        # Python 3 compatibility (xrange = range)
         from xlrd.timemachine import xrange
     except ImportError:
+        # Python 2: xrange is a builtin
         pass
 
     class LogHandler(object):
