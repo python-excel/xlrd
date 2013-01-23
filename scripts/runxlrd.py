@@ -37,19 +37,8 @@ if __name__ == "__main__":
     import xlrd
     import sys, time, glob, traceback, pprint, gc
     
-    try:
-        object
-    except NameError:
-        # Python 2.1
-        class object:
-            pass
+    from xlrd.timemachine import xrange
     
-    try:
-        # Python 3 compatibility (xrange = range)
-        from xlrd.timemachine import xrange
-    except ImportError:
-        # Python 2: xrange is a builtin
-        pass
 
     class LogHandler(object):
 

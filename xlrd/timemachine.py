@@ -17,7 +17,8 @@ python_version = sys.version_info[:2] # e.g. version 2.4 -> (2, 4)
 CAN_PICKLE_ARRAY = python_version >= (2, 5)
 CAN_SUBCLASS_BUILTIN = python_version >= (2, 2)
 
-if python_version >= (3, 0): # Might work on 3.0 but absolutely no support!
+if python_version >= (3, 0):
+    # Python 3
     BYTES_LITERAL = lambda x: x.encode('latin1')
     UNICODE_LITERAL = lambda x: x
     BYTES_ORD = lambda byte: byte
@@ -30,6 +31,7 @@ if python_version >= (3, 0): # Might work on 3.0 but absolutely no support!
     xrange = range
     unicode = lambda b, enc: b.decode(enc)
 else:
+    # Python 2
     BYTES_LITERAL = lambda x: x
     UNICODE_LITERAL = lambda x: x.decode('latin1')
     BYTES_ORD = ord
@@ -41,6 +43,7 @@ else:
     except NameError:
         EXCEL_TEXT_TYPES = (str, unicode)
     REPR = repr
+    xrange = xrange
 
 if python_version >= (2, 6):
     def BUFFER(obj, offset=0, size=None):
