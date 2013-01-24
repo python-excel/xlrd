@@ -4,7 +4,7 @@
 # Purpose: test cell formats
 # Created: 03.12.2010
 # Copyright (C) 2010, Manfred Moitzi
-# License: GPLv3
+# License: BSD licence
 
 import sys
 import os

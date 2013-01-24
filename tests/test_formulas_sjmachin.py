@@ -4,7 +4,7 @@
 # Purpose: test formula (inspired by sjmachin)
 # Created: 21.01.2011
 # Copyright (C) , Manfred Moitzi
-# License: GPLv3
+# License: BSD licence
 
 import os
 import sys
