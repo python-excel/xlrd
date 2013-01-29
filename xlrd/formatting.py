@@ -460,8 +460,6 @@ def is_date_format_string(book, fmt):
     # TODO: u'[h]\\ \\h\\o\\u\\r\\s' ([h] means don't care about hours > 23)
     state = 0
     s = ''
-    def ignorable(c):
-        return c in skip_char_dict
     
     for c in fmt:
         if state == 0:
@@ -469,7 +467,7 @@ def is_date_format_string(book, fmt):
                 state = 1
             elif c in UNICODE_LITERAL(r"\_*"):
                 state = 2
-            elif ignorable(c):
+            elif c in skip_char_dict:
                 pass
             else:
                 s += c
