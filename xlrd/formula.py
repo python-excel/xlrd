@@ -390,12 +390,7 @@ tAttrNames = {
     0x41: "SpaceVolatile",
     }
 
-_error_opcodes = {}
-for _x in [0x07, 0x08, 0x0A, 0x0B, 0x1C, 0x1D, 0x2F]:
-    _error_opcodes[_x] = 1
-
-def is_error_opcode(c):
-    return c in _error_opcodes
+error_opcodes = set([0x07, 0x08, 0x0A, 0x0B, 0x1C, 0x1D, 0x2F])
 
 tRangeFuncs = (min, max, min, max, min, max)
 tIsectFuncs = (max, min, max, min, max, min)
@@ -684,11 +679,6 @@ tLT, tLE, tEQ, tGE, tGT, tNE = range(0x09, 0x0F)
 
 import operator as opr
 
-try:
-    from operator import truediv
-except:
-    from operator import div as truediv
-
 def nop(x):
     return x
 
@@ -718,7 +708,7 @@ binop_rules = {
     tAdd:   (_arith_argdict, oNUM, opr.add,  30, '+'),
     tSub:   (_arith_argdict, oNUM, opr.sub,  30, '-'),
     tMul:   (_arith_argdict, oNUM, opr.mul,  40, '*'),
-    tDiv:   (_arith_argdict, oNUM, truediv,  40, '/'),
+    tDiv:   (_arith_argdict, oNUM, opr.truediv,  40, '/'),
     tPower: (_arith_argdict, oNUM, _opr_pow, 50, '^',),
     tConcat:(_strg_argdict, oSTRG, opr.add,  20, '&'),
     tLT:    (_cmp_argdict, oBOOL, _opr_lt,   10, '<'),
@@ -1325,7 +1315,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                 if blah:
                     print("    tNameX: setting text to", repr(res.text), file=bk.logfile)
             spush(res)
-        elif is_error_opcode(opcode):
+        elif opcode in error_opcodes:
             any_err = 1
             spush(error_opnd)
         else:
@@ -1859,7 +1849,7 @@ def decompile_formula(bk, fmla, fmlalen,
                     print("    tNameX: setting text to", repr(res.text), file=bk.logfile)
             res = Operand(okind, ovalue, LEAF_RANK, otext)
             spush(res)
-        elif is_error_opcode(opcode):
+        elif opcode in error_opcodes:
             any_err = 1
             spush(error_opnd)
         else:
@@ -2025,7 +2015,7 @@ def dump_formula(bk, data, fmlalen, bv, reldelta, blah=0, isname=0):
         elif opcode == 0x19: # tNameX
             refx, namex = unpack("<HH", data[pos+1:pos+5])
             if blah: print("   refx=%d namex=%d" % (refx, namex), file=bk.logfile)
-        elif is_error_opcode(opcode):
+        elif opcode in error_opcodes:
             any_err = 1
         else:
             if blah: print("FORMULA: /// Not handled yet: t" + oname, file=bk.logfile)
