@@ -16,11 +16,13 @@
 # 2007-09-08 SJM Avoid crash when zero-length Unicode string missing options byte.
 # 2007-04-22 SJM Remove experimental "trimming" facility.
 
+from __future__ import print_function
+
 DEBUG = 0
 
 from struct import unpack
 import sys
-from timemachine import *
+from .timemachine import *
 
 class XLRDError(Exception):
     pass
@@ -48,9 +50,9 @@ class BaseObject(object):
                 alist.append((attr, getattr(self, attr)))
         else:
             alist = self.__dict__.items()
-        alist.sort()
+        alist = sorted(alist)
         pad = " " * indent
-        if header is not None: print >> f, header
+        if header is not None: print(header, file=f)
         list_type = type([])
         dict_type = type({})
         for attr, value in alist:
@@ -61,10 +63,10 @@ class BaseObject(object):
             elif attr not in self._repr_these and (
                 isinstance(value, list_type) or isinstance(value, dict_type)
                 ):
-                print >> f, "%s%s: %s, len = %d" % (pad, attr, type(value), len(value))
+                print("%s%s: %s, len = %d" % (pad, attr, type(value), len(value)), file=f)
             else:
-                print >> f, "%s%s: %r" % (pad, attr, value)
-        if footer is not None: print >> f, footer
+                print("%s%s: %r" % (pad, attr, value), file=f)
+        if footer is not None: print(footer, file=f)
 
 FUN, FDT, FNU, FGE, FTX = range(5) # unknown, date, number, general, text
 DATEFORMAT = FDT
@@ -249,15 +251,17 @@ _cell_opcode_list = [
 _cell_opcode_dict = {}
 for _cell_opcode in _cell_opcode_list:
     _cell_opcode_dict[_cell_opcode] = 1
-is_cell_opcode = _cell_opcode_dict.has_key
+
+def is_cell_opcode(c):
+    return c in  _cell_opcode_dict
 
 # def fprintf(f, fmt, *vargs): f.write(fmt % vargs)
 
 def fprintf(f, fmt, *vargs):
     if fmt.endswith('\n'):
-        print >> f, fmt[:-1] % vargs
+        print(fmt[:-1] % vargs, file=f)
     else:
-        print >> f, fmt % vargs,
+        print(fmt % vargs, end=' ', file=f)
 
 def upkbits(tgt_obj, src, manifest, local_setattr=setattr):
     for n, mask, attr in manifest:
@@ -288,9 +292,9 @@ def unpack_unicode(data, pos, lenlen=2):
     if not nchars:
         # Ambiguous whether 0-length string should have an "options" byte.
         # Avoid crash if missing.
-        return u""
+        return UNICODE_LITERAL("")
     pos += lenlen
-    options = ord(data[pos])
+    options = BYTES_ORD(data[pos])
     pos += 1
     # phonetic = options & 0x04
     # richtext = options & 0x08
@@ -331,8 +335,8 @@ def unpack_unicode_update_pos(data, pos, lenlen=2, known_len=None):
         pos += lenlen
     if not nchars and not data[pos:]:
         # Zero-length string with no options byte
-        return (u"", pos)
-    options = ord(data[pos])
+        return (UNICODE_LITERAL(""), pos)
+    options = BYTES_ORD(data[pos])
     pos += 1
     phonetic = options & 0x04
     richtext = options & 0x08
@@ -557,9 +561,11 @@ def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout, unnumbered=False):
                 '??? hex_char_dump: ofs=%d dlen=%d base=%d -> endpos=%d pos=%d endsub=%d substrg=%r\n',
                 ofs, dlen, base, endpos, pos, endsub, substrg)
             break
-        hexd = ''.join(["%02x " % ord(c) for c in substrg])
+        hexd = ''.join(["%02x " % BYTES_ORD(c) for c in substrg])
+        
         chard = ''
         for c in substrg:
+            c = chr(BYTES_ORD(c))
             if c == '\0':
                 c = '~'
             elif not (' ' <= c <= '~'):
@@ -567,6 +573,7 @@ def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout, unnumbered=False):
             chard += c
         if numbered:
             num_prefix = "%5d: " %  (base+pos-ofs)
+        
         fprintf(fout, "%s     %-48s %s\n", num_prefix, hexd, chard)
         pos = endsub
 
@@ -580,7 +587,7 @@ def biff_dump(mem, stream_offset, stream_len, base=0, fout=sys.stdout, unnumbere
     while stream_end - pos >= 4:
         rc, length = unpack('<HH', mem[pos:pos+4])
         if rc == 0 and length == 0:
-            if mem[pos:] == '\0' * (stream_end - pos):
+            if mem[pos:] == b'\0' * (stream_end - pos):
                 dummies = stream_end - pos
                 savpos = pos
                 pos = stream_end
@@ -623,22 +630,21 @@ def biff_count_records(mem, stream_offset, stream_len, fout=sys.stdout):
     while stream_end - pos >= 4:
         rc, length = unpack('<HH', mem[pos:pos+4])
         if rc == 0 and length == 0:
-            if mem[pos:] == '\0' * (stream_end - pos):
+            if mem[pos:] == b'\0' * (stream_end - pos):
                 break
             recname = "<Dummy (zero)>"
         else:
             recname = biff_rec_name_dict.get(rc, None)
             if recname is None:
                 recname = "Unknown_0x%04X" % rc
-        if tally.has_key(recname):
+        if recname in tally:
             tally[recname] += 1
         else:
             tally[recname] = 1
         pos += length + 4
-    slist = tally.items()
-    slist.sort()
+    slist = sorted(tally.items())
     for recname, count in slist:
-        print >> fout, "%8d %s" % (count, recname)
+        print("%8d %s" % (count, recname), file=fout)
 
 encoding_from_codepage = {
     1200 : 'utf_16_le',

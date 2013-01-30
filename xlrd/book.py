@@ -4,16 +4,18 @@
 # <p>This module is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
-from timemachine import *
-from biffh import *
+from __future__ import print_function
+
+from .timemachine import *
+from .biffh import *
 import struct; unpack = struct.unpack
 import sys
 import time
-import sheet
-import compdoc
-from xldate import xldate_as_tuple, XLDateError
-from formula import *
-import formatting
+from . import sheet
+from . import compdoc
+from .xldate import xldate_as_tuple, XLDateError
+from .formula import *
+from . import formatting
 if sys.version.startswith("IronPython"):
     # print >> sys.stderr, "...importing encodings"
     import encodings
@@ -41,26 +43,30 @@ SUPBOOK_UNK, SUPBOOK_INTERNAL, SUPBOOK_EXTERNAL, SUPBOOK_ADDIN, SUPBOOK_DDEOLE =
 
 SUPPORTED_VERSIONS = (80, 70, 50, 45, 40, 30, 21, 20)
 
-code_from_builtin_name = {
-    u"Consolidate_Area": u"\x00",
-    u"Auto_Open":        u"\x01",
-    u"Auto_Close":       u"\x02",
-    u"Extract":          u"\x03",
-    u"Database":         u"\x04",
-    u"Criteria":         u"\x05",
-    u"Print_Area":       u"\x06",
-    u"Print_Titles":     u"\x07",
-    u"Recorder":         u"\x08",
-    u"Data_Form":        u"\x09",
-    u"Auto_Activate":    u"\x0A",
-    u"Auto_Deactivate":  u"\x0B",
-    u"Sheet_Title":      u"\x0C",
-    u"_FilterDatabase":  u"\x0D",
+_code_from_builtin_name = {
+    "Consolidate_Area": "\x00",
+    "Auto_Open":        "\x01",
+    "Auto_Close":       "\x02",
+    "Extract":          "\x03",
+    "Database":         "\x04",
+    "Criteria":         "\x05",
+    "Print_Area":       "\x06",
+    "Print_Titles":     "\x07",
+    "Recorder":         "\x08",
+    "Data_Form":        "\x09",
+    "Auto_Activate":    "\x0A",
+    "Auto_Deactivate":  "\x0B",
+    "Sheet_Title":      "\x0C",
+    "_FilterDatabase":  "\x0D",
     }
 builtin_name_from_code = {}
-for _bin, _bic in code_from_builtin_name.items():
+code_from_builtin_name = {}
+for _bin, _bic in _code_from_builtin_name.items():
+    _bin = UNICODE_LITERAL(_bin)
+    _bic = UNICODE_LITERAL(_bic)
+    code_from_builtin_name[_bin] = _bic
     builtin_name_from_code[_bic] = _bin
-del _bin, _bic
+del _bin, _bic, _code_from_builtin_name
 
 def open_workbook_xls(filename=None,
     logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
@@ -207,11 +213,11 @@ class Name(BaseObject):
 
     ##
     # A Unicode string. If builtin, decoded as per OOo docs.
-    name = u""
+    name = UNICODE_LITERAL("")
 
     ##
     # An 8-bit string.
-    raw_formula = BYTES_NULL
+    raw_formula = b''
 
     ##
     # -1: The name is global (visible in all calculation sheets).<br />
@@ -341,7 +347,7 @@ class Book(BaseObject):
 
     ##
     # What (if anything) is recorded as the name of the last user to save the file.
-    user_name = u''
+    user_name = UNICODE_LITERAL('')
 
     ##
     # A list of Font class instances, each corresponding to a FONT record.
@@ -543,8 +549,8 @@ class Book(BaseObject):
         self.palette_record = []
         self.xf_list = []
         self.style_name_map = {}
-        self.mem = BYTES_NULL
-        self.filestr = BYTES_NULL
+        self.mem = b''
+        self.filestr = b''
 
     def biff2_8_load(self, filename=None, file_contents=None,
         logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
@@ -612,14 +618,15 @@ class Book(BaseObject):
         else:
             cd = compdoc.CompDoc(self.filestr, logfile=self.logfile)
             if USE_FANCY_CD:
-                for qname in [u'Workbook', u'Book']:
-                    self.mem, self.base, self.stream_len = cd.locate_named_stream(qname)
+                for qname in ['Workbook', 'Book']:
+                    self.mem, self.base, self.stream_len = \
+                                cd.locate_named_stream(UNICODE_LITERAL(qname))
                     if self.mem: break
                 else:
                     raise XLRDError("Can't find workbook in OLE2 compound document")
             else:
-                for qname in [u'Workbook', u'Book']:
-                    self.mem = cd.get_named_stream(qname)
+                for qname in ['Workbook', 'Book']:
+                    self.mem = cd.get_named_stream(UNICODE_LITERAL(qname))
                     if self.mem: break
                 else:
                     raise XLRDError("Can't find workbook in OLE2 compound document")
@@ -628,10 +635,10 @@ class Book(BaseObject):
             if self.mem is not self.filestr:
                 if hasattr(self.filestr, "close"):
                     self.filestr.close()
-                self.filestr = BYTES_NULL
+                self.filestr = b''
         self._position = self.base
         if DEBUG:
-            print >> self.logfile, "mem: %s, base: %d, len: %d" % (type(self.mem), self.base, self.stream_len)
+            print("mem: %s, base: %d, len: %d" % (type(self.mem), self.base, self.stream_len), file=self.logfile)
 
     def initialise_format_info(self):
         # needs to be done once per sheet for BIFF 4W :-(
@@ -668,7 +675,7 @@ class Book(BaseObject):
         mem = self.mem
         code, length = unpack('<HH', mem[pos:pos+4])
         if code != reqd_record:
-            return (None, 0, BYTES_NULL)
+            return (None, 0, b'')
         pos += 4
         data = mem[pos:pos+length]
         self._position = pos + length
@@ -696,14 +703,14 @@ class Book(BaseObject):
 
     def get_sheets(self):
         # DEBUG = 0
-        if DEBUG: print >> self.logfile, "GET_SHEETS:", self._sheet_names, self._sh_abs_posn
+        if DEBUG: print("GET_SHEETS:", self._sheet_names, self._sh_abs_posn, file=self.logfile)
         for sheetno in xrange(len(self._sheet_names)):
-            if DEBUG: print >> self.logfile, "GET_SHEETS: sheetno =", sheetno, self._sheet_names, self._sh_abs_posn
+            if DEBUG: print("GET_SHEETS: sheetno =", sheetno, self._sheet_names, self._sh_abs_posn, file=self.logfile)
             self.get_sheet(sheetno)
 
     def fake_globals_get_sheet(self): # for BIFF 4.0 and earlier
         formatting.initialise_book(self)
-        fake_sheet_name = u'Sheet 1'
+        fake_sheet_name = UNICODE_LITERAL('Sheet 1')
         self._sheet_names = [fake_sheet_name]
         self._sh_abs_posn = [0]
         self._sheet_visibility = [0] # one sheet, visible
@@ -783,7 +790,7 @@ class Book(BaseObject):
                     fprintf(self.logfile, "*** No CODEPAGE record; assuming 1200 (utf_16_le)\n")
         else:
             codepage = self.codepage
-            if encoding_from_codepage.has_key(codepage):
+            if codepage in encoding_from_codepage:
                 encoding = encoding_from_codepage[codepage]
             elif 300 <= codepage <= 1999:
                 encoding = 'cp' + str(codepage)
@@ -796,7 +803,7 @@ class Book(BaseObject):
             # If we don't have a codec that can decode ASCII into Unicode,
             # we're well & truly stuffed -- let the punter know ASAP.
             try:
-                _unused = unicode(BYTES_LITERAL('trial'), self.encoding)
+                _unused = unicode(b'trial', self.encoding)
             except:
                 ei = sys.exc_info()[:2]
                 fprintf(self.logfile,
@@ -820,7 +827,7 @@ class Book(BaseObject):
 
     def handle_country(self, data):
         countries = unpack('<HH', data[0:4])
-        if self.verbosity: print >> self.logfile, "Countries:", countries
+        if self.verbosity: print("Countries:", countries, file=self.logfile)
         # Note: in BIFF7 and earlier, country record was put (redundantly?) in each worksheet.
         assert self.countries == (0, 0) or self.countries == countries
         self.countries = countries
@@ -880,7 +887,7 @@ class Book(BaseObject):
         else:
             nc, ty = unpack("<BB", data[:2])
             if blah2:
-                print >> self.logfile, "EXTERNSHEET(b7-):"
+                print("EXTERNSHEET(b7-):", file=self.logfile)
                 hex_char_dump(data, 0, len(data), fout=self.logfile)
                 msg = {
                     1: "Encoded URL",
@@ -888,11 +895,11 @@ class Book(BaseObject):
                     3: "Specific sheet in own doc't",
                     4: "Nonspecific sheet in own doc't!!",
                     }.get(ty, "Not encoded")
-                print >> self.logfile, "   %3d chars, type is %d (%s)" % (nc, ty, msg)
+                print("   %3d chars, type is %d (%s)" % (nc, ty, msg), file=self.logfile)
             if ty == 3:
                 sheet_name = unicode(data[2:nc+2], self.encoding)
                 self._extnsht_name_from_num[self._extnsht_count] = sheet_name
-                if blah2: print >> self.logfile, self._extnsht_name_from_num
+                if blah2: print(self._extnsht_name_from_num, file=self.logfile)
             if not (1 <= ty <= 4):
                 ty = 0
             self._externsheet_type_b57.append(ty)
@@ -959,13 +966,13 @@ class Book(BaseObject):
         nobj.excel_sheet_index = sheet_index
         nobj.scope = None # patched up in the names_epilogue() method
         if blah:
-            print >> self.logfile, "NAME[%d]:%s oflags=%d, name_len=%d, fmla_len=%d, extsht_index=%d, sheet_index=%d, name=%r" \
+            print("NAME[%d]:%s oflags=%d, name_len=%d, fmla_len=%d, extsht_index=%d, sheet_index=%d, name=%r" \
                 % (name_index, macro_flag, option_flags, name_len,
-                fmla_len, extsht_index, sheet_index, internal_name)
+                fmla_len, extsht_index, sheet_index, internal_name), file=self.logfile)
         name = internal_name
         if nobj.builtin:
             name = builtin_name_from_code.get(name, "??Unknown??")
-            if blah: print >> self.logfile, "    builtin: %s" % name
+            if blah: print("    builtin: %s" % name, file=self.logfile)
         nobj.name = name
         nobj.raw_formula = data[pos:]
         nobj.basic_formula_len = fmla_len
@@ -981,10 +988,10 @@ class Book(BaseObject):
         blah = self.verbosity >= 2
         f = self.logfile
         if blah:
-            print >> f, "+++++ names_epilogue +++++"
-            print >> f, "_all_sheets_map", self._all_sheets_map
-            print >> f, "_extnsht_name_from_num", self._extnsht_name_from_num
-            print >> f, "_sheet_num_from_name", self._sheet_num_from_name
+            print("+++++ names_epilogue +++++", file=f)
+            print("_all_sheets_map", self._all_sheets_map, file=f)
+            print("_extnsht_name_from_num", self._extnsht_name_from_num, file=f)
+            print("_sheet_num_from_name", self._sheet_num_from_name, file=f)
         num_names = len(self.name_obj_list)
         for namex in range(num_names):
             nobj = self.name_obj_list[namex]
@@ -1020,11 +1027,11 @@ class Book(BaseObject):
             evaluate_name_formula(self, nobj, namex, blah=blah)
 
         if self.verbosity >= 2:
-            print >> f, "---------- name object dump ----------"
+            print("---------- name object dump ----------", file=f)
             for namex in range(num_names):
                 nobj = self.name_obj_list[namex]
                 nobj.dump(f, header="--- name[%d] ---" % namex)
-            print >> f, "--------------------------------------"
+            print("--------------------------------------", file=f)
         #
         # Build some dicts for access to the name objects
         #
@@ -1034,15 +1041,15 @@ class Book(BaseObject):
             nobj = self.name_obj_list[namex]
             name_lcase = nobj.name.lower()
             key = (name_lcase, nobj.scope)
-            if name_and_scope_map.has_key(key):
+            if key in name_and_scope_map:
                 msg = 'Duplicate entry %r in name_and_scope_map' % (key, )
                 if 0:
                     raise XLRDError(msg)
                 else:
                     if self.verbosity:
-                        print >> f, msg
+                        print(msg, file=f)
             name_and_scope_map[key] = nobj
-            if name_map.has_key(name_lcase):
+            if name_lcase in name_map:
                 name_map[name_lcase].append((nobj.scope, nobj))
             else:
                 name_map[name_lcase] = [(nobj.scope, nobj)]
@@ -1065,31 +1072,31 @@ class Book(BaseObject):
         self._supbook_types.append(None)
         blah = DEBUG or self.verbosity >= 2
         if blah:
-            print >> self.logfile, "SUPBOOK:"
+            print("SUPBOOK:", file=self.logfile)
             hex_char_dump(data, 0, len(data), fout=self.logfile)
         num_sheets = unpack("<H", data[0:2])[0]
-        if blah: print >> self.logfile, "num_sheets = %d" % num_sheets
+        if blah: print("num_sheets = %d" % num_sheets, file=self.logfile)
         sbn = self._supbook_count
         self._supbook_count += 1
-        if data[2:4] == BYTES_LITERAL("\x01\x04"):
+        if data[2:4] == b"\x01\x04":
             self._supbook_types[-1] = SUPBOOK_INTERNAL
             self._supbook_locals_inx = self._supbook_count - 1
             if blah:
-                print >> self.logfile, "SUPBOOK[%d]: internal 3D refs; %d sheets" % (sbn, num_sheets)
-                print >> self.logfile, "    _all_sheets_map", self._all_sheets_map
+                print("SUPBOOK[%d]: internal 3D refs; %d sheets" % (sbn, num_sheets), file=self.logfile)
+                print("    _all_sheets_map", self._all_sheets_map, file=self.logfile)
             return
-        if data[0:4] == BYTES_LITERAL("\x01\x00\x01\x3A"):
+        if data[0:4] == b"\x01\x00\x01\x3A":
             self._supbook_types[-1] = SUPBOOK_ADDIN
             self._supbook_addins_inx = self._supbook_count - 1
-            if blah: print >> self.logfile, "SUPBOOK[%d]: add-in functions" % sbn
+            if blah: print("SUPBOOK[%d]: add-in functions" % sbn, file=self.logfile)
             return
         url, pos = unpack_unicode_update_pos(data, 2, lenlen=2)
         if num_sheets == 0:
             self._supbook_types[-1] = SUPBOOK_DDEOLE
-            if blah: print >> self.logfile, "SUPBOOK[%d]: DDE/OLE document = %r" % (sbn, url)
+            if blah: print("SUPBOOK[%d]: DDE/OLE document = %r" % (sbn, url), file=self.logfile)
             return
         self._supbook_types[-1] = SUPBOOK_EXTERNAL
-        if blah: print >> self.logfile, "SUPBOOK[%d]: url = %r" % (sbn, url)
+        if blah: print("SUPBOOK[%d]: url = %r" % (sbn, url), file=self.logfile)
         sheet_names = []
         for x in range(num_sheets):
             try:
@@ -1098,13 +1105,13 @@ class Book(BaseObject):
                 # #### FIX ME ####
                 # Should implement handling of CONTINUE record(s) ...
                 if self.verbosity:
-                    print >> self.logfile, (
+                    print((
                         "*** WARNING: unpack failure in sheet %d of %d in SUPBOOK record for file %r" 
                         % (x, num_sheets, url)
-                        )
+                        ), file=self.logfile)
                 break
             sheet_names.append(shname)
-            if blah: print >> self.logfile, "  sheetx=%d namelen=%d name=%r (next pos=%d)" % (x, len(shname), shname, pos)
+            if blah: print("  sheetx=%d namelen=%d name=%r (next pos=%d)" % (x, len(shname), shname, pos), file=self.logfile)
 
     def handle_sheethdr(self, data):
         # This a BIFF 4W special.
@@ -1119,24 +1126,24 @@ class Book(BaseObject):
         self._sheethdr_count += 1
         BOF_posn = self._position
         posn = BOF_posn - 4 - len(data)
-        if DEBUG: print >> self.logfile, 'SHEETHDR %d at posn %d: len=%d name=%r' % (sheetno, posn, sheet_len, sheet_name)
+        if DEBUG: print('SHEETHDR %d at posn %d: len=%d name=%r' % (sheetno, posn, sheet_len, sheet_name), file=self.logfile)
         self.initialise_format_info()
-        if DEBUG: print >> self.logfile, 'SHEETHDR: xf epilogue flag is %d' % self._xf_epilogue_done
+        if DEBUG: print('SHEETHDR: xf epilogue flag is %d' % self._xf_epilogue_done, file=self.logfile)
         self._sheet_list.append(None) # get_sheet updates _sheet_list but needs a None beforehand
         self.get_sheet(sheetno, update_pos=False)
-        if DEBUG: print >> self.logfile, 'SHEETHDR: posn after get_sheet() =', self._position
+        if DEBUG: print('SHEETHDR: posn after get_sheet() =', self._position, file=self.logfile)
         self._position = BOF_posn + sheet_len
 
     def handle_sheetsoffset(self, data):
         # DEBUG = 0
         posn = unpack('<i', data)[0]
-        if DEBUG: print >> self.logfile, 'SHEETSOFFSET:', posn
+        if DEBUG: print('SHEETSOFFSET:', posn, file=self.logfile)
         self._sheetsoffset = posn
 
     def handle_sst(self, data):
         # DEBUG = 1
         if DEBUG:
-            print >> self.logfile, "SST Processing"
+            print("SST Processing", file=self.logfile)
             t0 = time.time()
         nbt = len(data)
         strlist = [data]
@@ -1156,7 +1163,7 @@ class Book(BaseObject):
             self._rich_text_runlist_map = rt_runlist        
         if DEBUG:
             t1 = time.time()
-            print >> self.logfile, "SST processing took %.2f seconds" % (t1 - t0, )
+            print("SST processing took %.2f seconds" % (t1 - t0, ), file=self.logfile)
 
     def handle_writeaccess(self, data):
         # DEBUG = 0
@@ -1168,7 +1175,7 @@ class Book(BaseObject):
             strg = unpack_string(data, 0, self.encoding, lenlen=1)
         else:
             strg = unpack_unicode(data, 0, lenlen=2)
-        if DEBUG: print >> self.logfile, "WRITEACCESS: %d bytes; raw=%d %r" % (len(data), self.raw_user_name, strg)
+        if DEBUG: print("WRITEACCESS: %d bytes; raw=%d %r" % (len(data), self.raw_user_name, strg), file=self.logfile)
         strg = strg.rstrip()
         self.user_name = strg
 
@@ -1178,7 +1185,7 @@ class Book(BaseObject):
         formatting.initialise_book(self)
         while 1:
             rc, length, data = self.get_record_parts()
-            if DEBUG: print >> self.logfile, "parse_globals: record code is 0x%04x" % rc
+            if DEBUG: print("parse_globals: record code is 0x%04x" % rc, file=self.logfile)
             if rc == XL_SST:
                 self.handle_sst(data)
             elif rc == XL_FONT or rc == XL_FONT_B3B4:
@@ -1216,8 +1223,8 @@ class Book(BaseObject):
             elif rc == XL_STYLE:
                 self.handle_style(data)
             elif rc & 0xff == 9 and self.verbosity:
-                print >> self.logfile, "*** Unexpected BOF at posn %d: 0x%04x len=%d data=%r" \
-                    % (self._position - length - 4, rc, length, data)
+                print("*** Unexpected BOF at posn %d: 0x%04x len=%d data=%r" \
+                    % (self._position - length - 4, rc, length, data), file=self.logfile)
             elif rc ==  XL_EOF:
                 self.xf_epilogue()
                 self.names_epilogue()
@@ -1226,7 +1233,7 @@ class Book(BaseObject):
                     self.derive_encoding()
                 if self.biff_version == 45:
                     # DEBUG = 0
-                    if DEBUG: print >> self.logfile, "global EOF: position", self._position
+                    if DEBUG: print("global EOF: position", self._position, file=self.logfile)
                     # if DEBUG:
                     #     pos = self._position - 4
                     #     print repr(self.mem[pos:pos+40])
@@ -1244,7 +1251,7 @@ class Book(BaseObject):
     def getbof(self, rqd_stream):
         # DEBUG = 1
         # if DEBUG: print >> self.logfile, "getbof(): position", self._position
-        if DEBUG: print >> self.logfile, "reqd: 0x%04x" % rqd_stream
+        if DEBUG: print("reqd: 0x%04x" % rqd_stream, file=self.logfile)
         def bof_error(msg):
             raise XLRDError('Unsupported format, or corrupt file: ' + msg)
         savpos = self._position
@@ -1260,21 +1267,21 @@ class Book(BaseObject):
             bof_error(
                 'Invalid length (%d) for BOF record type 0x%04x'
                 % (length, opcode))
-        padding = BYTES_X00 * max(0, boflen[opcode] - length)
+        padding = b'\0' * max(0, boflen[opcode] - length)
         data = self.read(self._position, length);
-        if DEBUG: print >> self.logfile, "\ngetbof(): data=%r" % data
+        if DEBUG: print("\ngetbof(): data=%r" % data, file=self.logfile)
         if len(data) < length:
             bof_error('Incomplete BOF record[2]; met end of file')
         data += padding
         version1 = opcode >> 8
         version2, streamtype = unpack('<HH', data[0:4])
         if DEBUG:
-            print >> self.logfile, "getbof(): op=0x%04x version2=0x%04x streamtype=0x%04x" \
-                % (opcode, version2, streamtype)
+            print("getbof(): op=0x%04x version2=0x%04x streamtype=0x%04x" \
+                % (opcode, version2, streamtype), file=self.logfile)
         bof_offset = self._position - 4 - length
         if DEBUG:
-            print >> self.logfile, "getbof(): BOF found at offset %d; savpos=%d" \
-                % (bof_offset, savpos)
+            print("getbof(): BOF found at offset %d; savpos=%d" \
+                % (bof_offset, savpos), file=self.logfile)
         version = build = year = 0
         if version1 == 0x08:
             build, year = unpack('<HH', data[4:8])
@@ -1301,9 +1308,8 @@ class Book(BaseObject):
             version = 45 # i.e. 4W
 
         if DEBUG or self.verbosity >= 2:
-            print >> self.logfile, \
-                "BOF: op=0x%04x vers=0x%04x stream=0x%04x buildid=%d buildyr=%d -> BIFF%d" \
-                % (opcode, version2, streamtype, build, year, version)
+            print("BOF: op=0x%04x vers=0x%04x stream=0x%04x buildid=%d buildyr=%d -> BIFF%d" \
+                % (opcode, version2, streamtype, build, year, version), file=self.logfile)
         got_globals = streamtype == XL_WORKBOOK_GLOBALS or (
             version == 45 and streamtype == XL_WORKBOOK_GLOBALS_4W)
         if (rqd_stream == XL_WORKBOOK_GLOBALS and got_globals) or streamtype == rqd_stream:
@@ -1339,7 +1345,7 @@ def expand_cell_address(inrow, incol):
 
 def colname(colx, _A2Z="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
     assert colx >= 0
-    name = u''
+    name = UNICODE_LITERAL('')
     while 1:
         quot, rem = divmod(colx, 26)
         name = _A2Z[rem] + name
@@ -1385,7 +1391,7 @@ def unpack_SST_table(datatab, nstrings):
         if options & 0x04: # phonetic
             phosz = local_unpack('<i', data[pos:pos+4])[0]
             pos += 4
-        accstrg = u''
+        accstrg = UNICODE_LITERAL('')
         charsgot = 0
         while 1:
             charsneed = nchars - charsgot

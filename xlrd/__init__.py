@@ -1,12 +1,12 @@
 from os import path
 
-from info import __VERSION__
+from .info import __VERSION__
 
 # <p>Copyright (c) 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
 
-import licences
+from . import licences
 
 ##
 # <p><b>A Python module for extracting data from MS Excel (TM) spreadsheet files.
@@ -304,8 +304,8 @@ import licences
 ##
 
 import sys, zipfile, pprint
-import timemachine
-from biffh import (
+from . import timemachine
+from .biffh import (
     XLRDError,
     biff_text_from_num,
     error_text_from_code,
@@ -317,10 +317,10 @@ from biffh import (
     XL_CELL_DATE,
     XL_CELL_NUMBER
     )
-from formula import * # is constrained by __all__
-from book import Book, colname #### TODO #### formula also has `colname` (restricted to 256 cols)
-from sheet import empty_cell
-from xldate import XLDateError, xldate_as_tuple
+from .formula import * # is constrained by __all__
+from .book import Book, colname #### TODO #### formula also has `colname` (restricted to 256 cols)
+from .sheet import empty_cell
+from .xldate import XLDateError, xldate_as_tuple
 
 if sys.version.startswith("IronPython"):
     # print >> sys.stderr, "...importing encodings"
@@ -400,7 +400,7 @@ def open_workbook(filename=None,
         f = open(filename, "rb")
         peek = f.read(peeksz)
         f.close()
-    if peek == timemachine.BYTES_LITERAL("PK\x03\x04"): # a ZIP file
+    if peek == b"PK\x03\x04": # a ZIP file
         if file_contents:
             zf = zipfile.ZipFile(timemachine.BYTES_IO(file_contents))
         else:
@@ -410,7 +410,7 @@ def open_workbook(filename=None,
             logfile.write('ZIP component_names:\n')
             pprint.pprint(component_names, logfile)
         if 'xl/workbook.xml' in component_names:
-            import xlsx
+            from . import xlsx
             bk = xlsx.open_workbook_2007_xml(
                 zf,
                 component_names,
@@ -429,7 +429,7 @@ def open_workbook(filename=None,
             raise XLRDError('Openoffice.org ODS file; not supported')
         raise XLRDError('ZIP file contents not a known type of workbook')
 
-    import book
+    from . import book
     bk = book.open_workbook_xls(
         filename=filename,
         logfile=logfile,
@@ -451,8 +451,8 @@ def open_workbook(filename=None,
 # @param unnumbered If true, omit offsets (for meaningful diffs).
 
 def dump(filename, outfile=sys.stdout, unnumbered=False):
-    from book import Book
-    from biffh import biff_dump
+    from .book import Book
+    from .biffh import biff_dump
     bk = Book()
     bk.biff2_8_load(filename=filename, logfile=outfile, )
     biff_dump(bk.mem, bk.base, bk.stream_len, 0, outfile, unnumbered)
@@ -464,8 +464,8 @@ def dump(filename, outfile=sys.stdout, unnumbered=False):
 # @param outfile An open file, to which the summary is written.
 
 def count_records(filename, outfile=sys.stdout):
-    from book import Book
-    from biffh import biff_count_records
+    from .book import Book
+    from .biffh import biff_count_records
     bk = Book()
     bk.biff2_8_load(filename=filename, logfile=outfile, )
     biff_count_records(bk.mem, bk.base, bk.stream_len, outfile)
