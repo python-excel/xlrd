@@ -3,3 +3,7 @@
 *.egg-info
 build/
 *.pyc
+/.coverage
+/.tox
+/*.xml
+/htmlcov
