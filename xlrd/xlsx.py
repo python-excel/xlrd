@@ -5,15 +5,17 @@
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
+from __future__ import print_function, unicode_literals
+
 DEBUG = 0
 
 import sys, zipfile, pprint
 import re
-from timemachine import *
-from book import Book, Name
-from biffh import error_text_from_code, XLRDError, XL_CELL_BLANK, XL_CELL_TEXT, XL_CELL_BOOLEAN, XL_CELL_ERROR
-from formatting import is_date_format_string, Format, XF
-from sheet import Sheet
+from .timemachine import *
+from .book import Book, Name
+from .biffh import error_text_from_code, XLRDError, XL_CELL_BLANK, XL_CELL_TEXT, XL_CELL_BOOLEAN, XL_CELL_ERROR
+from .formatting import is_date_format_string, Format, XF
+from .sheet import Sheet
 
 DLF = sys.stdout # Default Log File
 
@@ -41,7 +43,7 @@ def ensure_elementtree_imported(verbosity, logfile):
                         except ImportError:
                             raise Exception("Failed to import an ElementTree implementation")
     if hasattr(ET, 'iterparse'):
-        _dummy_stream = BYTES_IO(BYTES_NULL)
+        _dummy_stream = BYTES_IO(b'')
         try:
             ET.iterparse(_dummy_stream)
             ET_has_iterparse = True
@@ -53,7 +55,7 @@ def ensure_elementtree_imported(verbosity, logfile):
             for item in ET.__dict__.keys()
             if item.lower().replace('_', '') == 'version'
             ])
-        print >> logfile, ET.__file__, ET.__name__, etree_version, ET_has_iterparse
+        print(ET.__file__, ET.__name__, etree_version, ET_has_iterparse, file=logfile)
         
 def split_tag(tag):
     pos = tag.rfind('}') + 1
@@ -106,7 +108,7 @@ U_CP = "{http://schemas.openxmlformats.org/package/2006/metadata/core-properties
 U_DC = "{http://purl.org/dc/elements/1.1/}"
 U_DCTERMS = "{http://purl.org/dc/terms/}"
 XML_SPACE_ATTR = "{http://www.w3.org/XML/1998/namespace}space"
-XML_WHITESPACE = u"\t\n \r"
+XML_WHITESPACE = "\t\n \r"
 X12_MAX_ROWS = 2 ** 20
 X12_MAX_COLS = 2 ** 14
 V_TAG = U_SSML12 + 'v' # cell child: value
@@ -117,7 +119,7 @@ def unescape(s,
     subber=re.compile(r'_x[0-9A-Fa-f]{4,4}_', re.UNICODE).sub,
     repl=lambda mobj: unichr(int(mobj.group(0)[2:6], 16)),
     ):
-    if u"_" in s:
+    if "_" in s:
         return subber(repl, s)
     return s
 
@@ -136,7 +138,7 @@ if python_version < (2, 2):
     def cooked_text(self, elem):
         t = elem.text
         if t is None:
-            return u''
+            return ''
         if elem.get(XML_SPACE_ATTR) != 'preserve':
             t = strip_xml_ws(t)
         return unicode(unescape(t))
@@ -145,7 +147,7 @@ else:
     def cooked_text(self, elem):
         t = elem.text
         if t is None:
-            return u''
+            return ''
         if elem.get(XML_SPACE_ATTR) != 'preserve':
             t = t.strip(XML_WHITESPACE)
         return unicode(unescape(t))
@@ -166,7 +168,7 @@ def get_text_from_si_or_is(self, elem, r_tag=U_SSML12+'r', t_tag=U_SSML12 +'t'):
                     t = cooked_text(self, tnode)
                     if t:
                         accum.append(t)
-    return u''.join(accum)
+    return ''.join(accum)
 
 def map_attributes(amap, elem, obj):
     for xml_attr, obj_attr, cnv_func_or_const in amap:
@@ -179,7 +181,7 @@ def map_attributes(amap, elem, obj):
         setattr(obj, obj_attr, cooked_value)
 
 def cnv_ST_Xstring(s):
-    if s is None: return u""
+    if s is None: return ""
     return unicode(s)
 
 def cnv_xsd_unsignedInt(s):
@@ -238,15 +240,15 @@ def make_name_access_maps(bk):
         nobj = bk.name_obj_list[namex]
         name_lcase = nobj.name.lower()
         key = (name_lcase, nobj.scope)
-        if name_and_scope_map.has_key(key):
+        if key in name_and_scope_map:
             msg = 'Duplicate entry %r in name_and_scope_map' % (key, )
             if 0:
                 raise XLRDError(msg)
             else:
                 if bk.verbosity:
-                    print >> bk.logfile, msg
+                    print(msg, file=bk.logfile)
         name_and_scope_map[key] = nobj
-        if name_map.has_key(name_lcase):
+        if name_lcase in name_map:
             name_map[name_lcase].append((nobj.scope, nobj))
         else:
             name_map[name_lcase] = [(nobj.scope, nobj)]
@@ -357,7 +359,7 @@ class X12Book(X12General):
         map_attributes(_defined_name_attribute_map, elem, nobj)
         if nobj.scope is None:
             nobj.scope = -1 # global
-        if nobj.name.startswith(u"_xlnm."):
+        if nobj.name.startswith("_xlnm."):
             nobj.builtin = 1
         if self.verbosity >= 2:
             nobj.dump(header='=== Name object ===')
@@ -438,7 +440,7 @@ class X12SST(X12General):
             self.dumpout('Entries in SST: %d', len(sst))
         if self.verbosity >= 3:
             for x, s in enumerate(sst):
-                print "SST x=%d s=%r" % (x, s)
+                print("SST x=%d s=%r" % (x, s))
 
     def process_stream_findall(self, stream, heading=None):
         if self.verbosity >= 2 and heading is not None:
@@ -736,7 +738,7 @@ def open_workbook_2007_xml(
     bk.on_demand = on_demand
     if on_demand:
         if verbosity:
-            print >> bk.logfile, "WARNING *** on_demand=True not yet implemented; falling back to False"
+            print("WARNING *** on_demand=True not yet implemented; falling back to False", file=bk.logfile)
         bk.on_demand = False
     bk.ragged_rows = ragged_rows
 

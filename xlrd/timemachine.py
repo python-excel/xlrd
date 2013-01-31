@@ -15,26 +15,25 @@ import sys
 python_version = sys.version_info[:2] # e.g. version 2.4 -> (2, 4)
 
 CAN_PICKLE_ARRAY = python_version >= (2, 5)
-CAN_SUBCLASS_BUILTIN = python_version >= (2, 2)
 
-if python_version >= (3, 0): # Might work on 3.0 but absolutely no support!
+if python_version >= (3, 0):
+    # Python 3
     BYTES_LITERAL = lambda x: x.encode('latin1')
+    UNICODE_LITERAL = lambda x: x
     BYTES_ORD = lambda byte: byte
-    BYTES_NULL = bytes(0)   # b''
-    BYTES_X00  = bytes(1)   # b'\x00'
-    BYTES_X01  = bytes([1]) # b'\x01'
     from io import BytesIO as BYTES_IO
     def fprintf(f, fmt, *vargs):
         fmt = fmt.replace("%r", "%a")
         f.write(fmt % vargs)
     EXCEL_TEXT_TYPES = (str, bytes, bytearray) # xlwt: isinstance(obj, EXCEL_TEXT_TYPES)
     REPR = ascii
+    xrange = range
+    unicode = lambda b, enc: b.decode(enc)
 else:
+    # Python 2
     BYTES_LITERAL = lambda x: x
+    UNICODE_LITERAL = lambda x: x.decode('latin1')
     BYTES_ORD = ord
-    BYTES_NULL = ''
-    BYTES_X00  = '\x00'
-    BYTES_X01  = '\x01'
     from cStringIO import StringIO as BYTES_IO
     def fprintf(f, fmt, *vargs):
         f.write(fmt % vargs)
@@ -43,6 +42,7 @@ else:
     except NameError:
         EXCEL_TEXT_TYPES = (str, unicode)
     REPR = repr
+    xrange = xrange
 
 if python_version >= (2, 6):
     def BUFFER(obj, offset=0, size=None):
@@ -73,8 +73,7 @@ try:
     False
 except NameError:
     setattr(sys.modules['__builtin__'], 'False', 0)
-
-
+    
 def int_floor_div(x, y):
     return divmod(x, y)[0]
 
