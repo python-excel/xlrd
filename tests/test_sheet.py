@@ -1,9 +1,6 @@
-#!/usr/bin/env python
-# Author:  mozman <mozman@gmx.at>
-# Purpose: test sheet functions
-# Created: 03.12.2010
-# Copyright (C) 2010, Manfred Moitzi
-# License: BSD licence
+# Portions Copyright (C) 2010, Manfred Moitzi under a BSD licence
+
+from unittest import TestCase
 
 import sys
 import os
@@ -11,8 +8,7 @@ import unittest
 
 import xlrd
 
-def from_this_dir(filename):
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+from .base import from_this_dir
 
 SHEETINDEX = 0
 NROWS = 15
@@ -21,9 +17,13 @@ NCOLS = 13
 ROW_ERR = NROWS + 10
 COL_ERR = NCOLS + 10
 
-class TestSheet(unittest.TestCase):
-    book = xlrd.open_workbook(from_this_dir('profiles.xls'), formatting_info=True)
-    sheetnames = ['PROFILEDEF', 'AXISDEF', 'TRAVERSALCHAINAGE', 'AXISDATUMLEVELS', 'PROFILELEVELS']
+class TestSheet(TestCase):
+
+    sheetnames = ['PROFILEDEF', 'AXISDEF', 'TRAVERSALCHAINAGE',
+                  'AXISDATUMLEVELS', 'PROFILELEVELS']
+
+    def setUp(self):
+        self.book = xlrd.open_workbook(from_this_dir('profiles.xls'), formatting_info=True)
 
     def check_sheet_function(self, function):
         self.assertTrue(function(0, 0))
@@ -116,7 +116,8 @@ class TestSheet(unittest.TestCase):
         sheet = self.book.sheet_by_index(SHEETINDEX)
         self.check_col_slice(sheet.row_values)
 
-class TestSheetRagged(unittest.TestCase):
+class TestSheetRagged(TestCase):
+    
     def test_read_ragged(self):
         book = xlrd.open_workbook(from_this_dir('ragged.xls'), ragged_rows=True)
         sheet = book.sheet_by_index(0)
@@ -125,6 +126,3 @@ class TestSheetRagged(unittest.TestCase):
         self.assertEqual(sheet.row_len(2), 1)
         self.assertEqual(sheet.row_len(3), 4)
         self.assertEqual(sheet.row_len(4), 4)
-
-if __name__=='__main__':
-    unittest.main()
