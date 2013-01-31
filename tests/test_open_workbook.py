@@ -9,8 +9,13 @@ from .base import from_this_dir
 class TestOpen(TestCase):
     # test different uses of open_workbook
 
-    def test_open(self):
+    def test_names_demo(self):
         # For now, we just check this doesn't raise an error.
         open_workbook(
             from_this_dir(os.path.join('..','xlrd','examples','namesdemo.xls'))
             )
+
+    def test_ragged_rows_tidied_with_formatting(self):
+        # For now, we just check this doesn't raise an error.
+        open_workbook(from_this_dir('issue20.xls'),
+                      formatting_info=True)
