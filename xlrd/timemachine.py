@@ -51,9 +51,3 @@ try:
 except ImportError:
     # old version of IronPython?
     array_array = None
-    
-def intbool(x):
-    if x:
-        return 1
-    return 0
-
