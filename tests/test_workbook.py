@@ -45,10 +45,3 @@ class TestWorkbook(TestCase):
     def test_sheet_names(self):
         self.assertEqual(self.sheetnames, self.book.sheet_names())
 
-class TestOpen(TestCase):
-
-    def test_open(self):
-        # For now, we just check this doesn't raise an error.
-        open_workbook(
-            from_this_dir(os.path.join('..','xlrd','examples','namesdemo.xls'))
-            )
