@@ -123,34 +123,13 @@ def unescape(s,
         return subber(repl, s)
     return s
 
-if python_version < (2, 2):
-    def strip_xml_ws(s,
-        ):
-        n = len(s)
-        spos = 0
-        while spos < n and s[spos] in XML_WHITESPACE:
-            spos += 1
-        epos = n - 1
-        while epos >= spos and s[epos] in XML_WHITESPACE:
-            epos -= 1
-        return s[spos:epos+1]
-
-    def cooked_text(self, elem):
-        t = elem.text
-        if t is None:
-            return ''
-        if elem.get(XML_SPACE_ATTR) != 'preserve':
-            t = strip_xml_ws(t)
-        return unicode(unescape(t))
-else:
-
-    def cooked_text(self, elem):
-        t = elem.text
-        if t is None:
-            return ''
-        if elem.get(XML_SPACE_ATTR) != 'preserve':
-            t = t.strip(XML_WHITESPACE)
-        return unicode(unescape(t))
+def cooked_text(self, elem):
+    t = elem.text
+    if t is None:
+        return ''
+    if elem.get(XML_SPACE_ATTR) != 'preserve':
+        t = t.strip(XML_WHITESPACE)
+    return unicode(unescape(t))
 
 def get_text_from_si_or_is(self, elem, r_tag=U_SSML12+'r', t_tag=U_SSML12 +'t'):
     "Returns unescaped unicode"
