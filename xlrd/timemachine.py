@@ -52,9 +52,6 @@ except ImportError:
     # old version of IronPython?
     array_array = None
     
-def int_floor_div(x, y):
-    return divmod(x, y)[0]
-
 def intbool(x):
     if x:
         return 1
