@@ -306,7 +306,7 @@ class Sheet(BaseObject):
         self._position = position
         self.logfile = book.logfile
         self.pickleable = book.pickleable
-        if array_array and (CAN_PICKLE_ARRAY or not book.pickleable):
+        if array_array:
             # use array
             self.bt = array_array('B', [XL_CELL_EMPTY])
             self.bf = array_array('h', [-1])

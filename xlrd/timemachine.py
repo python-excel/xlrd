@@ -6,15 +6,12 @@
 ##
 
 # timemachine.py -- adaptation for single codebase.
-# Currently supported: 2.1 to 2.7
+# Currently supported: 2.6 to 2.7, 3.2+
 # usage: from timemachine import *
 
-from __future__ import nested_scopes
 import sys
 
-python_version = sys.version_info[:2] # e.g. version 2.4 -> (2, 4)
-
-CAN_PICKLE_ARRAY = python_version >= (2, 5)
+python_version = sys.version_info[:2] # e.g. version 2.6 -> (2, 6)
 
 if python_version >= (3, 0):
     # Python 3
@@ -44,35 +41,16 @@ else:
     REPR = repr
     xrange = xrange
 
-if python_version >= (2, 6):
-    def BUFFER(obj, offset=0, size=None):
-        if size is None:
-            return memoryview(obj)[offset:]
-        return memoryview(obj)[offset:offset+size]
-else:
-    BUFFER = buffer
+def BUFFER(obj, offset=0, size=None):
+    if size is None:
+        return memoryview(obj)[offset:]
+    return memoryview(obj)[offset:offset+size]
 
 try:
     from array import array as array_array
 except ImportError:
     # old version of IronPython?
     array_array = None
-
-try:
-    object
-except NameError:
-    class object:
-        pass
-
-try:
-    True
-except NameError:
-    setattr(sys.modules['__builtin__'], 'True', 1)
-
-try:
-    False
-except NameError:
-    setattr(sys.modules['__builtin__'], 'False', 0)
     
 def int_floor_div(x, y):
     return divmod(x, y)[0]
@@ -82,9 +60,3 @@ def intbool(x):
         return 1
     return 0
 
-if python_version < (2, 3):
-    def sum(sequence, start=0):
-        tot = start
-        for item in aseq:
-            tot += item
-        return tot
