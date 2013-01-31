@@ -583,7 +583,7 @@ class Sheet(BaseObject):
                 # we put one empty cell at (nr-1,0) to make sure
                 # we have the right number of rows. The ragged rows
                 # will sort out the rest if needed.
-                self.put_cell(nr-1, 0, XL_CELL_EMPTY, -1)
+                self.put_cell(nr-1, 0, XL_CELL_EMPTY, '', -1)
         if self.verbosity >= 1 \
         and (self.nrows != self._dimnrows or self.ncols != self._dimncols):
             fprintf(self.logfile,
