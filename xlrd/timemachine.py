@@ -41,11 +41,6 @@ else:
     REPR = repr
     xrange = xrange
 
-def BUFFER(obj, offset=0, size=None):
-    if size is None:
-        return memoryview(obj)[offset:]
-    return memoryview(obj)[offset:offset+size]
-
 try:
     from array import array as array_array
 except ImportError:
