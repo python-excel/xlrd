@@ -306,7 +306,7 @@ class Sheet(BaseObject):
         self._position = position
         self.logfile = book.logfile
         self.pickleable = book.pickleable
-        if array_array and (CAN_PICKLE_ARRAY or not book.pickleable):
+        if array_array:
             # use array
             self.bt = array_array('B', [XL_CELL_EMPTY])
             self.bf = array_array('h', [-1])
@@ -1231,7 +1231,7 @@ class Sheet(BaseObject):
                     self.merged_cells, data, 0, bv, addr_size=8)
                 if blah:
                     fprintf(self.logfile,
-                        "MERGEDCELLS: %d ranges\n", int_floor_div(pos - 2, 8))
+                        "MERGEDCELLS: %d ranges\n", (pos - 2) // 8)
                 assert pos == data_len, \
                     "MERGEDCELLS: pos=%d data_len=%d" % (pos, data_len)
             elif rc == XL_WINDOW2:
@@ -1273,7 +1273,7 @@ class Sheet(BaseObject):
                 num, den = unpack("<HH", data)
                 result = 0
                 if den:
-                    result = int_floor_div(num * 100, den)
+                    result = (num * 100) // den
                 if not(10 <= result <= 400):
                     if DEBUG or self.verbosity >= 0:
                         print((
