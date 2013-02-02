@@ -38,7 +38,7 @@ if __name__ == "__main__":
     import xlrd
     import sys, time, glob, traceback, pprint, gc
     
-    from xlrd.timemachine import xrange
+    from xlrd.timemachine import xrange, REPR
     
 
     class LogHandler(object):
@@ -189,8 +189,8 @@ if __name__ == "__main__":
             nrows, ncols = sh.nrows, sh.ncols
             colrange = range(ncols)
             anshow = min(nshow, nrows)
-            print("sheet %d: name = %r; nrows = %d; ncols = %d" %
-                (shx, sh.name, sh.nrows, sh.ncols))
+            print("sheet %d: name = %s; nrows = %d; ncols = %d" %
+                (shx, REPR(sh.name), sh.nrows, sh.ncols))
             if nrows and ncols:
                 # Beat the bounds
                 for rowx in xrange(nrows):
