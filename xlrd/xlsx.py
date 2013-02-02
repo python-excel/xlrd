@@ -468,7 +468,7 @@ class X12Styles(X12General):
         self.xf_counts = [0, 0]
         self.xf_type = None
         self.fmt_is_date = {}
-        for x in range(14, 23) + range(45, 48): #### hard-coding FIX ME ####
+        for x in list(range(14, 23)) + list(range(45, 48)): #### hard-coding FIX ME ####
             self.fmt_is_date[x] = 1
         # dummy entry for XF 0 in case no Styles section
         self.bk._xf_index_to_xl_type_map[0] = 2
