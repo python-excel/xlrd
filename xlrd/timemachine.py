@@ -30,6 +30,7 @@ if python_version >= (3, 0):
     xrange = range
     unicode = lambda b, enc: b.decode(enc)
     ensure_unicode = lambda s: s
+    unichr = chr
 else:
     # Python 2
     BYTES_LITERAL = lambda x: x
