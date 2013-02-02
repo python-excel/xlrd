@@ -65,7 +65,7 @@ def split_tag(tag):
 
 def augment_keys(adict, uri):
     # uri must already be enclosed in {}
-    for x in adict.keys():
+    for x in list(adict.keys()):
         adict[uri + x] = adict[x]
 
 _UPPERCASE_1_REL_INDEX = {} # Used in fast conversion of column names (e.g. "XFD") to indices (16383)
