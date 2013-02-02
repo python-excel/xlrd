@@ -1975,7 +1975,7 @@ class Sheet(BaseObject):
             nchars = data2_len - 1
             if nb:
                 assert nchars % 2 == 0
-                nchars /= 2
+                nchars //= 2
             utext, endpos = unpack_unicode_update_pos(data2, 0, known_len=nchars)
             assert endpos == data2_len
             o.text += utext
