@@ -141,7 +141,7 @@ if python_version < (2, 2):
             return ''
         if elem.get(XML_SPACE_ATTR) != 'preserve':
             t = strip_xml_ws(t)
-        return unicode(unescape(t))
+        return ensure_unicode(unescape(t))
 else:
 
     def cooked_text(self, elem):
@@ -150,7 +150,7 @@ else:
             return ''
         if elem.get(XML_SPACE_ATTR) != 'preserve':
             t = t.strip(XML_WHITESPACE)
-        return unicode(unescape(t))
+        return ensure_unicode(unescape(t))
 
 def get_text_from_si_or_is(self, elem, r_tag=U_SSML12+'r', t_tag=U_SSML12 +'t'):
     "Returns unescaped unicode"
@@ -182,7 +182,7 @@ def map_attributes(amap, elem, obj):
 
 def cnv_ST_Xstring(s):
     if s is None: return ""
-    return unicode(s)
+    return ensure_unicode(s)
 
 def cnv_xsd_unsignedInt(s):
     if not s:
@@ -375,7 +375,7 @@ class X12Book(X12General):
         # print elem.attrib
         rid = elem.get(U_ODREL + 'id')
         sheetId = int(elem.get('sheetId'))
-        name = unescape(unicode(elem.get('name')))
+        name = unescape(ensure_unicode(elem.get('name')))
         reltype = self.relid2reltype[rid]
         target = self.relid2path[rid]
         if self.verbosity >= 2:
@@ -481,7 +481,7 @@ class X12Styles(X12General):
         self.xf_type = 1
 
     def do_numfmt(self, elem):
-        formatCode = unicode(elem.get('formatCode'))
+        formatCode = ensure_unicode(elem.get('formatCode'))
         numFmtId = int(elem.get('numFmtId'))
         is_date = is_date_format_string(self.bk, formatCode)
         self.fmt_is_date[numFmtId] = is_date

@@ -29,6 +29,7 @@ if python_version >= (3, 0):
     REPR = ascii
     xrange = range
     unicode = lambda b, enc: b.decode(enc)
+    ensure_unicode = lambda s: s
 else:
     # Python 2
     BYTES_LITERAL = lambda x: x
@@ -43,6 +44,9 @@ else:
         EXCEL_TEXT_TYPES = (str, unicode)
     REPR = repr
     xrange = xrange
+    # following used only to overcome 2.x ElementTree gimmick which
+    # returns text as `str` if it's ascii, otherwise `unicode`
+    ensure_unicode = unicode # used only in xlsx.py 
 
 if python_version >= (2, 6):
     def BUFFER(obj, offset=0, size=None):
