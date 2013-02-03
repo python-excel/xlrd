@@ -1784,8 +1784,23 @@ class Sheet(BaseObject):
         if options & 0x8: # has textmark
             h.textmark, offset = get_nul_terminated_unicode(data, offset)
 
-        assert offset == record_size
-        if DEBUG: h.dump(header="... object dump ...")        
+        if DEBUG:
+            h.dump(header="... object dump ...") 
+            print("offset=%d record_size=%d" % (offset, record_size))
+            
+        extra_nbytes = record_size - offset
+        if extra_nbytes > 0:
+            fprintf(
+                self.logfile,
+                "*** WARNING: hyperlink at r=%d c=%d has %d extra data bytes: %s\n",
+                h.frowx,
+                h.fcolx,
+                extra_nbytes,
+                REPR(data[-extra_nbytes:])
+                )
+            # Seen: b"\x00\x00" also b"A\x00", b"V\x00"
+        elif extra_nbytes < 0:        
+            raise XLRDError("Bug or corrupt file, send copy of input file for debugging")
 
         self.hyperlink_list.append(h)
         for rowx in xrange(h.frowx, h.lrowx+1):
