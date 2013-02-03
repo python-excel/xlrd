@@ -1,7 +1,7 @@
 # -*- coding: cp1252 -*-
 
 ##
-# <p> Portions copyright © 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p> Portions copyright © 2005-2013 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
@@ -1725,7 +1725,7 @@ class Sheet(BaseObject):
         if (options & 1) and not (options & 0x100): # HasMoniker and not MonikerSavedAsString
             # an OLEMoniker structure
             clsid, = unpack('<16s', data[offset:offset + 16])
-            if DEBUG: print("clsid=%r" %clsid, file=self.logfile)
+            if DEBUG: fprintf(self.logfile, "clsid=%r\n",  clsid)
             offset += 16
             if clsid == b"\xE0\xC9\xEA\x79\xF9\xBA\xCE\x11\x8C\x82\x00\xAA\x00\x4B\xA9\x0B":
                 #          E0H C9H EAH 79H F9H BAH CEH 11H 8CH 82H 00H AAH 00H 4BH A9H 0BH
@@ -1734,7 +1734,7 @@ class Sheet(BaseObject):
                 nbytes = unpack('<L', data[offset:offset + 4])[0]
                 offset += 4
                 h.url_or_path = unicode(data[offset:offset + nbytes], 'UTF-16le')
-                if DEBUG: print("initial url=%r len=%d" % (h.url_or_path, len(h.url_or_path)), file=self.logfile)
+                if DEBUG: fprintf(self.logfile, "initial url=%r len=%d\n", h.url_or_path, len(h.url_or_path))
                 endpos = h.url_or_path.find('\x00')
                 if DEBUG: print("endpos=%d" % endpos, file=self.logfile)
                 h.url_or_path = h.url_or_path[:endpos]
@@ -1743,9 +1743,12 @@ class Sheet(BaseObject):
                 extra_nbytes = nbytes - true_nbytes
                 extra_data = data[offset:offset + extra_nbytes]
                 offset += extra_nbytes
-                if DEBUG: print("url=%r" % h.url_or_path, file=self.logfile)
-                if DEBUG: print("extra=%r" % extra_data, file=self.logfile)
-                if DEBUG: print("nbytes=%d true_nbytes=%d extra_nbytes=%d" % (nbytes, true_nbytes, extra_nbytes), file=self.logfile)
+                if DEBUG: 
+                    fprintf(
+                        self.logfile,
+                        "url=%r\nextra=%r\nnbytes=%d true_nbytes=%d extra_nbytes=%d\n",
+                        h.url_or_path, extra_data, nbytes, true_nbytes, extra_nbytes,
+                        )
                 assert extra_nbytes in (24, 0)
             elif clsid == b"\x03\x03\x00\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46":
                 # file moniker
@@ -1753,7 +1756,7 @@ class Sheet(BaseObject):
                 uplevels, nbytes = unpack("<Hi", data[offset:offset + 6])
                 offset += 6
                 shortpath = b"..\\" * uplevels + data[offset:offset + nbytes - 1] #### BYTES, not unicode
-                if DEBUG: print("uplevels=%d shortpath=%r" % (uplevels, shortpath), file=self.logfile)
+                if DEBUG: fprintf(self.logfile, "uplevels=%d shortpath=%r\n", uplevels, shortpath)
                 offset += nbytes
                 offset += 24 # OOo: "unknown byte sequence"
                 # above is version 0xDEAD + 20 reserved zero bytes
@@ -1772,7 +1775,7 @@ class Sheet(BaseObject):
                     #### MS KLUDGE WARNING ####
                     # The "shortpath" is bytes encoded in the **UNKNOWN** creator's "ANSI" encoding.
             else:
-                print("*** unknown clsid %r" % clsid, file=self.logfile)
+                fprintf(self.logfile, "*** unknown clsid %r\n", clsid)
         elif options & 0x163 == 0x103: # UNC
             h.type = UNICODE_LITERAL('unc')
             h.url_or_path, offset = get_nul_terminated_unicode(data, offset)
@@ -2034,7 +2037,7 @@ class Sheet(BaseObject):
         assert rt == 0x872
         assert fHdr == 0
         assert Ref1 == Ref0
-        print("FEAT11: grbitFrt=%d  Ref0=%r cref=%d cbFeatData=%d" % (grbitFrt, Ref0, cref, cbFeatData), file=self.logfile)
+        print(self.logfile, "FEAT11: grbitFrt=%d  Ref0=%r cref=%d cbFeatData=%d\n", grbitFrt, Ref0, cref, cbFeatData)
         # lt: Table data source type:
         #   =0 for Excel Worksheet Table =1 for read-write SharePoint linked List
         #   =2 for XML mapper Table =3 for Query Table

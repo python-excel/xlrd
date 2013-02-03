@@ -1327,8 +1327,8 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
         pos += sz
     any_rel = not not any_rel
     if blah:
-        print("End of formula. level=%d any_rel=%d any_err=%d stack=%r" % \
-            (level, not not any_rel, any_err, stack), file=bk.logfile)
+        fprintf(bk.logfile, "End of formula. level=%d any_rel=%d any_err=%d stack=%r\n",
+            level, not not any_rel, any_err, stack)
         if len(stack) >= 2:
             print("*** Stack has unprocessed args", file=bk.logfile)
         print(file=bk.logfile)

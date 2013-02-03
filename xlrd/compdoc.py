@@ -56,9 +56,11 @@ class DirNode(object):
             self.dump(DEBUG)
 
     def dump(self, DEBUG=1):
-        print("DID=%d name=%r etype=%d DIDs(left=%d right=%d root=%d parent=%d kids=%r) first_SID=%d tot_size=%d" \
-            % (self.DID, self.name, self.etype, self.left_DID,
-            self.right_DID, self.root_DID, self.parent, self.children, self.first_SID, self.tot_size), file=self.logfile)
+        fprintf(
+            "DID=%d name=%r etype=%d DIDs(left=%d right=%d root=%d parent=%d kids=%r) first_SID=%d tot_size=%d\n",
+            self.DID, self.name, self.etype, self.left_DID,
+            self.right_DID, self.root_DID, self.parent, self.children, self.first_SID, self.tot_size
+            )
         if DEBUG == 2:
             # cre_lo, cre_hi, mod_lo, mod_hi = tsinfo
             print("timestamp info", self.tsinfo, file=self.logfile)
@@ -323,9 +325,9 @@ class CompDoc(object):
                         )
             assert s == EOCSID
             if todo != 0:
-                print("WARNING *** OLE2 stream %r: expected size %d, actual size %d" \
-                    % (name, size, size - todo), file=self.logfile)
-        # print >> self.logfile, "_get_stream(%s): seen" % name; dump_list(self.seen, 20, self.logfile)
+                fprintf(self.logfile, 
+                    "WARNING *** OLE2 stream %r: expected size %d, actual size %d\n",
+                    name, size, size - todo)
 
         return b''.join(sectors)
 

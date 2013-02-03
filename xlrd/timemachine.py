@@ -10,6 +10,7 @@
 # usage: from timemachine import *
 
 from __future__ import nested_scopes
+from __future__ import print_function
 import sys
 
 python_version = sys.version_info[:2] # e.g. version 2.4 -> (2, 4)
@@ -24,7 +25,10 @@ if python_version >= (3, 0):
     from io import BytesIO as BYTES_IO
     def fprintf(f, fmt, *vargs):
         fmt = fmt.replace("%r", "%a")
-        f.write(fmt % vargs)
+        if fmt.endswith('\n'):
+            print(fmt[:-1] % vargs, file=f)
+        else:
+            print(fmt % vargs, end=' ', file=f)        
     EXCEL_TEXT_TYPES = (str, bytes, bytearray) # xlwt: isinstance(obj, EXCEL_TEXT_TYPES)
     REPR = ascii
     xrange = range
@@ -38,7 +42,10 @@ else:
     BYTES_ORD = ord
     from cStringIO import StringIO as BYTES_IO
     def fprintf(f, fmt, *vargs):
-        f.write(fmt % vargs)
+        if fmt.endswith('\n'):
+            print(fmt[:-1] % vargs, file=f)
+        else:
+            print(fmt % vargs, end=' ', file=f)        
     try:
         EXCEL_TEXT_TYPES = basestring # xlwt: isinstance(obj, EXCEL_TEXT_TYPES)
     except NameError:

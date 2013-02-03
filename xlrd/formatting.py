@@ -479,7 +479,7 @@ def is_date_format_string(book, fmt):
             state = 0
         assert 0 <= state <= 2
     if book.verbosity >= 4:
-        print("is_date_format_string: reduced format is %r" % s, file=book.logfile)
+        print("is_date_format_string: reduced format is %s" % REPR(s), file=book.logfile)
     s = fmt_bracketed_sub('', s)
     if s in non_date_formats:
         return False
@@ -614,8 +614,8 @@ def palette_epilogue(book):
             book.colour_indexes_used[cx] = 1
         elif book.verbosity:
             print("Size of colour table:", len(book.colour_map), file=book.logfile)
-            print("*** Font #%d (%r): colour index 0x%04x is unknown" \
-                % (font.font_index, font.name, cx), file=book.logfile)
+            fprintf(self.logfile, "*** Font #%d (%r): colour index 0x%04x is unknown\n",
+                font.font_index, font.name, cx)
     if book.verbosity >= 1:
         used = sorted(book.colour_indexes_used.keys())
         print("\nColour indexes used:\n%r\n" % used, file=book.logfile)
@@ -661,8 +661,8 @@ def handle_style(book, data):
             print("WARNING *** A user-defined style has a zero-length name", file=book.logfile)
     book.style_name_map[name] = (built_in, xf_index)
     if blah:
-        print("STYLE: built_in=%d xf_index=%d built_in_id=%d level=%d name=%r" \
-            % (built_in, xf_index, built_in_id, level, name), file=book.logfile)
+        fprintf(book.logfile, "STYLE: built_in=%d xf_index=%d built_in_id=%d level=%d name=%r\n",
+            built_in, xf_index, built_in_id, level, name)
 
 def check_colour_indexes_in_obj(book, obj, orig_index):
     alist = sorted(obj.__dict__.items())

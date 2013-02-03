@@ -440,7 +440,7 @@ class X12SST(X12General):
             self.dumpout('Entries in SST: %d', len(sst))
         if self.verbosity >= 3:
             for x, s in enumerate(sst):
-                print("SST x=%d s=%r" % (x, s))
+                fprintf(self.logfile, "SST x=%d s=%r\n", x, s)
 
     def process_stream_findall(self, stream, heading=None):
         if self.verbosity >= 2 and heading is not None:

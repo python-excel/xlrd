@@ -65,7 +65,7 @@ class BaseObject(object):
                 ):
                 print("%s%s: %s, len = %d" % (pad, attr, type(value), len(value)), file=f)
             else:
-                print("%s%s: %r" % (pad, attr, value), file=f)
+                fprintf(f, "%s%s: %r\n", pad, attr, value)
         if footer is not None: print(footer, file=f)
 
 FUN, FDT, FNU, FGE, FTX = range(5) # unknown, date, number, general, text
@@ -254,14 +254,6 @@ for _cell_opcode in _cell_opcode_list:
 
 def is_cell_opcode(c):
     return c in  _cell_opcode_dict
-
-# def fprintf(f, fmt, *vargs): f.write(fmt % vargs)
-
-def fprintf(f, fmt, *vargs):
-    if fmt.endswith('\n'):
-        print(fmt[:-1] % vargs, file=f)
-    else:
-        print(fmt % vargs, end=' ', file=f)
 
 def upkbits(tgt_obj, src, manifest, local_setattr=setattr):
     for n, mask, attr in manifest:
