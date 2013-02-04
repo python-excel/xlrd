@@ -57,6 +57,7 @@ class DirNode(object):
 
     def dump(self, DEBUG=1):
         fprintf(
+            self.logfile,
             "DID=%d name=%r etype=%d DIDs(left=%d right=%d root=%d parent=%d kids=%r) first_SID=%d tot_size=%d\n",
             self.DID, self.name, self.etype, self.left_DID,
             self.right_DID, self.root_DID, self.parent, self.children, self.first_SID, self.tot_size
