@@ -4,38 +4,37 @@ from os import path
 import sys
 python_version = sys.version_info[:2]
 
+if python_version < (2, 6):
+    raise Exception("This version of xlrd requires Python 2.6 or above. "
+                    "For older versions of Python, you can use the 0.8 series.")
+
 av = sys.argv
 if len(av) > 1 and av[1].lower() == "--egg":
-    if python_version < (2, 3):
-        raise Exception("Can't lay eggs with Python version %d.%d " % python_version)
     del av[1]
     from setuptools import setup
 else:
     from distutils.core import setup
 
-the_url = 'http://www.lexicon.net/sjmachin/xlrd.htm'
+from xlrd.info import __VERSION__
 
-# Get version number without importing xlrd/__init__
-# (this horrificness is needed while using 2to3 for
-#  python 3 compatibility, it should go away once
-#  we stop using that.)
-sys.path.insert(0, path.join(path.dirname(__file__), 'xlrd'))
-from info import __VERSION__
-sys.path.pop(0)
-
-def mkargs(**kwargs):
-    return kwargs
-
-args = mkargs(
+setup(
     name = 'xlrd',
     version = __VERSION__,
     author = 'John Machin',
     author_email = 'sjmachin@lexicon.net',
-    url = the_url,
+    url = 'http://www.python-excel.org/',
     packages = ['xlrd'],
     scripts = [
         'scripts/runxlrd.py',
         ],
+    package_data={
+            'xlrd': [
+                'doc/*.htm*',
+                # 'doc/*.txt',
+                'examples/*.*',
+                ],
+
+            },
     description = 'Library for developers to extract data from Microsoft Excel (tm) spreadsheet files',
     long_description = \
         "Extract data from Excel spreadsheets (.xls and .xlsx, versions 2.0 onwards) on any platform. " \
@@ -43,12 +42,7 @@ args = mkargs(
     platforms = ["Any platform -- don't need Windows"],
     license = 'BSD',
     keywords = ['xls', 'excel', 'spreadsheet', 'workbook'],
-    )
-
-if python_version >= (2, 3):
-    args23 = mkargs(
-        download_url = the_url,
-        classifiers = [
+    classifiers = [
             'Development Status :: 5 - Production/Stable',
             'Intended Audience :: Developers',
             'License :: OSI Approved :: BSD License',
@@ -60,20 +54,4 @@ if python_version >= (2, 3):
             'Topic :: Office/Business',
             'Topic :: Software Development :: Libraries :: Python Modules',
             ],
-        )
-    args.update(args23)
-
-if python_version >= (2, 4):
-    args24 = mkargs(
-        package_data={
-            'xlrd': [
-                'doc/*.htm*',
-                # 'doc/*.txt',
-                'examples/*.*',
-                ],
-
-            },
-        )
-    args.update(args24)
-
-setup(**args)
+    )
