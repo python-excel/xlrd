@@ -10,17 +10,18 @@
 from __future__ import print_function
 
 import xlrd
+from xlrd.timemachine import REPR
 import sys
 import glob
 
 def scope_as_string(book, scope):
     if 0 <= scope < book.nsheets:
-        return "sheet #%d (%r)" % (scope, book.sheet_names()[scope])
+        return "sheet #%d (%r)" % (scope, REPR(book.sheet_names()[scope]))
     if scope == -1:
         return "Global"
     if scope == -2:
         return "Macro/VBA"
-    return "Unknown scope value (%r)" % scope
+    return "Unknown scope value (%r)" % REPR(scope)
 
 def do_scope_query(book, scope_strg, show_contents=0, f=sys.stdout):
     try:
@@ -65,11 +66,11 @@ def show_name_details_in_scope(
         nobj = book.name_and_scope_map.get((name_lcase, scope))
         if nobj:
             break
-        print("Name %r not found in scope %d" % (name, scope), file=f)
+        print("Name %s not found in scope %d" % (REPR(name), scope), file=f)
         if scope == -1:
             return
         scope = -1 # Try again with global scope
-    print("Name %r found in scope %d" % (name, scope), file=f)
+    print("Name %s found in scope %d" % (REPR(name), scope), file=f)
     show_name_object(book, nobj, show_contents, f)
 
 def showable_cell_value(celltype, cellvalue, datemode):
@@ -87,10 +88,10 @@ def showable_cell_value(celltype, cellvalue, datemode):
     return showval
 
 def show_name_object(book, nobj, show_contents=0, f=sys.stdout):
-    print("\nName: %r, scope: %r (%s)" \
-        % (nobj.name, nobj.scope, scope_as_string(book, nobj.scope)), file=f)
+    print("\nName: %s, scope: %s (%s)" \
+        % (REPR(nobj.name), REPR(nobj.scope), scope_as_string(book, nobj.scope)), file=f)
     res = nobj.result
-    print("Formula eval result: %r" % res, file=f)
+    print("Formula eval result: %s" % REPR(res), file=f)
     if res is None:
         return
     # result should be an instance of the Operand class
@@ -103,12 +104,12 @@ def show_name_object(book, nobj, show_contents=0, f=sys.stdout):
         # A list of Ref3D objects representing *relative* ranges
         for i in range(len(value)):
             ref3d = value[i]
-            print("Range %d: %r ==> %s"% (i, ref3d.coords, xlrd.rangename3drel(book, ref3d)), file=f)
+            print("Range %d: %s ==> %s"% (i, REPR(ref3d.coords), REPR(xlrd.rangename3drel(book, ref3d))), file=f)
     elif kind == xlrd.oREF:
         # A list of Ref3D objects
         for i in range(len(value)):
             ref3d = value[i]
-            print("Range %d: %r ==> %s"% (i, ref3d.coords, xlrd.rangename3d(book, ref3d)), file=f)
+            print("Range %d: %s ==> %s"% (i, REPR(ref3d.coords), REPR(xlrd.rangename3d(book, ref3d))), file=f)
             if not show_contents:
                 continue
             datemode = book.datemode
@@ -124,8 +125,8 @@ def show_name_object(book, nobj, show_contents=0, f=sys.stdout):
                             continue
                         cval = sh.cell_value(rowx, colx)
                         sval = showable_cell_value(cty, cval, datemode)
-                        print("      (%3d,%3d) %-5s: %r" \
-                            % (rowx, colx, xlrd.cellname(rowx, colx), sval), file=f)
+                        print("      (%3d,%3d) %-5s: %s"
+                            % (rowx, colx, xlrd.cellname(rowx, colx), REPR(sval)), file=f)
 
 if __name__ == "__main__":
     def usage():
