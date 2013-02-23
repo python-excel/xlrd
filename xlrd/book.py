@@ -1043,22 +1043,20 @@ class Book(BaseObject):
             nobj = self.name_obj_list[namex]
             name_lcase = nobj.name.lower()
             key = (name_lcase, nobj.scope)
-            if key in name_and_scope_map:
-                msg = 'Duplicate entry %r in name_and_scope_map' % (key, )
-                if 0:
-                    raise XLRDError(msg)
-                else:
-                    if self.verbosity:
-                        print(msg, file=f)
+            if key in name_and_scope_map and self.verbosity:
+                fprintf(f, 'Duplicate entry %r in name_and_scope_map\n', key)
             name_and_scope_map[key] = nobj
+            sort_data = (nobj.scope, namex, nobj)
+            # namex (a temp unique ID) ensures the Name objects will not
+            # be compared (fatal in py3)
             if name_lcase in name_map:
-                name_map[name_lcase].append((nobj.scope, nobj))
+                name_map[name_lcase].append(sort_data)
             else:
-                name_map[name_lcase] = [(nobj.scope, nobj)]
+                name_map[name_lcase] = [sort_data]
         for key in name_map.keys():
             alist = name_map[key]
             alist.sort()
-            name_map[key] = [x[1] for x in alist]
+            name_map[key] = [x[2] for x in alist]
         self.name_and_scope_map = name_and_scope_map
         self.name_map = name_map
 
