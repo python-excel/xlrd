@@ -34,6 +34,14 @@ from .biffh import BaseObject, unpack_unicode, unpack_string, \
     XL_FORMAT, XL_FORMAT2, \
     XLRDError
 
+_cellty_from_fmtty = {
+    FNU: XL_CELL_NUMBER,
+    FUN: XL_CELL_NUMBER,
+    FGE: XL_CELL_NUMBER,
+    FDT: XL_CELL_DATE,
+    FTX: XL_CELL_NUMBER, # Yes, a number can be formatted as text.
+    }    
+    
 excel_default_palette_b5 = (
     (  0,   0,   0), (255, 255, 255), (255,   0,   0), (  0, 255,   0),
     (  0,   0, 255), (255, 255,   0), (255,   0, 255), (  0, 255, 255),
@@ -945,6 +953,13 @@ def handle_xf(self, data):
             header="--- handle_xf: xf[%d] ---" % xf.xf_index,
             footer=" ",
         )
+    try:
+        fmt = self.format_map[xf.format_key]
+        cellty = _cellty_from_fmtty[fmt.type]
+    except KeyError:
+        cellty = XL_CELL_NUMBER
+    self._xf_index_to_xl_type_map[xf.xf_index] = cellty
+
     # Now for some assertions ...
     if self.formatting_info:
         if self.verbosity and xf.is_style and xf.parent_style_index != 0x0FFF:
@@ -981,15 +996,9 @@ def xf_epilogue(self):
             fprintf(self.logfile, msg,
                     xf.xf_index, xf.format_key, xf.format_key)
             xf.format_key = 0
-        cellty_from_fmtty = {
-            FNU: XL_CELL_NUMBER,
-            FUN: XL_CELL_NUMBER,
-            FGE: XL_CELL_NUMBER,
-            FDT: XL_CELL_DATE,
-            FTX: XL_CELL_NUMBER, # Yes, a number can be formatted as text.
-            }
+
         fmt = self.format_map[xf.format_key]
-        cellty = cellty_from_fmtty[fmt.type]
+        cellty = _cellty_from_fmtty[fmt.type]
         self._xf_index_to_xl_type_map[xf.xf_index] = cellty
         # Now for some assertions etc
         if not self.formatting_info:
