@@ -13,6 +13,7 @@ xlrd/licences.py
 xlrd/sheet.py
 xlrd/timemachine.py
 xlrd/xldate.py
+xlrd/xlsx.py
 xlrd/doc/compdoc.html
 xlrd/doc/xlrd.html
 xlrd/examples/namesdemo.xls
