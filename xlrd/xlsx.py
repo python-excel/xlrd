@@ -378,7 +378,7 @@ class X12Book(X12General):
         name = unescape(ensure_unicode(elem.get('name')))
         reltype = self.relid2reltype[rid]
         target = self.relid2path[rid]
-        visibility = 0 if elem.get('state') == "visible" else 1
+        visibility = 1 if elem.get('state') == "hidden" else 1
 
         if self.verbosity >= 2:
             self.dumpout(
