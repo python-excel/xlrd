@@ -378,7 +378,7 @@ class X12Book(X12General):
         name = unescape(ensure_unicode(elem.get('name')))
         reltype = self.relid2reltype[rid]
         target = self.relid2path[rid]
-        visibility = elem.get('state')
+        visibility = 0 if elem.get('state') == "visible" else 1
 
         if self.verbosity >= 2:
             self.dumpout(
@@ -388,7 +388,7 @@ class X12Book(X12General):
             if self.verbosity >= 2:
                 self.dumpout('Ignoring sheet of type %r (name=%r)', reltype, name)
             return
-        bk._sheet_visibility.append(visibility == 'visible')
+        bk._sheet_visibility.append(visibility)
         sheet = Sheet(bk, position=None, name=name, number=sheetx)
         sheet.utter_max_rows = X12_MAX_ROWS
         sheet.utter_max_cols = X12_MAX_COLS
