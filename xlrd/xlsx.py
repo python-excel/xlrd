@@ -88,7 +88,7 @@ def cell_name_to_rowx_colx(cell_name, letter_value=_UPPERCASE_1_REL_INDEX):
                 colx = colx * 26 + lv
             else: # start of row number; can't be '0'
                 colx = colx - 1
-                assert 0 <= colx < X12_MAX_COLS
+                #assert 0 <= colx < X12_MAX_COLS
                 break
     except KeyError:
         raise Exception('Unexpected character %r in cell name %r' % (c, cell_name))
