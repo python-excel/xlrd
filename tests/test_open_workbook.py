@@ -19,3 +19,8 @@ class TestOpen(TestCase):
         # For now, we just check this doesn't raise an error.
         open_workbook(from_this_dir('issue20.xls'),
                       formatting_info=True)
+        
+    def test_BYTES_X00(self):
+        # For now, we just check this doesn't raise an error.
+        open_workbook(from_this_dir('picture_in_cell.xls'),
+                      formatting_info=True)
