@@ -7,3 +7,4 @@ build/
 /.tox
 /*.xml
 /htmlcov
+MANIFEST
