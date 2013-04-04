@@ -11,7 +11,6 @@ import sys
 import time
 from . import sheet
 from . import compdoc
-from .xldate import xldate_as_tuple, XLDateError
 from .formula import *
 from . import formatting
 if sys.version.startswith("IronPython"):

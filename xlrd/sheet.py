@@ -30,7 +30,6 @@
 from __future__ import print_function
 
 from struct import unpack, calcsize
-import time
 from .biffh import *
 from .timemachine import *
 from .formula import dump_formula, decompile_formula, rangename2d, FMLA_TYPE_CELL, FMLA_TYPE_SHARED

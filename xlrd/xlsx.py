@@ -7,7 +7,7 @@ from __future__ import print_function, unicode_literals
 
 DEBUG = 0
 
-import sys, zipfile, pprint
+import sys
 import re
 from .timemachine import *
 from .book import Book, Name

@@ -35,7 +35,7 @@ if __name__ == "__main__":
     PSYCO = 0
 
     import xlrd
-    import sys, time, glob, traceback, pprint, gc
+    import sys, time, glob, traceback, gc
     
     from xlrd.timemachine import xrange, REPR
     

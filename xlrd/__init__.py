@@ -451,7 +451,6 @@ def open_workbook(filename=None,
 # @param unnumbered If true, omit offsets (for meaningful diffs).
 
 def dump(filename, outfile=sys.stdout, unnumbered=False):
-    from .book import Book
     from .biffh import biff_dump
     bk = Book()
     bk.biff2_8_load(filename=filename, logfile=outfile, )
@@ -464,7 +463,6 @@ def dump(filename, outfile=sys.stdout, unnumbered=False):
 # @param outfile An open file, to which the summary is written.
 
 def count_records(filename, outfile=sys.stdout):
-    from .book import Book
     from .biffh import biff_count_records
     bk = Book()
     bk.biff2_8_load(filename=filename, logfile=outfile, )
