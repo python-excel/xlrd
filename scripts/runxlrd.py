@@ -108,8 +108,8 @@ if __name__ == "__main__":
             % (bk.codepage, bk.encoding, bk.countries))
         print("Last saved by: %r" % bk.user_name)
         print("Number of data sheets: %d" % bk.nsheets)
-        print("Pickleable: %d; Use mmap: %d; Formatting: %d; On demand: %d"
-            % (bk.pickleable, bk.use_mmap, bk.formatting_info, bk.on_demand))
+        print("Use mmap: %d; Formatting: %d; On demand: %d"
+            % (bk.use_mmap, bk.formatting_info, bk.on_demand))
         print("Ragged rows: %d" % bk.ragged_rows)
         if bk.formatting_info:
             print("FORMATs: %d, FONTs: %d, XFs: %d"
@@ -241,10 +241,6 @@ if __name__ == "__main__":
             type="int", default=0,
             help="level of information and diagnostics provided")
         oparser.add_option(
-            "-p", "--pickleable",
-            type="int", default=1,
-            help="1: ensure Book object is pickleable (default); 0: don't bother")
-        oparser.add_option(
             "-m", "--mmap",
             type="int", default=-1,
             help="1: use mmap; 0: don't use mmap; -1: accept heuristic")
@@ -330,7 +326,7 @@ if __name__ == "__main__":
                     t0 = time.time()
                     bk = xlrd.open_workbook(fname,
                         verbosity=options.verbosity, logfile=logfile,
-                        pickleable=options.pickleable, use_mmap=mmap_arg,
+                        use_mmap=mmap_arg,
                         encoding_override=options.encoding,
                         formatting_info=fmt_opt,
                         on_demand=options.on_demand,

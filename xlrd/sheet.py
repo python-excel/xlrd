@@ -29,6 +29,7 @@
 
 from __future__ import print_function
 
+from array import array
 from struct import unpack, calcsize
 from .biffh import *
 from .timemachine import *
@@ -304,15 +305,8 @@ class Sheet(BaseObject):
         self.biff_version = book.biff_version
         self._position = position
         self.logfile = book.logfile
-        self.pickleable = book.pickleable
-        if array_array and (CAN_PICKLE_ARRAY or not book.pickleable):
-            # use array
-            self.bt = array_array('B', [XL_CELL_EMPTY])
-            self.bf = array_array('h', [-1])
-        else:
-            # don't use array
-            self.bt = [XL_CELL_EMPTY]
-            self.bf = [-1]
+        self.bt = array('B', [XL_CELL_EMPTY])
+        self.bf = array('h', [-1])
         self.name = name
         self.number = number
         self.verbosity = book.verbosity

@@ -66,7 +66,7 @@ for _bin, _bic in _code_from_builtin_name.items():
 del _bin, _bic, _code_from_builtin_name
 
 def open_workbook_xls(filename=None,
-    logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
+    logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
     file_contents=None,
     encoding_override=None,
     formatting_info=False, on_demand=False, ragged_rows=False,
@@ -80,7 +80,7 @@ def open_workbook_xls(filename=None,
     try:
         bk.biff2_8_load(
             filename=filename, file_contents=file_contents,
-            logfile=logfile, verbosity=verbosity, pickleable=pickleable, use_mmap=use_mmap,
+            logfile=logfile, verbosity=verbosity, use_mmap=use_mmap,
             encoding_override=encoding_override,
             formatting_info=formatting_info,
             on_demand=on_demand,
@@ -550,7 +550,7 @@ class Book(BaseObject):
         self.filestr = b''
 
     def biff2_8_load(self, filename=None, file_contents=None,
-        logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP,
+        logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
         encoding_override=None,
         formatting_info=False,
         on_demand=False,
@@ -559,7 +559,6 @@ class Book(BaseObject):
         # DEBUG = 0
         self.logfile = logfile
         self.verbosity = verbosity
-        self.pickleable = pickleable
         self.use_mmap = use_mmap and MMAP_AVAILABLE
         self.encoding_override = encoding_override
         self.formatting_info = formatting_info

@@ -718,7 +718,6 @@ def open_workbook_2007_xml(
     component_names,
     logfile=sys.stdout,
     verbosity=0,
-    pickleable=1,
     use_mmap=0,
     formatting_info=0,
     on_demand=0,
@@ -728,7 +727,6 @@ def open_workbook_2007_xml(
     bk = Book()
     bk.logfile = logfile
     bk.verbosity = verbosity
-    bk.pickleable = pickleable
     bk.formatting_info = formatting_info
     if formatting_info:
         raise NotImplementedError("formatting_info=True not yet implemented")

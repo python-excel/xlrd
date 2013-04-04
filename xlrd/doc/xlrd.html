@@ -412,7 +412,7 @@ considered a font, but also several other display attributes.</p>
 <p>For more information about this class, see <a href='#sheet.Note-class'><i>The Note Class</i></a>.</p>
 </dd>
 <dt><a id='__init__.open_workbook-function' name='__init__.open_workbook-function'><b>open_workbook(filename=None, 
-logfile=sys.stdout, verbosity=0, pickleable=True, use_mmap=USE_MMAP, 
+logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP, 
 file_contents=None, 
 encoding_override=None, 
 formatting_info=False, on_demand=False, ragged_rows=False, 
@@ -429,13 +429,6 @@ An open file to which messages and diagnostics are written.</dd>
 <dt><i>verbosity</i></dt>
 <dd>
 Increases the volume of trace material written to the logfile.</dd>
-<dt><i>pickleable</i></dt>
-<dd>
-Default is true. In Python 2.4 or earlier, setting to false
-will cause use of array.array objects which save some memory but can't be pickled.
-In Python 2.5, array.arrays are used unconditionally. Note: if you have large files that
-you need to read multiple times, it can be much faster to cPickle.dump() the xlrd.Book object
-once, and use cPickle.load() multiple times.</dd>
 <dt><i>use_mmap</i></dt>
 <dd>
 Whether to use the mmap module is determined heuristically.

@@ -13,8 +13,6 @@ import sys
 
 python_version = sys.version_info[:2] # e.g. version 2.4 -> (2, 4)
 
-CAN_PICKLE_ARRAY = python_version >= (2, 5)
-
 if python_version >= (3, 0):
     # Python 3
     BYTES_LITERAL = lambda x: x.encode('latin1')
@@ -61,12 +59,6 @@ if python_version >= (2, 6):
         return memoryview(obj)[offset:offset+size]
 else:
     BUFFER = buffer
-
-try:
-    from array import array as array_array
-except ImportError:
-    # old version of IronPython?
-    array_array = None
 
 try:
     object
