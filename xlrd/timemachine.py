@@ -1,12 +1,10 @@
-# -*- coding: ascii -*-
-
 ##
 # <p>Copyright (c) 2006-2012 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
 # timemachine.py -- adaptation for single codebase.
-# Currently supported: 2.1 to 2.7
+# Currently supported: 2.6 to 2.7, 3.2 to 3.3
 # usage: from timemachine import *
 
 from __future__ import nested_scopes
