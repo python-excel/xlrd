@@ -782,7 +782,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
         aval = aconv(aop.value)
         result = func(aval, bval)
         if result_kind == oBOOL:
-            result = intbool(result) # -> 1 or 0
+            result = 1 if result else 0
         resop.value = result
         stk.append(resop)
 
@@ -1681,8 +1681,7 @@ def decompile_formula(bk, fmla, fmlalen,
             rowx2, colx2, row_rel2, col_rel2 = res2
             coords = (rowx1, rowx2+1, colx1, colx2+1)
             relflags = (row_rel1, row_rel2, col_rel1, col_rel2)
-            is_rel = intbool(sum(relflags))
-            if is_rel:
+            if sum(relflags):  # relative
                 okind = oREL
             else:
                 okind = oREF
@@ -1722,8 +1721,7 @@ def decompile_formula(bk, fmla, fmlalen,
             rowx2, colx2, row_rel2, col_rel2 = res2
             coords = (rowx1, rowx2+1, colx1, colx2+1)
             relflags = (row_rel1, row_rel2, col_rel1, col_rel2)
-            is_rel = intbool(sum(relflags))
-            if is_rel:
+            if sum(relflags):  # relative
                 okind = oREL
             else:
                 okind = oREF
