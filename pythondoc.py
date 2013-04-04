@@ -1,6 +1,5 @@
 #
 #!/usr/bin/env python
-# -*- coding: ascii -*-
 #
 # $Id: pythondoc.py 3271 2007-09-09 09:45:14Z fredrik $
 # pythondoc documentation generator
