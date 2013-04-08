@@ -8,12 +8,10 @@ if python_version < (2, 6):
     raise Exception("This version of xlrd requires Python 2.6 or above. "
                     "For older versions of Python, you can use the 0.8 series.")
 
-av = sys.argv
-if len(av) > 1 and av[1].lower() == "--egg":
-    del av[1]
-    from setuptools import setup
-else:
-    from distutils.core import setup
+from distribute_setup import use_setuptools
+use_setuptools()
+
+from setuptools import setup
 
 from xlrd.info import __VERSION__
 
@@ -24,9 +22,9 @@ setup(
     author_email = 'sjmachin@lexicon.net',
     url = 'http://www.python-excel.org/',
     packages = ['xlrd'],
-    scripts = [
-        'scripts/runxlrd.py',
-        ],
+    entry_points = dict(console_scripts=[
+            "runxlrd = xlrd.runxlrd:main",
+    ]), 
     package_data={
             'xlrd': [
                 'doc/*.htm*',
@@ -41,6 +39,7 @@ setup(
         "Pure Python (2.6, 2.7, 3.2+). Strong support for Excel dates. Unicode-aware.",
     platforms = ["Any platform -- don't need Windows"],
     license = 'BSD',
+    
     keywords = ['xls', 'excel', 'spreadsheet', 'workbook'],
     classifiers = [
             'Development Status :: 5 - Production/Stable',

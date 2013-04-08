@@ -30,9 +30,7 @@ xfc             Print "XF counts" and cell-type counts -- see code for details
 """
 
 options = None
-if __name__ == "__main__":
-
-    PSYCO = 0
+def main():
 
     import xlrd
     import sys, time, glob, traceback, gc
@@ -227,9 +225,9 @@ if __name__ == "__main__":
             print()
             if bk.on_demand: bk.unload_sheet(shx)
 
-    def main(cmd_args):
+    def do_main(cmd_args):
         import optparse
-        global options, PSYCO
+        global options
         usage = "\n%prog [options] command [input-file-patterns]\n" + cmd_doc
         oparser = optparse.OptionParser(usage)
         oparser.add_option(
@@ -318,10 +316,6 @@ if __name__ == "__main__":
                     n_unreachable = gc.collect()
                     if n_unreachable:
                         print("GC before open:", n_unreachable, "unreachable objects")
-                if PSYCO:
-                    import psyco
-                    psyco.full()
-                    PSYCO = 0
                 try:
                     t0 = time.time()
                     bk = xlrd.open_workbook(fname,
@@ -388,15 +382,15 @@ if __name__ == "__main__":
 
     av = sys.argv[1:]
     if not av:
-        main(av)
+        do_main(av)
     firstarg = av[0].lower()
     if firstarg == "hotshot":
         import hotshot, hotshot.stats
         av = av[1:]
         prof_log_name = "XXXX.prof"
         prof = hotshot.Profile(prof_log_name)
-        # benchtime, result = prof.runcall(main, *av)
-        result = prof.runcall(main, *(av, ))
+        # benchtime, result = prof.runcall(do_main, *av)
+        result = prof.runcall(do_main, *(av, ))
         print("result", repr(result))
         prof.close()
         stats = hotshot.stats.load(prof_log_name)
@@ -406,12 +400,12 @@ if __name__ == "__main__":
     elif firstarg == "profile":
         import cProfile
         av = av[1:]
-        cProfile.run('main(av)', 'YYYY.prof')
+        cProfile.run('do_main(av)', 'YYYY.prof')
         import pstats
         p = pstats.Stats('YYYY.prof')
         p.strip_dirs().sort_stats('cumulative').print_stats(30)
-    elif firstarg == "psyco":
-        PSYCO = 1
-        main(av[1:])
     else:
-        main(av)
+        do_main(av)
+
+if __name__ == "__main__":
+    main()
