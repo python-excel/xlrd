@@ -127,7 +127,7 @@ def cooked_text(self, elem):
         return ''
     if elem.get(XML_SPACE_ATTR) != 'preserve':
         t = t.strip(XML_WHITESPACE)
-    return unicode(unescape(t))
+    return ensure_unicode(unescape(t))
 
 def get_text_from_si_or_is(self, elem, r_tag=U_SSML12+'r', t_tag=U_SSML12 +'t'):
     "Returns unescaped unicode"
