@@ -1,2 +1,2 @@
 include README.html
-recursive-include tests *.py *.xls
+recursive-include tests *.py *.xls *.xlsx
