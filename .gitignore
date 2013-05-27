@@ -1,4 +1,13 @@
 .settings
 doc/build/*
 *~
+/build
+/dist
+*.egg-info
+build/
 *.pyc
+/.coverage
+/.tox
+/*.xml
+/htmlcov
+MANIFEST

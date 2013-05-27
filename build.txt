@@ -1,0 +1,10 @@
+Instructions to build releases
+------------------------------
+
+- Make sure you run tests
+
+~/virtualenvs/tox/bin/tox -e py26,py27,py32,py33
+
+- Build the tarball *with Python 2.7 or newer*:
+
+python3.3 setup.py sdist register upload

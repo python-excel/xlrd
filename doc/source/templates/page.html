@@ -1,0 +1,102 @@
+{% extends "!page.html" %}
+
+
+{% block header %}
+    <style>
+        .lxhead{
+            margin: 10px;
+            text-shadow: 1px 1px 1px #444444;
+        }
+        .pyxll {
+            float: right;
+            margin-right: 150px;
+        }
+        .pyxll li {
+            display: inline;
+            list-style-type: none;
+            margin: 2px;
+             width: 50px;
+        }
+        .pyxll a {
+            text-decoration: none;
+            background-color: #333333;
+            color: #eeeeee;
+            border-radius: 5px;
+            padding: 5px;
+           
+            font-family: Verdana;
+            font-size: 12pt;
+            font-weight: bold;
+         }
+        .pyxll a:hover {
+            color: black;
+            background-color: #999999;
+        }
+        .pyxll a.xlsel{
+            background-color: white;
+            color: black;
+        }
+    </style>
+   <a href="https://github.com/python-excel/{{XL.mod}}"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+  <ul class="pyxll">
+    <li><a href="http://python-excel.org"{% if XL.mod == "tutorial" %}class="xlsel"{% endif %}>Home</a></li>
+    <li><a href="http://pythonhosted.org/xlrd/"  {% if XL.mod == "xlrd" %}class="xlsel"{% endif %}>xlrd</a></li>
+    <li><a href="http://pythonhosted.org/xlwt/"{% if XL.mod == "xlwt" %}class="xlsel"{% endif %}>xlwt</a></li>
+    <li><a href="http://pythonhosted.org/xlutils/"{% if XL.mod == "xlutils" %}class="xlsel"{% endif %}>xlutils</a></li>
+  </ul>
+  <h1 class="lxhead">python-excel</h1>
+  {{ super() }}
+{% endblock %}
+
+
+
+ {%- block document %}
+      <style>
+      .admonition-todo{
+          background-color: #EBE2F2;
+      }
+      .rtkit {
+          font-size: 8pt;
+          }
+          .rtkitd ul{
+              padding-left: 25px;
+              }
+      </style>
+      <div class="documentwrapper">
+      {%- if render_sidebar %}
+        <div class="bodywrapper">
+      {%- endif %}
+
+          <div class="body" style="padding-right: 0;">
+             <div style="background-color: #dddddd; float: right; width: 250px; font-size: 9pt;" class="rtkitd">
+                          {{toctree() }}
+                          <h4>Project Links</h4>
+                          <ul>
+                            <li>Home Page<br>
+                                <a class="rtkit" target="_blank" href="http://www.python-excel.org/">www.python-excel.org/</a>
+                            </li>
+                            <li>Source Code at github<br>
+                                <a class="rtkit" target="_blank" href="https://github.com/python-excel">github.com/python-excel/</a>
+                            </li>
+                            <li>Latest Documentation<br>
+                                <a class="rtkit"  target="_blank" href="https://{{XL.mod}}.readthedocs.org/">{{XL.mod}}.readthedocs.org/</a>
+                            </li>
+                            <li>Travis CI (currently petes repo)<br>
+                                <a class="rtkit"  target="_blank" href="https://travis-ci.org/pedromorgan/{{XL.mod}}">https://travis-ci.org/pedromorgan/{{XL.mod}}</a><br>
+                                <img src="https://secure.travis-ci.org/pedromorgan/{{XL.mod}}.png?branch=master">
+                            </li>
+                            
+                           </ul>
+                          
+                          
+            </div>
+            <div style="margin-right: 260px;">
+            {% block body %}{{ super() }} {% endblock %}
+            </div>
+          </div>
+          
+      {%- if render_sidebar %}
+        </div>
+      {%- endif %}
+      </div>
+  {%- endblock %}
