@@ -388,7 +388,7 @@ def open_workbook(filename=None,
     ragged_rows=False,
     ):
     peeksz = 4
-    if file_contents:
+    if file_contents is not None:
         peek = file_contents[:peeksz]
     else:
         f = open(filename, "rb")
