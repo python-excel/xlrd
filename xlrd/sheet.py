@@ -1460,6 +1460,16 @@ class Sheet(BaseObject):
             else:
                 # if DEBUG: print "SHEET.READ: Unhandled record type %02x %d bytes %r" % (rc, data_len, data)
                 pass
+
+        # Drew Lloyd: Maybe BIFF4 WINDOW2 (023E) records are optional?
+        # this block adds the BIFF3-7 defaults used in the above XL_WINDOW2 condition
+        # gridline_colour_rgb and gridline_colour_index are left untouched
+        if bv == 40:
+            if self.cached_page_break_preview_mag_factor is None:
+                    self.cached_page_break_preview_mag_factor = 0 # default (60%)
+            if self.cached_normal_view_mag_factor is None:
+                    self.cached_normal_view_mag_factor = 0 # default (100%)
+
         if not eof_found:
             raise XLRDError("Sheet %d (%r) missing EOF record" \
                 % (self.number, self.name))
