@@ -36,3 +36,9 @@ class TestOpen(TestCase):
         open_workbook(from_this_dir('reveng1.xlsx'))
         # we should make assertions here that data has been
         # correctly processed.
+
+    def test_BIFF4_no_format(self):
+        # For now, we just check this doesn't raise an error.
+        open_workbook(from_this_dir('biff4_no_format.xls'))
+        # we should make assertions here that data has been
+        # correctly processed.

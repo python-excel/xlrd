@@ -960,6 +960,15 @@ def handle_xf(self, data):
         cellty = XL_CELL_NUMBER
     self._xf_index_to_xl_type_map[xf.xf_index] = cellty
 
+    # Drew Lloyd: Maybe BIFF4 FORMAT (041E) records are optional?
+    # open office says format_key is undefined for BIFF4
+    # this block adds "General" fmtobj from std_format_code_types (BIFF5-BIFF8)
+    if bv == 40 and xf.format_key == 0 and xf.format_key not in self.format_map:
+        ty = std_format_code_types[0]
+        fmt_str = std_format_strings[0]
+        fmtobj = Format(0, ty, fmt_str)
+        self.format_map[0] = fmtobj
+    
     # Now for some assertions ...
     if self.formatting_info:
         if self.verbosity and xf.is_style and xf.parent_style_index != 0x0FFF:
