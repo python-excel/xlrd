@@ -967,16 +967,6 @@ def handle_xf(self, data):
             fprintf(self.logfile, msg, xf.xf_index, xf.parent_style_index)
         check_colour_indexes_in_obj(self, xf, xf.xf_index)
 
-    if xf.format_key not in self.format_map:
-        msg = "WARNING *** XF[%d] unknown (raw) format key (%d, 0x%04x)\n"
-        if self.verbosity:
-            fprintf(self.logfile, msg,
-                xf.xf_index, xf.format_key, xf.format_key)
-
-        # Drew Lloyd: save the format_key for BIFF4 dummy formats in xf_epilogue()
-        if bv != 40:
-            xf.format_key = 0
-
 def xf_epilogue(self):
     # self is a Book instance.
     self._xf_epilogue_done = 1
@@ -1004,6 +994,18 @@ def xf_epilogue(self):
                     fprintf(self.logfile, "xf_epilogue adding dummy BIFF4 FORMAT (041E) record: %d,'%s'\n", fk, fmt_str)
                 self.format_map[fk] = fmtobj
                 self.format_list.append(fmtobj)
+            else:
+                xf.format_key = 0
+    else:
+        for xfx in xrange(num_xfs):
+            xf = self.xf_list[xfx]
+            if xf.format_key not in self.format_map:
+                msg = "WARNING *** XF[%d] unknown (raw) format key (%d, 0x%04x)\n"
+                if self.verbosity:
+                    fprintf(self.logfile, msg,
+                        xf.xf_index, xf.format_key, xf.format_key)
+
+                xf.format_key = 0
 
     def check_same(book_arg, xf_arg, parent_arg, attr):
         # the _arg caper is to avoid a Warning msg from Python 2.1 :-(
