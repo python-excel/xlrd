@@ -125,6 +125,12 @@ if __name__ == "__main__":
             font = bk.font_list[x]
             font.dump(header='== Index %d ==' % x, indent=4)
 
+    def show_formats(bk):
+        print("Formats:")
+        for x in xrange(len(bk.format_list)):
+            fmt = bk.format_list[x]
+            fmt.dump(header='== Index %d ==' % x, indent=4)
+
     def show_names(bk, dump=0):
         bk_header(bk)
         if bk.biff_version < 50:
@@ -364,6 +370,9 @@ if __name__ == "__main__":
                 elif cmd == 'fonts':
                     bk_header(bk)
                     show_fonts(bk)
+                elif cmd == 'formats':
+                    bk_header(bk)
+                    show_formats(bk)
                 elif cmd == 'names': # named reference list
                     show_names(bk)
                 elif cmd == 'name_dump': # named reference list

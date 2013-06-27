@@ -960,27 +960,22 @@ def handle_xf(self, data):
         cellty = XL_CELL_NUMBER
     self._xf_index_to_xl_type_map[xf.xf_index] = cellty
 
-    # Drew Lloyd: Maybe BIFF4 FORMAT (041E) records are optional?
-    # open office says format_key is undefined for BIFF4
-    # this block adds "General" fmtobj from std_format_code_types (BIFF5-BIFF8)
-    if bv == 40 and xf.format_key == 0 and xf.format_key not in self.format_map:
-        ty = std_format_code_types[0]
-        fmt_str = std_format_strings[0]
-        fmtobj = Format(0, ty, fmt_str)
-        self.format_map[0] = fmtobj
-    
     # Now for some assertions ...
     if self.formatting_info:
         if self.verbosity and xf.is_style and xf.parent_style_index != 0x0FFF:
             msg = "WARNING *** XF[%d] is a style XF but parent_style_index is 0x%04x, not 0x0fff\n"
             fprintf(self.logfile, msg, xf.xf_index, xf.parent_style_index)
         check_colour_indexes_in_obj(self, xf, xf.xf_index)
+
     if xf.format_key not in self.format_map:
         msg = "WARNING *** XF[%d] unknown (raw) format key (%d, 0x%04x)\n"
         if self.verbosity:
             fprintf(self.logfile, msg,
                 xf.xf_index, xf.format_key, xf.format_key)
-        xf.format_key = 0
+
+        # Drew Lloyd: save the format_key for BIFF4 dummy formats in xf_epilogue()
+        if bv != 40:
+            xf.format_key = 0
 
 def xf_epilogue(self):
     # self is a Book instance.
@@ -990,6 +985,25 @@ def xf_epilogue(self):
     blah1 = DEBUG or self.verbosity >= 1
     if blah:
         fprintf(self.logfile, "xf_epilogue called ...\n")
+
+    # sjmachin: BIFF4 FORMAT (041E) records are NOT optional
+    # sjmachin: FORMAT records can occur after XF records
+    # Drew Lloyd: dummy formats for BIFF4 based on fill_in_standard_formats()
+    # this block adds "missing" fmtobj from std_format_code_types (BIFF5-BIFF8)
+    # fill_in_standard_formats does not update book.format_list however since 
+    # BIFF4 demands format records this block must also update the format_list
+    if self.biff_version == 40:
+        for xfx in xrange(num_xfs):
+            xf = self.xf_list[xfx]
+            fk = xf.format_key
+            if fk not in self.format_map and fk in std_format_code_types:
+                ty = std_format_code_types[fk]
+                fmt_str = std_format_strings.get(fk)
+                fmtobj = Format(fk, ty, fmt_str)
+                if blah1:
+                    fprintf(self.logfile, "xf_epilogue adding dummy BIFF4 FORMAT (041E) record: %d,'%s'\n", fk, fmt_str)
+                self.format_map[fk] = fmtobj
+                self.format_list.append(fmtobj)
 
     def check_same(book_arg, xf_arg, parent_arg, attr):
         # the _arg caper is to avoid a Warning msg from Python 2.1 :-(
