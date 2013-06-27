@@ -986,16 +986,17 @@ def xf_epilogue(self):
         for xfx in xrange(num_xfs):
             xf = self.xf_list[xfx]
             fk = xf.format_key
-            if fk not in self.format_map and fk in std_format_code_types:
-                ty = std_format_code_types[fk]
-                fmt_str = std_format_strings.get(fk)
-                fmtobj = Format(fk, ty, fmt_str)
-                if blah1:
-                    fprintf(self.logfile, "xf_epilogue adding dummy BIFF4 FORMAT (041E) record: %d,'%s'\n", fk, fmt_str)
-                self.format_map[fk] = fmtobj
-                self.format_list.append(fmtobj)
-            else:
-                xf.format_key = 0
+            if fk not in self.format_map:
+                if fk in std_format_code_types:
+                    ty = std_format_code_types[fk]
+                    fmt_str = std_format_strings.get(fk)
+                    fmtobj = Format(fk, ty, fmt_str)
+                    if blah1:
+                        fprintf(self.logfile, "xf_epilogue adding dummy BIFF4 FORMAT (041E) record: %d,'%s'\n", fk, fmt_str)
+                    self.format_map[fk] = fmtobj
+                    self.format_list.append(fmtobj)
+                else:
+                    xf.format_key = 0
     else:
         for xfx in xrange(num_xfs):
             xf = self.xf_list[xfx]
@@ -1004,7 +1005,6 @@ def xf_epilogue(self):
                 if self.verbosity:
                     fprintf(self.logfile, msg,
                         xf.xf_index, xf.format_key, xf.format_key)
-
                 xf.format_key = 0
 
     def check_same(book_arg, xf_arg, parent_arg, attr):
