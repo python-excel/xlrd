@@ -522,7 +522,33 @@ class X12Sheet(X12General):
             elif elem.tag == U_SSML12 + "dimension":
                 self.do_dimension(elem)
         self.finish_off()
-        
+
+    def process_comments_stream(self, stream):
+        root = ET.parse(stream).getroot()
+        author_list = root[0]
+        assert author_list.tag == U_SSML12 + 'authors'
+        authors = [elem.text for elem in author_list]
+        comment_list = root[1]
+        assert comment_list.tag == U_SSML12 + 'commentList'
+        cell_note_map = self.sheet.cell_note_map
+        from .sheet import Note
+        t_tag = U_SSML12 + 't'
+        warned_bogus_comment_element = False
+        for elem in comment_list.findall(U_SSML12 + 'comment'):
+            t = elem[0][0].find(t_tag)
+            ref = elem.get('ref')
+            if t is None:
+                if self.verbosity and not warned_bogus_comment_element:
+                    fprintf(self.logfile,
+                            "\nBroken comment at %s, missing t element" % ref)
+                    warned_bogus_comment_element = True
+                continue
+            note = Note()
+            note.author = authors[int(elem.get('authorId'))]
+            note.rowx, note.colx = coords = cell_name_to_rowx_colx(ref)
+            note.text = cooked_text(self, t)
+            cell_note_map[coords] = note
+
     def do_dimension(self, elem):
         ref = elem.get('ref') # example: "A1:Z99" or just "A1"
         if ref:
@@ -753,6 +779,12 @@ def open_workbook_2007_xml(
         heading = "Sheet %r (sheetx=%d) from %r" % (sheet.name, sheetx, fname)
         x12sheet.process_stream(zflo, heading)
         del zflo
+        comments_fname = 'xl/comments%d.xml' % (sheetx + 1)
+        if comments_fname in component_names:
+            comments_stream = getzflo(zf, comments_fname)
+            x12sheet.process_comments_stream(comments_stream)
+            del comments_stream
+
         sheet.tidy_dimensions()
 
     return bk
