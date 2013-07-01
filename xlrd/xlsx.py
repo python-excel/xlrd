@@ -532,12 +532,13 @@ class X12Sheet(X12General):
         assert comment_list.tag == U_SSML12 + 'commentList'
         cell_note_map = self.sheet.cell_note_map
         from .sheet import Note
+        text_tag = U_SSML12 + 'text'
         t_tag = U_SSML12 + 't'
         warned_bogus_comment_element = False
         for elem in comment_list.findall(U_SSML12 + 'comment'):
-            t = elem[0][0].find(t_tag)
+            ts = elem.findall('./' + text_tag + '//' + t_tag)
             ref = elem.get('ref')
-            if t is None:
+            if len(ts) == 0:
                 if self.verbosity and not warned_bogus_comment_element:
                     fprintf(self.logfile,
                             "\nBroken comment at %s, missing t element" % ref)
@@ -546,7 +547,8 @@ class X12Sheet(X12General):
             note = Note()
             note.author = authors[int(elem.get('authorId'))]
             note.rowx, note.colx = coords = cell_name_to_rowx_colx(ref)
-            note.text = cooked_text(self, t)
+            for t in ts:
+                note.text += cooked_text(self, t)
             cell_note_map[coords] = note
 
     def do_dimension(self, elem):
