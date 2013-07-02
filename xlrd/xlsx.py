@@ -533,10 +533,12 @@ class X12Sheet(X12General):
         cell_note_map = self.sheet.cell_note_map
         from .sheet import Note
         text_tag = U_SSML12 + 'text'
+        r_tag = U_SSML12 + 'r'
         t_tag = U_SSML12 + 't'
         warned_bogus_comment_element = False
         for elem in comment_list.findall(U_SSML12 + 'comment'):
-            ts = elem.findall('./' + text_tag + '//' + t_tag)
+            ts = elem.findall('./' + text_tag + '/' + t_tag)
+            ts += elem.findall('./' + text_tag + '/' + r_tag + '/' + t_tag)
             ref = elem.get('ref')
             if len(ts) == 0:
                 if self.verbosity and not warned_bogus_comment_element:
