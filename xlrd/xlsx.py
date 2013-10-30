@@ -81,6 +81,8 @@ def cell_name_to_rowx_colx(cell_name, letter_value=_UPPERCASE_1_REL_INDEX):
     try:
         for c in cell_name:
             charx += 1
+            if c == '$':
+                continue
             lv = letter_value[c]
             if lv:
                 colx = colx * 26 + lv
@@ -576,6 +578,8 @@ class X12Sheet(X12General):
                 try:
                     for c in cell_name:
                         charx += 1
+                        if c == '$':
+                            continue
                         lv = letter_value[c]
                         if lv:
                             colx = colx * 26 + lv
