@@ -1046,6 +1046,9 @@ class Sheet(BaseObject):
                     self_put_cell(rowx, colx, XL_CELL_BLANK, '', result[pos])
                     pos += 1
             elif rc == XL_DIMENSION or rc == XL_DIMENSION2:
+                if data_len == 0:
+                    # Four zero bytes after some other record. See github issue 64.
+                    continue
                 # if data_len == 10:
                 # Was crashing on BIFF 4.0 file w/o the two trailing unused bytes.
                 # Reported by Ralph Heimburger.
