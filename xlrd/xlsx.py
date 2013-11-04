@@ -573,11 +573,11 @@ class X12Sheet(X12General):
                 # A<row number> => 0, Z =>25, AA => 26, XFD => 16383
                 colx = 0
                 charx = -1
-                # Anchored cell names (e.g. '$A$1') spotted in the wild
-                cell_name = cell_name.replace ('$', '')
                 try:
                     for c in cell_name:
                         charx += 1
+                        if c == '$':
+                            continue
                         lv = letter_value[c]
                         if lv:
                             colx = colx * 26 + lv
