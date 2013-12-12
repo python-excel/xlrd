@@ -36,3 +36,6 @@ class TestOpen(TestCase):
         open_workbook(from_this_dir('reveng1.xlsx'))
         # we should make assertions here that data has been
         # correctly processed.
+
+    def test_bad_xlsx(self):
+        open_workbook(from_this_dir('elin.xlsx'))

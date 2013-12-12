@@ -669,8 +669,13 @@ class X12Sheet(X12General):
                         formula = cooked_text(self, child)
                     else:
                         bad_child_tag(child_tag)
-                value = error_code_from_text[tvalue]
-                self.sheet.put_cell(rowx, colx, XL_CELL_ERROR, value, xf_index)
+                if not tvalue:
+                    # <c r="A1" t="e"/>
+                    if self.bk.formatting_info:
+                        self.sheet.put_cell(rowx, colx, XL_CELL_BLANK, '', xf_index)
+                else:
+                    value = error_code_from_text[tvalue]
+                    self.sheet.put_cell(rowx, colx, XL_CELL_ERROR, value, xf_index)
             elif cell_type == "inlineStr":
                 # Not expected in files produced by Excel.
                 # Only possible child is <is>.
@@ -748,8 +753,15 @@ def open_workbook_2007_xml(
         pass
 
     sst_fname = 'xl/sharedStrings.xml'
+    for component_name in component_names:
+        if sst_fname.lower() == component_name.lower():
+            sst_fname = component_name
+            use_sst = True
+            break
+    else:
+        use_sst = False
     x12sst = X12SST(bk, logfile, verbosity)
-    if sst_fname in component_names:
+    if use_sst:
         zflo = getzflo(zf, sst_fname)
         x12sst.process_stream(zflo, 'SST')
         del zflo
