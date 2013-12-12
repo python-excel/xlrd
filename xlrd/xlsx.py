@@ -748,8 +748,15 @@ def open_workbook_2007_xml(
         pass
 
     sst_fname = 'xl/sharedStrings.xml'
+    for component_name in component_names:
+        if sst_fname.lower() == component_name.lower():
+            sst_fname = component_name
+            use_sst = True
+            break
+    else:
+        use_sst = False
     x12sst = X12SST(bk, logfile, verbosity)
-    if sst_fname in component_names:
+    if use_sst:
         zflo = getzflo(zf, sst_fname)
         x12sst.process_stream(zflo, 'SST')
         del zflo
