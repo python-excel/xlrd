@@ -363,7 +363,14 @@ class X12Book(X12General):
             if self.verbosity >= 2:
                 self.dumpout('Ignoring sheet of type %r (name=%r)', reltype, name)
             return
-        bk._sheet_visibility.append(True)
+        state = elem.get('state')
+        visibility_map = {
+            None: 0,
+            'visible': 0,
+            'hidden': 1,
+            'veryHidden': 2
+            }
+        bk._sheet_visibility.append(visibility_map[state])
         sheet = Sheet(bk, position=None, name=name, number=sheetx)
         sheet.utter_max_rows = X12_MAX_ROWS
         sheet.utter_max_cols = X12_MAX_COLS
@@ -599,6 +606,8 @@ class X12Sheet(X12General):
                 try:
                     for c in cell_name:
                         charx += 1
+                        if c == '$':
+                            continue
                         lv = letter_value[c]
                         if lv:
                             colx = colx * 26 + lv
