@@ -542,20 +542,14 @@ class X12Sheet(X12General):
         text_tag = U_SSML12 + 'text'
         r_tag = U_SSML12 + 'r'
         t_tag = U_SSML12 + 't'
-        warned_bogus_comment_element = False
         for elem in comment_list.findall(U_SSML12 + 'comment'):
             ts = elem.findall('./' + text_tag + '/' + t_tag)
             ts += elem.findall('./' + text_tag + '/' + r_tag + '/' + t_tag)
             ref = elem.get('ref')
-            if len(ts) == 0:
-                if self.verbosity and not warned_bogus_comment_element:
-                    fprintf(self.logfile,
-                            "\nBroken comment at %s, missing t element" % ref)
-                    warned_bogus_comment_element = True
-                continue
             note = Note()
             note.author = authors[int(elem.get('authorId'))]
             note.rowx, note.colx = coords = cell_name_to_rowx_colx(ref)
+            note.text = ''
             for t in ts:
                 note.text += cooked_text(self, t)
             cell_note_map[coords] = note

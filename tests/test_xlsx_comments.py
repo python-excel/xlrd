@@ -30,6 +30,13 @@ class TestXlsxComments(TestCase):
         note_map = sheet.cell_note_map
         self.assertEqual(note_map[(0, 0)].text, 'Author:\nTwo t elements')
 
+    def test_excel_comments_no_t_elements(self):
+        book = open_workbook(from_this_dir('test_comments_excel.xlsx'))
+        sheet = book.sheet_by_index(3)
+
+        note_map = sheet.cell_note_map
+        self.assertEqual(note_map[(0,0)].text, '')
+
     def test_gdocs_comments(self):
         book = open_workbook(from_this_dir('test_comments_gdocs.xlsx'))
         sheet = book.sheet_by_index(0)
