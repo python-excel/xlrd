@@ -42,7 +42,7 @@ _XLDAYS_TOO_LARGE = (2958466, 2958466 - 1462) # This is equivalent to 10000-01-0
 # the workbook has ever been anywhere near a Macintosh is irrelevant.
 # @return Gregorian (year, month, day, hour, minute, nearest_second).
 # <br>Special case: if 0.0 <= xldate < 1.0, it is assumed to represent a time;
-# (0, 0, 0, hour, minute, second) will be returned.
+# (0, 0, 0, hour, minute, second, microsecond) will be returned.
 # <br>Note: 1904-01-01 is not regarded as a valid date in the datemode 1 system; its "serial number"
 # is zero.
 # @throws XLDateNegative xldate < 0.00
@@ -55,15 +55,17 @@ def xldate_as_tuple(xldate, datemode):
     if datemode not in (0, 1):
         raise XLDateBadDatemode(datemode)
     if xldate == 0.00:
-        return (0, 0, 0, 0, 0, 0)
+        return (0, 0, 0, 0, 0, 0, 0)
     if xldate < 0.00:
         raise XLDateNegative(xldate)
     xldays = int(xldate)
     frac = xldate - xldays
-    seconds = int(round(frac * 86400.0))
+    seconds = int(round(frac * 86400.0 * 1000.0))
+    seconds, microsecond = divmod(seconds, 1000)
+    microsecond *= 1000
     assert 0 <= seconds <= 86400
     if seconds == 86400:
-        hour = minute = second = 0
+        hour = minute = second = microsecond = 0
         xldays += 1
     else:
         # second = seconds % 60; minutes = seconds // 60
@@ -74,7 +76,7 @@ def xldate_as_tuple(xldate, datemode):
         raise XLDateTooLarge(xldate)
 
     if xldays == 0:
-        return (0, 0, 0, hour, minute, second)
+        return (0, 0, 0, hour, minute, second, microsecond)
 
     if xldays < 61 and datemode == 0:
         raise XLDateAmbiguous(xldate)
@@ -86,9 +88,11 @@ def xldate_as_tuple(xldate, datemode):
     # mp /= 16384
     mp >>= 14
     if mp >= 10:
-        return ((yreg // 1461) - 4715, mp - 9, d, hour, minute, second)
+        return ((yreg // 1461) - 4715, mp - 9, d,
+                hour, minute, second, microsecond)
     else:
-        return ((yreg // 1461) - 4716, mp + 3, d, hour, minute, second)
+        return ((yreg // 1461) - 4716, mp + 3, d,
+                hour, minute, second, microsecond)
 
 # === conversions from date/time to xl numbers
 

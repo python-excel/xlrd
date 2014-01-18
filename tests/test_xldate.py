@@ -15,19 +15,21 @@ DATEMODE = 0 # 1900-based
 class TestXLDate(unittest.TestCase):
     def test_date_as_tuple(self):
         date = xldate.xldate_as_tuple(2741., DATEMODE)
-        self.assertEqual(date, (1907, 7, 3, 0, 0, 0))
+        self.assertEqual(date, (1907, 7, 3, 0, 0, 0, 0))
         date = xldate.xldate_as_tuple(38406., DATEMODE)
-        self.assertEqual(date, (2005, 2, 23, 0, 0, 0))
+        self.assertEqual(date, (2005, 2, 23, 0, 0, 0, 0))
         date = xldate.xldate_as_tuple(32266., DATEMODE)
-        self.assertEqual(date, (1988, 5, 3, 0, 0, 0))
+        self.assertEqual(date, (1988, 5, 3, 0, 0, 0, 0))
 
     def test_time_as_tuple(self):
         time = xldate.xldate_as_tuple(.273611, DATEMODE)
-        self.assertEqual(time, (0, 0, 0, 6, 34, 0))
+        self.assertEqual(time, (0, 0, 0, 6, 33, 59, 990000))
         time = xldate.xldate_as_tuple(.538889, DATEMODE)
-        self.assertEqual(time, (0, 0, 0, 12, 56, 0))
+        self.assertEqual(time, (0, 0, 0, 12, 56, 0, 10000))
         time = xldate.xldate_as_tuple(.741123, DATEMODE)
-        self.assertEqual(time, (0, 0, 0, 17, 47, 13))
+        self.assertEqual(time, (0, 0, 0, 17, 47, 13, 27000))
+        time = xldate.xldate_as_tuple(0.285, DATEMODE)
+        self.assertEqual(time, (0, 0, 0, 6, 50, 24, 0))
 
     def test_xldate_from_date_tuple(self):
         date = xldate.xldate_from_date_tuple( (1907, 7, 3), DATEMODE )
