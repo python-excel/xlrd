@@ -614,7 +614,7 @@ def palette_epilogue(book):
             book.colour_indexes_used[cx] = 1
         elif book.verbosity:
             print("Size of colour table:", len(book.colour_map), file=book.logfile)
-            fprintf(self.logfile, "*** Font #%d (%r): colour index 0x%04x is unknown\n",
+            fprintf(book.logfile, "*** Font #%d (%r): colour index 0x%04x is unknown\n",
                 font.font_index, font.name, cx)
     if book.verbosity >= 1:
         used = sorted(book.colour_indexes_used.keys())
