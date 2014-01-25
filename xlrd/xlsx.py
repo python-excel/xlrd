@@ -792,7 +792,7 @@ def open_workbook_2007_xml(
         del zflo
         comments_fname = 'xl/comments%d.xml' % (sheetx + 1)
         if comments_fname in component_names:
-            comments_stream = getzflo(zf, comments_fname)
+            comments_stream = zf.open(comments_fname)
             x12sheet.process_comments_stream(comments_stream)
             del comments_stream
 
