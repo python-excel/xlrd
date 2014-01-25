@@ -532,7 +532,31 @@ class X12Sheet(X12General):
             elif elem.tag == U_SSML12 + "mergeCell":
                 self.do_merge_cell(elem)
         self.finish_off()
-        
+
+    def process_comments_stream(self, stream):
+        root = ET.parse(stream).getroot()
+        author_list = root[0]
+        assert author_list.tag == U_SSML12 + 'authors'
+        authors = [elem.text for elem in author_list]
+        comment_list = root[1]
+        assert comment_list.tag == U_SSML12 + 'commentList'
+        cell_note_map = self.sheet.cell_note_map
+        from .sheet import Note
+        text_tag = U_SSML12 + 'text'
+        r_tag = U_SSML12 + 'r'
+        t_tag = U_SSML12 + 't'
+        for elem in comment_list.findall(U_SSML12 + 'comment'):
+            ts = elem.findall('./' + text_tag + '/' + t_tag)
+            ts += elem.findall('./' + text_tag + '/' + r_tag + '/' + t_tag)
+            ref = elem.get('ref')
+            note = Note()
+            note.author = authors[int(elem.get('authorId'))]
+            note.rowx, note.colx = coords = cell_name_to_rowx_colx(ref)
+            note.text = ''
+            for t in ts:
+                note.text += cooked_text(self, t)
+            cell_note_map[coords] = note
+
     def do_dimension(self, elem):
         ref = elem.get('ref') # example: "A1:Z99" or just "A1"
         if ref:
@@ -766,6 +790,12 @@ def open_workbook_2007_xml(
         heading = "Sheet %r (sheetx=%d) from %r" % (sheet.name, sheetx, fname)
         x12sheet.process_stream(zflo, heading)
         del zflo
+        comments_fname = 'xl/comments%d.xml' % (sheetx + 1)
+        if comments_fname in component_names:
+            comments_stream = getzflo(zf, comments_fname)
+            x12sheet.process_comments_stream(comments_stream)
+            del comments_stream
+
         sheet.tidy_dimensions()
 
     return bk
