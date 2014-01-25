@@ -77,9 +77,8 @@ def showable_cell_value(celltype, cellvalue, datemode):
     if celltype == xlrd.XL_CELL_DATE:
         try:
             showval = xlrd.xldate_as_tuple(cellvalue, datemode)
-        except xlrd.XLDateError:
-            e1, e2 = sys.exc_info()[:2]
-            showval = "%s:%s" % (e1.__name__, e2)
+        except xlrd.XLDateError as e:
+            showval = "%s:%s" % (type(e).__name__, e)
     elif celltype == xlrd.XL_CELL_ERROR:
         showval = xlrd.error_text_from_code.get(
             cellvalue, '<Unknown error code 0x%02x>' % cellvalue)

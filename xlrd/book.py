@@ -452,22 +452,20 @@ class Book(BaseObject):
     # @return true if sheet is loaded, false otherwise
     # <br />  -- New in version 0.7.1
     def sheet_loaded(self, sheet_name_or_index):
-        # using type(1) because int won't work with Python 2.1
-        if isinstance(sheet_name_or_index, type(1)):
+        if isinstance(sheet_name_or_index, int):
             sheetx = sheet_name_or_index
         else:
             try:
                 sheetx = self._sheet_names.index(sheet_name_or_index)
             except ValueError:
                 raise XLRDError('No sheet named <%r>' % sheet_name_or_index)
-        return self._sheet_list[sheetx] and True or False # Python 2.1 again
+        return bool(self._sheet_list[sheetx])
 
     ##
     # @param sheet_name_or_index Name or index of sheet to be unloaded.
     # <br />  -- New in version 0.7.1
     def unload_sheet(self, sheet_name_or_index):
-        # using type(1) because int won't work with Python 2.1
-        if isinstance(sheet_name_or_index, type(1)):
+        if isinstance(sheet_name_or_index, int):
             sheetx = sheet_name_or_index
         else:
             try:
@@ -566,43 +564,18 @@ class Book(BaseObject):
         self.ragged_rows = ragged_rows
 
         if not file_contents:
-            if python_version < (2, 2) and self.use_mmap:
-                # need to open for update
-                open_mode = "r+b"
-            else:
-                open_mode = "rb"
-            retry = False
-            f = None
-            try:
-                try:
-                    f = open(filename, open_mode)
-                except IOError:
-                    e, v = sys.exc_info()[:2]
-                    if open_mode == "r+b" \
-                    and (v.errno == 13 or v.strerror == "Permission denied"):
-                        # Maybe the file is read-only
-                        retry = True
-                        self.use_mmap = False
-                    else:
-                        raise
-                if retry:
-                    f = open(filename, "rb")
+            with open(filename, "rb") as f:
                 f.seek(0, 2) # EOF
                 size = f.tell()
                 f.seek(0, 0) # BOF
                 if size == 0:
                     raise XLRDError("File size is 0 bytes")
                 if self.use_mmap:
-                    if python_version < (2, 2):
-                        self.filestr = mmap.mmap(f.fileno(), size)
-                    else:
-                        self.filestr = mmap.mmap(f.fileno(), size, access=mmap.ACCESS_READ)
+                    self.filestr = mmap.mmap(f.fileno(), size, access=mmap.ACCESS_READ)
                     self.stream_len = size
                 else:
                     self.filestr = f.read()
                     self.stream_len = len(self.filestr)
-            finally:
-                if f: f.close()
         else:
             self.filestr = file_contents
             self.stream_len = len(file_contents)
@@ -800,11 +773,10 @@ class Book(BaseObject):
             # we're well & truly stuffed -- let the punter know ASAP.
             try:
                 _unused = unicode(b'trial', self.encoding)
-            except:
-                ei = sys.exc_info()[:2]
+            except BaseException as e:
                 fprintf(self.logfile,
                     "ERROR *** codepage %r -> encoding %r -> %s: %s\n",
-                    self.codepage, self.encoding, ei[0].__name__.split(".")[-1], ei[1])
+                    self.codepage, self.encoding, type(e).__name__.split(".")[-1], e)
                 raise
         if self.raw_user_name:
             strg = unpack_string(self.user_name, 0, self.encoding, lenlen=1)

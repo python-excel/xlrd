@@ -89,9 +89,8 @@ if __name__ == "__main__":
             if cty == xlrd.XL_CELL_DATE:
                 try:
                     showval = xlrd.xldate_as_tuple(cval, dmode)
-                except xlrd.XLDateError:
-                    e1, e2 = sys.exc_info()[:2]
-                    showval = "%s:%s" % (e1.__name__, e2)
+                except xlrd.XLDateError as e:
+                    showval = "%s:%s" % (type(e).__name__, e)
                     cty = xlrd.XL_CELL_ERROR
             elif cty == xlrd.XL_CELL_ERROR:
                 showval = xlrd.error_text_from_code.get(cval, '<Unknown error code 0x%02x>' % cval)
@@ -335,17 +334,15 @@ if __name__ == "__main__":
                     t1 = time.time()
                     if not options.suppress_timing:
                         print("Open took %.2f seconds" % (t1-t0,))
-                except xlrd.XLRDError:
-                    e0, e1 = sys.exc_info()[:2]
-                    print("*** Open failed: %s: %s" % (e0.__name__, e1))
+                except xlrd.XLRDError as e:
+                    print("*** Open failed: %s: %s" % (type(e).__name__, e))
                     continue
                 except KeyboardInterrupt:
                     print("*** KeyboardInterrupt ***")
                     traceback.print_exc(file=sys.stdout)
                     sys.exit(1)
-                except:
-                    e0, e1 = sys.exc_info()[:2]
-                    print("*** Open failed: %s: %s" % (e0.__name__, e1))
+                except BaseException as e:
+                    print("*** Open failed: %s: %s" % (type(e).__name__, e))
                     traceback.print_exc(file=sys.stdout)
                     continue
                 t0 = time.time()

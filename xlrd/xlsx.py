@@ -692,15 +692,6 @@ class X12Sheet(X12General):
         }
     augment_keys(tag2meth, U_SSML12)
 
-def getzflo(zipfile, member_path):
-    # GET a Zipfile File-Like Object for passing to
-    # an XML parser
-    try:
-        return zipfile.open(member_path) # CPython 2.6 onwards
-    except AttributeError:
-        # old way
-        return BYTES_IO(zipfile.read(member_path))
-
 def open_workbook_2007_xml(
     zf,
     component_names,
@@ -727,20 +718,20 @@ def open_workbook_2007_xml(
     bk.ragged_rows = ragged_rows
 
     x12book = X12Book(bk, logfile, verbosity)
-    zflo = getzflo(zf, 'xl/_rels/workbook.xml.rels')
+    zflo = zf.open('xl/_rels/workbook.xml.rels')
     x12book.process_rels(zflo)
     del zflo
-    zflo = getzflo(zf, 'xl/workbook.xml')
+    zflo = zf.open('xl/workbook.xml')
     x12book.process_stream(zflo, 'Workbook')
     del zflo
     props_name = 'docProps/core.xml'
     if props_name in component_names:
-        zflo = getzflo(zf, props_name)
+        zflo = zf.open(props_name)
         x12book.process_coreprops(zflo)
 
     x12sty = X12Styles(bk, logfile, verbosity)
     if 'xl/styles.xml' in component_names:
-        zflo = getzflo(zf, 'xl/styles.xml')
+        zflo = zf.open('xl/styles.xml')
         x12sty.process_stream(zflo, 'styles')
         del zflo
     else:
@@ -750,13 +741,13 @@ def open_workbook_2007_xml(
     sst_fname = 'xl/sharedStrings.xml'
     x12sst = X12SST(bk, logfile, verbosity)
     if sst_fname in component_names:
-        zflo = getzflo(zf, sst_fname)
+        zflo = zf.open(sst_fname)
         x12sst.process_stream(zflo, 'SST')
         del zflo
 
     for sheetx in range(bk.nsheets):
         fname = x12book.sheet_targets[sheetx]
-        zflo = getzflo(zf, fname)
+        zflo = zf.open(fname)
         sheet = bk._sheet_list[sheetx]
         x12sheet = X12Sheet(sheet, logfile, verbosity)
         heading = "Sheet %r (sheetx=%d) from %r" % (sheet.name, sheetx, fname)

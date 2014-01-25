@@ -15,7 +15,7 @@
 # 2007-05-07 SJM Meaningful exception instead of IndexError if a SAT (sector allocation table) is corrupted.
 # 2007-04-22 SJM Missing "<" in a struct.unpack call => can't open files on bigendian platforms.
 
-from __future__ import nested_scopes, print_function
+from __future__ import print_function
 import sys
 from struct import unpack
 from .timemachine import *
