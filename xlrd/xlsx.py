@@ -511,6 +511,7 @@ class X12Sheet(X12General):
         self.rowx = -1 # We may need to count them.
         self.bk = sheet.book
         self.sst = self.bk._sharedstrings
+        self.merged_cells = sheet.merged_cells
         self.warned_no_cell_name = 0
         self.warned_no_row_num = 0
         if ET_has_iterparse:
@@ -528,6 +529,8 @@ class X12Sheet(X12General):
                 elem.clear() # destroy all child elements (cells)
             elif elem.tag == U_SSML12 + "dimension":
                 self.do_dimension(elem)
+            elif elem.tag == U_SSML12 + "mergeCell":
+                self.do_merge_cell(elem)
         self.finish_off()
         
     def do_dimension(self, elem):
@@ -538,6 +541,16 @@ class X12Sheet(X12General):
             rowx, colx = cell_name_to_rowx_colx(last_cell_ref)
             self.sheet._dimnrows = rowx + 1
             self.sheet._dimncols = colx + 1
+
+    def do_merge_cell(self, elem):
+        # The ref attribute should be a cell range like "B1:D5".
+        ref = elem.get('ref')
+        if ref:
+            first_cell_ref, last_cell_ref = ref.split(':')
+            first_rowx, first_colx = cell_name_to_rowx_colx(first_cell_ref)
+            last_rowx, last_colx = cell_name_to_rowx_colx(last_cell_ref)
+            self.merged_cells.append((first_rowx, last_rowx + 1,
+                                      first_colx, last_colx + 1))
 
     def do_row(self, row_elem):
     
