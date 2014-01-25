@@ -773,11 +773,10 @@ class Book(BaseObject):
             # we're well & truly stuffed -- let the punter know ASAP.
             try:
                 _unused = unicode(b'trial', self.encoding)
-            except:
-                ei = sys.exc_info()[:2]
+            except BaseException as e:
                 fprintf(self.logfile,
                     "ERROR *** codepage %r -> encoding %r -> %s: %s\n",
-                    self.codepage, self.encoding, ei[0].__name__.split(".")[-1], ei[1])
+                    self.codepage, self.encoding, type(e).__name__.split(".")[-1], e)
                 raise
         if self.raw_user_name:
             strg = unpack_string(self.user_name, 0, self.encoding, lenlen=1)
