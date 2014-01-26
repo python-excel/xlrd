@@ -17,9 +17,15 @@
 # More importantly:
 #    Noon on Gregorian 1900-03-01 (day 61 in the 1900-based system) is JDN 2415080.0
 #    Noon on Gregorian 1904-01-02 (day  1 in the 1904-based system) is JDN 2416482.0
+import datetime
 
 _JDN_delta = (2415080 - 61, 2416482 - 1)
 assert _JDN_delta[1] - _JDN_delta[0] == 1462
+
+# Pre-calculate the datetime epochs for efficiency.
+epoch_1904 = datetime.datetime(1904, 1, 1)
+epoch_1900 = datetime.datetime(1899, 12, 31)
+epoch_1900_minus_1 = datetime.datetime(1899, 12, 30)
 
 class XLDateError(ValueError): pass
 
@@ -89,6 +95,40 @@ def xldate_as_tuple(xldate, datemode):
         return ((yreg // 1461) - 4715, mp - 9, d, hour, minute, second)
     else:
         return ((yreg // 1461) - 4716, mp + 3, d, hour, minute, second)
+
+
+##
+# Convert an Excel date/time number into a datetime.datetime object.
+#
+# @param xldate The Excel number
+# @param datemode 0: 1900-based, 1: 1904-based.
+#
+# @return a datetime.datetime() object.
+#
+def xldate_as_datetime(xldate, datemode):
+    """Convert an Excel date/time number into a datetime.datetime object."""
+
+    # Set the epoch based on the 1900/1904 datemode.
+    if datemode:
+        epoch = epoch_1904
+    else:
+        if xldate < 60:
+            epoch = epoch_1900
+        else:
+            # Workaround Excel 1900 leap year bug by adjusting the epoch.
+            epoch = epoch_1900_minus_1
+
+    # The integer part of the Excel date stores the number of days since
+    # the epoch and the fractional part stores the percentage of the day.
+    days = int(xldate)
+    fraction = xldate - days
+
+    # Get the the integer and decimal seconds in Excel's millisecond resolution.
+    seconds = int(round(fraction * 86400000.0))
+    seconds, milliseconds = divmod(seconds, 1000)
+
+    return epoch + datetime.timedelta(days, seconds, 0, milliseconds)
+
 
 # === conversions from date/time to xl numbers
 
