@@ -6,6 +6,7 @@ from __future__ import print_function
 
 from .timemachine import *
 from .biffh import *
+from collections import Mapping
 import struct; unpack = struct.unpack
 import sys
 import time
@@ -296,7 +297,7 @@ class Name(BaseObject):
 # <p>WARNING: You don't call this class yourself. You use the Book object that
 # was returned when you called xlrd.open_workbook("myfile.xls").</p>
 
-class Book(BaseObject):
+class Book(BaseObject, Mapping):
 
     ##
     # The number of worksheets present in the workbook file.
@@ -415,6 +416,18 @@ class Book(BaseObject):
     ##
     # Time in seconds to parse the data from the contiguous string (or mmap equivalent).
     load_time_stage_2 = -1.0
+
+    def __len__(self):
+        return self.nsheets
+
+    def __iter__(self):
+        return iter(self._sheet_names)
+
+    def __getitem__(self, key):
+        try:
+            return self.sheet_by_name(key)
+        except XLRDError:
+            raise KeyError(key)
 
     ##
     # @return A list of all sheets in the book.

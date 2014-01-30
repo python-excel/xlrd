@@ -30,6 +30,7 @@
 from __future__ import print_function
 
 from array import array
+from collections import Sequence
 from struct import unpack, calcsize
 from .biffh import *
 from .timemachine import *
@@ -78,7 +79,7 @@ _WINDOW2_options = (
 # was returned when you called xlrd.open_workbook("myfile.xls").</p>
 
 
-class Sheet(BaseObject):
+class Sheet(BaseObject, Sequence):
     ##
     # Name of sheet.
     name = ''
@@ -387,6 +388,12 @@ class Sheet(BaseObject):
         # self._put_cell_rows_appended = 0
         # self._put_cell_cells_appended = 0
 
+
+    def __getitem__(self, i):
+        return self.row(i)
+
+    def __len__(self):
+        return self.nrows
 
     ##
     # {@link #Cell} object in the given row and column.
