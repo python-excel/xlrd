@@ -442,7 +442,10 @@ class Book(BaseObject, Mapping):
     # @param sheetx Sheet index in range(nsheets)
     # @return An object of the Sheet class
     def sheet_by_index(self, sheetx):
-        return self._sheet_list[sheetx] or self.get_sheet(sheetx)
+        if self._sheet_list[sheetx] is None:
+            return self.get_sheet(sheetx)
+        else:
+            return self._sheet_list[sheetx]
 
     ##
     # @param sheet_name Name of sheet required
