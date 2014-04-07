@@ -13,7 +13,7 @@
 from __future__ import print_function
 
 DEBUG = 0
-import copy, re
+import re
 from struct import unpack
 from .timemachine import *
 from .biffh import BaseObject, unpack_unicode, unpack_string, \
