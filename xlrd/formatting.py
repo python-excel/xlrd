@@ -976,24 +976,21 @@ def xf_epilogue(self):
     if blah:
         fprintf(self.logfile, "xf_epilogue called ...\n")
 
-    # sjmachin: BIFF4 FORMAT (041E) records are NOT optional
-    # sjmachin: FORMAT records can occur after XF records
-    # Drew Lloyd: dummy formats for BIFF4 based on fill_in_standard_formats()
-    # this block adds "missing" fmtobj from std_format_code_types (BIFF5-BIFF8)
-    # fill_in_standard_formats does not update book.format_list however since 
-    # BIFF4 demands format records this block must also update the format_list
     if self.biff_version == 40:
+        # adds "dummy" formats for BIFF4 based on fill_in_standard_formats()
         for xfx in xrange(num_xfs):
             xf = self.xf_list[xfx]
             fk = xf.format_key
             if fk not in self.format_map:
                 if fk in std_format_code_types:
+                    # get missing BIFF4 fmtobj from BIFF5-BIFF8
                     ty = std_format_code_types[fk]
                     fmt_str = std_format_strings.get(fk)
                     fmtobj = Format(fk, ty, fmt_str)
                     if blah1:
                         fprintf(self.logfile, "xf_epilogue adding dummy BIFF4 FORMAT (041E) record: %d,'%s'\n", fk, fmt_str)
                     self.format_map[fk] = fmtobj
+                    # BIFF4 FORMAT (041E) records are NOT optional so update the format_list
                     self.format_list.append(fmtobj)
                 else:
                     xf.format_key = 0
