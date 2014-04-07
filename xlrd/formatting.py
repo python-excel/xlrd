@@ -267,7 +267,7 @@ def handle_font(book, data):
     if bv >= 50:
         (
             f.height, option_flags, f.colour_index, f.weight,
-            f.escapement_type, f.underline_type, f.family,
+            f.escapement, f.underline_type, f.family,
             f.character_set,
         ) = unpack('<HHHHHBBB', data[0:13])
         f.bold = option_flags & 1
@@ -291,7 +291,7 @@ def handle_font(book, data):
         f.name = unpack_string(data, 6, book.encoding, lenlen=1)
         # Now cook up the remaining attributes ...
         f.weight = [400, 700][f.bold]
-        f.escapement_type = 0 # None
+        f.escapement = 0 # None
         f.underline_type = f.underlined # None or Single
         f.family = 0 # Unknown / don't care
         f.character_set = 1 # System default (0 means "ANSI Latin")
@@ -307,7 +307,7 @@ def handle_font(book, data):
         f.name = unpack_string(data, 4, book.encoding, lenlen=1)
         # Now cook up the remaining attributes ...
         f.weight = [400, 700][f.bold]
-        f.escapement_type = 0 # None
+        f.escapement = 0 # None
         f.underline_type = f.underlined # None or Single
         f.family = 0 # Unknown / don't care
         f.character_set = 1 # System default (0 means "ANSI Latin")
