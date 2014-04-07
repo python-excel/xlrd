@@ -10,18 +10,6 @@
 
 # No part of the content of this file was derived from the works of David Giffin.
 
-# 2010-10-30 SJM Added space after colon in "# coding" line to work around IBM iSeries Python bug
-# 2009-05-31 SJM Fixed problem with non-zero reserved bits in some STYLE records in Mac Excel files
-# 2008-08-03 SJM Ignore PALETTE record when Book.formatting_info is false
-# 2008-08-03 SJM Tolerate up to 4 bytes trailing junk on PALETTE record
-# 2008-05-10 SJM Do some XF checks only when Book.formatting_info is true
-# 2008-02-08 SJM Preparation for Excel 2.0 support
-# 2008-02-03 SJM Another tweak to is_date_format_string()
-# 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
-# 2007-10-13 SJM Warning: style XF whose parent XF index != 0xFFF
-# 2007-09-08 SJM Work around corrupt STYLE record
-# 2007-07-11 SJM Allow for BIFF2/3-style FORMAT record in BIFF4/8 file
-
 from __future__ import print_function
 
 DEBUG = 0
