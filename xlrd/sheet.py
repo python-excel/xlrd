@@ -1463,6 +1463,7 @@ class Sheet(BaseObject):
             else:
                 # if DEBUG: print "SHEET.READ: Unhandled record type %02x %d bytes %r" % (rc, data_len, data)
                 pass
+
         if not eof_found:
             raise XLRDError("Sheet %d (%r) missing EOF record" \
                 % (self.number, self.name))
@@ -1516,7 +1517,10 @@ class Sheet(BaseObject):
                 self.cooked_page_break_preview_mag_factor = 100 # Yes, 100, not 60, NOT a typo
             else:
                 self.cooked_page_break_preview_mag_factor = self.scl_mag_factor
-            zoom = self.cached_normal_view_mag_factor
+            if self.cached_normal_view_mag_factor is None: # No WINDOW2 (023E) record
+                zoom = 0
+            else:
+                zoom = self.cached_normal_view_mag_factor
             if not (10 <= zoom <=400):
                 if blah:
                     print((
@@ -1531,7 +1535,10 @@ class Sheet(BaseObject):
                 self.cooked_normal_view_mag_factor = 100
             else:
                 self.cooked_normal_view_mag_factor = self.scl_mag_factor
-            zoom = self.cached_page_break_preview_mag_factor
+            if self.cached_page_break_preview_mag_factor is None: # No WINDOW2 (023E) record
+                zoom = 0
+            else:
+                zoom = self.cached_page_break_preview_mag_factor
             if zoom == 0:
                 # VALID, defaults to 60
                 zoom = 60

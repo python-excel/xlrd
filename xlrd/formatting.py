@@ -954,12 +954,6 @@ def handle_xf(self, data):
             msg = "WARNING *** XF[%d] is a style XF but parent_style_index is 0x%04x, not 0x0fff\n"
             fprintf(self.logfile, msg, xf.xf_index, xf.parent_style_index)
         check_colour_indexes_in_obj(self, xf, xf.xf_index)
-    if xf.format_key not in self.format_map:
-        msg = "WARNING *** XF[%d] unknown (raw) format key (%d, 0x%04x)\n"
-        if self.verbosity:
-            fprintf(self.logfile, msg,
-                xf.xf_index, xf.format_key, xf.format_key)
-        xf.format_key = 0
 
 def xf_epilogue(self):
     # self is a Book instance.
@@ -969,6 +963,34 @@ def xf_epilogue(self):
     blah1 = DEBUG or self.verbosity >= 1
     if blah:
         fprintf(self.logfile, "xf_epilogue called ...\n")
+
+    if self.biff_version == 40:
+        # adds "dummy" formats for BIFF4 based on fill_in_standard_formats()
+        for xfx in xrange(num_xfs):
+            xf = self.xf_list[xfx]
+            fk = xf.format_key
+            if fk not in self.format_map:
+                if fk in std_format_code_types:
+                    # get missing BIFF4 fmtobj from BIFF5-BIFF8
+                    ty = std_format_code_types[fk]
+                    fmt_str = std_format_strings.get(fk)
+                    fmtobj = Format(fk, ty, fmt_str)
+                    if blah1:
+                        fprintf(self.logfile, "xf_epilogue adding dummy BIFF4 FORMAT (041E) record: %d,'%s'\n", fk, fmt_str)
+                    self.format_map[fk] = fmtobj
+                    # BIFF4 FORMAT (041E) records are NOT optional so update the format_list
+                    self.format_list.append(fmtobj)
+                else:
+                    xf.format_key = 0
+    else:
+        for xfx in xrange(num_xfs):
+            xf = self.xf_list[xfx]
+            if xf.format_key not in self.format_map:
+                msg = "WARNING *** XF[%d] unknown (raw) format key (%d, 0x%04x)\n"
+                if self.verbosity:
+                    fprintf(self.logfile, msg,
+                        xf.xf_index, xf.format_key, xf.format_key)
+                xf.format_key = 0
 
     def check_same(book_arg, xf_arg, parent_arg, attr):
         # the _arg caper is to avoid a Warning msg from Python 2.1 :-(

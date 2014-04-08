@@ -14,6 +14,7 @@ bench           Same as "show", but doesn't print -- for profiling
 biff_count[1]   Print a count of each type of BIFF record in the file
 biff_dump[1]    Print a dump (char and hex) of the BIFF records in the file
 fonts           hdr + print a dump of all font objects
+formats         hdr + print a dump of all format objects
 hdr             Mini-overview of file (no per-sheet information)
 hotshot         Do a hotshot profile run e.g. ... -f1 hotshot bench bigfile*.xls
 labels          Dump of sheet.col_label_ranges and ...row... for each sheet
@@ -123,6 +124,12 @@ if __name__ == "__main__":
         for x in xrange(len(bk.font_list)):
             font = bk.font_list[x]
             font.dump(header='== Index %d ==' % x, indent=4)
+
+    def show_formats(bk):
+        print("Formats:")
+        for x in xrange(len(bk.format_list)):
+            fmt = bk.format_list[x]
+            fmt.dump(header='== Index %d ==' % x, indent=4)
 
     def show_names(bk, dump=0):
         bk_header(bk)
@@ -361,6 +368,9 @@ if __name__ == "__main__":
                 elif cmd == 'fonts':
                     bk_header(bk)
                     show_fonts(bk)
+                elif cmd == 'formats':
+                    bk_header(bk)
+                    show_formats(bk)
                 elif cmd == 'names': # named reference list
                     show_names(bk)
                 elif cmd == 'name_dump': # named reference list
