@@ -18,6 +18,7 @@
 #    Noon on Gregorian 1900-03-01 (day 61 in the 1900-based system) is JDN 2415080.0
 #    Noon on Gregorian 1904-01-02 (day  1 in the 1904-based system) is JDN 2416482.0
 import datetime
+import re
 
 _JDN_delta = (2415080 - 61, 2416482 - 1)
 assert _JDN_delta[1] - _JDN_delta[0] == 1462
@@ -128,6 +129,76 @@ def xldate_as_datetime(xldate, datemode):
     seconds, milliseconds = divmod(seconds, 1000)
 
     return epoch + datetime.timedelta(days, seconds, 0, milliseconds)
+
+
+##
+# Convert an Excel date/time in ISO date format into a serial number.
+#
+# @param xldate The Excel number
+# @param datemode 0: 1900-based, 1: 1904-based.
+#
+# @return an Excel serial date number.
+#
+def xldate_strict_to_number(xldate, datemode):
+    """
+    Convert a Excel ISO date (from Excel 2013 in strict Open XML mode)
+    to a serial date and time.
+
+    """
+
+    if datemode:
+        # Excel for Mac date epoch.
+        epoch = epoch_1904
+    else:
+        # Default Excel epoch.
+        epoch = epoch_1900_minus_1
+
+    if re.search("T", xldate):
+        # The Excel date is in a date and time format.
+        m = re.match(r'(\d\d\d\d)-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)(.\d+)',
+                     xldate)
+
+        dt = datetime.datetime(
+            int(m.group(1)),
+            int(m.group(2)),
+            int(m.group(3)),
+            int(m.group(4)),
+            int(m.group(5)),
+            int(m.group(6)),
+            int(float(m.group(7)) * 1E6))
+
+    elif re.search("-", xldate):
+        # The Excel date is in a date only format.
+        m = re.match(r'(\d\d\d\d)-(\d\d)-(\d\d)', xldate)
+
+        dt = datetime.datetime(
+            int(m.group(1)),
+            int(m.group(2)),
+            int(m.group(3)))
+
+    elif re.search(":", xldate):
+        # The Excel date is in a time only format.
+        m = re.match(r'(\d\d):(\d\d):(\d\d)(.\d+)', xldate)
+
+        dt = datetime.time(
+            int(m.group(1)),
+            int(m.group(2)),
+            int(m.group(3)),
+            int(float(m.group(4)) * 1E6))
+
+        dt = datetime.datetime.combine(epoch, dt)
+
+    else:
+        raise XLDateError(xldate)
+
+    # Convert a Python datetime.datetime value to an Excel date number.
+    delta = dt - epoch
+    excel_date = (delta.days
+                  + (float(delta.seconds)
+                     + float(delta.microseconds) / 1E6)
+                  / (60 * 60 * 24))
+
+    return excel_date
 
 
 # === conversions from date/time to xl numbers
