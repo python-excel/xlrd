@@ -12,6 +12,22 @@ class TestXlsxParse(unittest.TestCase):
     # Test parsing of problematic xlsx files. These are usually submitted
     # as part of bug reports as noted below.
 
+    def test_for_github_issue_75(self):
+        # Test <cell> inlineStr attribute without <si> child.
+        # https://github.com/python-excel/xlrd/issues/75
+        workbook = xlrd.open_workbook(from_this_dir('apachepoi_52348.xlsx'))
+        worksheet = workbook.sheet_by_index(0)
+
+        # Test an empty inlineStr cell.
+        cell = worksheet.cell(0, 0)
+        self.assertEqual(cell.value, '')
+        self.assertEqual(cell.ctype, xlrd.book.XL_CELL_EMPTY)
+
+        # Test a non-empty inlineStr cell.
+        cell = worksheet.cell(1, 2)
+        self.assertEqual(cell.value, 'Category')
+        self.assertEqual(cell.ctype, xlrd.book.XL_CELL_TEXT)
+
     def test_for_github_issue_96(self):
         # Test for non-Excel file with forward slash file separator and
         # lowercase names. https://github.com/python-excel/xlrd/issues/96
