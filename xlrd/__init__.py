@@ -399,7 +399,13 @@ def open_workbook(filename=None,
             zf = zipfile.ZipFile(timemachine.BYTES_IO(file_contents))
         else:
             zf = zipfile.ZipFile(filename)
-        component_names = zf.namelist()
+
+        # Workaround for some third party files that use forward slashes and
+        # lower case names. We map the expected name in lowercase to the
+        # actual filename in the zip container.
+        component_names = dict([(name.replace('\\', '/').lower(), name)
+                                for name in zf.namelist()])
+
         if verbosity:
             logfile.write('ZIP component_names:\n')
             pprint.pprint(component_names, logfile)
