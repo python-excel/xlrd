@@ -54,7 +54,14 @@ def ensure_elementtree_imported(verbosity, logfile):
             if item.lower().replace('_', '') == 'version'
             ])
         print(ET.__file__, ET.__name__, etree_version, ET_has_iterparse, file=logfile)
-        
+
+def tree_iterator(tree):
+    # iter attribute not present in Python 2.6
+    try:
+        return tree.iter()
+    except AttributeError:
+        return tree.getiterator()
+
 def split_tag(tag):
     pos = tag.rfind('}') + 1
     if pos >= 2:
@@ -243,7 +250,7 @@ class X12General(object):
             fprintf(self.logfile, "\n=== %s ===\n", heading)
         self.tree = ET.parse(stream)
         getmethod = self.tag2meth.get
-        for elem in self.tree.iter():
+        for elem in tree_iterator(self.tree):
             if self.verbosity >= 3:
                 self.dump_elem(elem)
             meth = getmethod(elem.tag)
@@ -289,7 +296,7 @@ class X12Book(X12General):
         self.tree = ET.parse(stream)
         getmenu = self.core_props_menu.get
         props = {}
-        for elem in self.tree.iter():
+        for elem in tree_iterator(self.tree):
             if self.verbosity >= 3:
                 self.dump_elem(elem)
             menu = getmenu(elem.tag)
