@@ -814,7 +814,7 @@ def open_workbook_2007_xml(
             x12sheet.process_rels(zfrels)
             del zfrels
 
-        for relid, reltype in x12sheet.relid2reltype.iteritems():
+        for relid, reltype in x12sheet.relid2reltype.items():
             if reltype == 'comments':
                 comments_fname = x12sheet.relid2path.get(relid)
                 if comments_fname and comments_fname in component_names:
