@@ -2,8 +2,9 @@
 
 from unittest import TestCase
 
-import sys
 import os
+import sys
+import types
 import unittest
 
 import xlrd
@@ -91,6 +92,12 @@ class TestSheet(TestCase):
         sheet = self.book.sheet_by_index(SHEETINDEX)
         row = sheet.row(0)
         self.assertEqual(len(row), NCOLS)
+
+    def test_get_rows(self):
+        sheet = self.book.sheet_by_index(SHEETINDEX)
+        rows = sheet.get_rows()
+        self.assertTrue(isinstance(rows, types.GeneratorType), True)
+        self.assertEqual(len(list(rows)), sheet.nrows)
 
     def test_col_slice(self):
         sheet = self.book.sheet_by_index(SHEETINDEX)
