@@ -570,7 +570,12 @@ class X12Sheet(X12General):
         # The ref attribute should be a cell range like "B1:D5".
         ref = elem.get('ref')
         if ref:
-            first_cell_ref, last_cell_ref = ref.split(':')
+            try:
+                first_cell_ref, last_cell_ref = ref.split(':')
+            except ValueError:
+                # encountered a single cell merge, e.g. "B3"
+                first_cell_ref = ref
+                last_cell_ref = ref
             first_rowx, first_colx = cell_name_to_rowx_colx(first_cell_ref)
             last_rowx, last_colx = cell_name_to_rowx_colx(last_cell_ref)
             self.merged_cells.append((first_rowx, last_rowx + 1,
