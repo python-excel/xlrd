@@ -225,14 +225,15 @@ def make_name_access_maps(bk):
                 if bk.verbosity:
                     print(msg, file=bk.logfile)
         name_and_scope_map[key] = nobj
+        sort_data = (nobj.scope, namex, nobj)
         if name_lcase in name_map:
-            name_map[name_lcase].append((nobj.scope, nobj))
+            name_map[name_lcase].append(sort_data)
         else:
-            name_map[name_lcase] = [(nobj.scope, nobj)]
+            name_map[name_lcase] = [sort_data]
     for key in name_map.keys():
         alist = name_map[key]
         alist.sort()
-        name_map[key] = [x[1] for x in alist]
+        name_map[key] = [x[2] for x in alist]
     bk.name_and_scope_map = name_and_scope_map
     bk.name_map = name_map
 
