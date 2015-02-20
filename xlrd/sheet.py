@@ -1,7 +1,7 @@
 # -*- coding: cp1252 -*-
 
 ##
-# <p> Portions copyright © 2005-2013 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p> Portions copyright Â© 2005-2013 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
@@ -138,6 +138,8 @@ class Sheet(BaseObject):
     # List of address ranges of cells which have been merged.
     # These are set up in Excel by Format > Cells > Alignment, then ticking
     # the "Merge cells" box.
+    # <br> Note that the upper limits are exclusive: i.e. <tt>[2, 3, 7, 9]</tt> only
+    # spans two cells.
     # <br> -- New in version 0.6.1. Extracted only if open_workbook(formatting_info=True).
     # <br>How to deconstruct the list:
     # <pre>
