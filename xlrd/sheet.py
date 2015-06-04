@@ -458,6 +458,11 @@ class Sheet(BaseObject):
             ]
 
     ##
+    # Returns a generator for iterating through each row.
+    def get_rows(self):
+        return (self.row(index) for index in range(self.nrows))
+
+    ##
     # Returns a slice of the types
     # of the cells in the given row.
     def row_types(self, rowx, start_colx=0, end_colx=None):
