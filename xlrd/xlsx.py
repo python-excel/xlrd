@@ -7,6 +7,7 @@ from __future__ import print_function, unicode_literals
 
 DEBUG = 0
 
+from os.path import normpath, join
 import sys
 import re
 from .timemachine import *
@@ -514,6 +515,8 @@ class X12Sheet(X12General):
         self.rowx = -1 # We may need to count them.
         self.bk = sheet.book
         self.sst = self.bk._sharedstrings
+        self.relid2path = {}
+        self.relid2reltype = {}
         self.merged_cells = sheet.merged_cells
         self.warned_no_cell_name = 0
         self.warned_no_row_num = 0
@@ -535,6 +538,20 @@ class X12Sheet(X12General):
             elif elem.tag == U_SSML12 + "mergeCell":
                 self.do_merge_cell(elem)
         self.finish_off()
+
+    def process_rels(self, stream):
+        if self.verbosity >= 2:
+            fprintf(self.logfile, "\n=== Sheet Relationships ===\n")
+        tree = ET.parse(stream)
+        r_tag = U_PKGREL + 'Relationship'
+        for elem in tree.findall(r_tag):
+            rid = elem.get('Id')
+            target = elem.get('Target')
+            reltype = elem.get('Type').split('/')[-1]
+            if self.verbosity >= 2:
+                self.dumpout('Id=%r Type=%r Target=%r', rid, reltype, target)
+            self.relid2reltype[rid] = reltype
+            self.relid2path[rid] = normpath(join('xl/worksheets', target))
 
     def process_comments_stream(self, stream):
         root = ET.parse(stream).getroot()
@@ -793,11 +810,20 @@ def open_workbook_2007_xml(
         heading = "Sheet %r (sheetx=%d) from %r" % (sheet.name, sheetx, fname)
         x12sheet.process_stream(zflo, heading)
         del zflo
-        comments_fname = 'xl/comments%d.xml' % (sheetx + 1)
-        if comments_fname in component_names:
-            comments_stream = zf.open(comments_fname)
-            x12sheet.process_comments_stream(comments_stream)
-            del comments_stream
+
+        rels_fname = 'xl/worksheets/_rels/%s.rels' % fname.rsplit('/', 1)[-1]
+        if rels_fname in component_names:
+            zfrels = zf.open(rels_fname)
+            x12sheet.process_rels(zfrels)
+            del zfrels
+
+        for relid, reltype in x12sheet.relid2reltype.items():
+            if reltype == 'comments':
+                comments_fname = x12sheet.relid2path.get(relid)
+                if comments_fname and comments_fname in component_names:
+                    comments_stream = zf.open(comments_fname)
+                    x12sheet.process_comments_stream(comments_stream)
+                    del comments_stream
 
         sheet.tidy_dimensions()
 
