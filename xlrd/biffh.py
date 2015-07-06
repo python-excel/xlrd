@@ -263,12 +263,12 @@ def upkbitsL(tgt_obj, src, manifest, local_setattr=setattr, local_int=int):
     for n, mask, attr in manifest:
         local_setattr(tgt_obj, attr, local_int((src & mask) >> n))
 
-def unpack_string(data, pos, encoding, lenlen=1):
+def unpack_string(data, pos, encoding, errors, lenlen=1):
     nchars = unpack('<' + 'BH'[lenlen-1], data[pos:pos+lenlen])[0]
     pos += lenlen
-    return unicode(data[pos:pos+nchars], encoding)
+    return unicode(data[pos:pos+nchars], encoding, errors)
 
-def unpack_string_update_pos(data, pos, encoding, lenlen=1, known_len=None):
+def unpack_string_update_pos(data, pos, encoding, errors, lenlen=1, known_len=None):
     if known_len is not None:
         # On a NAME record, the length byte is detached from the front of the string.
         nchars = known_len
@@ -276,9 +276,9 @@ def unpack_string_update_pos(data, pos, encoding, lenlen=1, known_len=None):
         nchars = unpack('<' + 'BH'[lenlen-1], data[pos:pos+lenlen])[0]
         pos += lenlen
     newpos = pos + nchars
-    return (unicode(data[pos:newpos], encoding), newpos)
+    return (unicode(data[pos:newpos], encoding, errors), newpos)
 
-def unpack_unicode(data, pos, lenlen=2):
+def unpack_unicode(data, pos, errors, lenlen=2):
     "Return unicode_strg"
     nchars = unpack('<' + 'BH'[lenlen-1], data[pos:pos+lenlen])[0]
     if not nchars:
@@ -300,7 +300,7 @@ def unpack_unicode(data, pos, lenlen=2):
         # Uncompressed UTF-16-LE
         rawstrg = data[pos:pos+2*nchars]
         # if DEBUG: print "nchars=%d pos=%d rawstrg=%r" % (nchars, pos, rawstrg)
-        strg = unicode(rawstrg, 'utf_16_le')
+        strg = unicode(rawstrg, 'utf_16_le', errors)
         # pos += 2*nchars
     else:
         # Note: this is COMPRESSED (not ASCII!) encoding!!!
@@ -308,7 +308,7 @@ def unpack_unicode(data, pos, lenlen=2):
         # if the local codepage was cp1252 -- however this would rapidly go pear-shaped
         # for other codepages so we grit our Anglocentric teeth and return Unicode :-)
 
-        strg = unicode(data[pos:pos+nchars], "latin_1")
+        strg = unicode(data[pos:pos+nchars], "latin_1", errors)
         # pos += nchars
     # if richtext:
     #     pos += 4 * rt
@@ -317,7 +317,7 @@ def unpack_unicode(data, pos, lenlen=2):
     # return (strg, pos)
     return strg
 
-def unpack_unicode_update_pos(data, pos, lenlen=2, known_len=None):
+def unpack_unicode_update_pos(data, pos, errors, lenlen=2, known_len=None):
     "Return (unicode_strg, updated value of pos)"
     if known_len is not None:
         # On a NAME record, the length byte is detached from the front of the string.
@@ -340,11 +340,11 @@ def unpack_unicode_update_pos(data, pos, lenlen=2, known_len=None):
         pos += 4
     if options & 0x01:
         # Uncompressed UTF-16-LE
-        strg = unicode(data[pos:pos+2*nchars], 'utf_16_le')
+        strg = unicode(data[pos:pos+2*nchars], 'utf_16_le', errors)
         pos += 2*nchars
     else:
         # Note: this is COMPRESSED (not ASCII!) encoding!!!
-        strg = unicode(data[pos:pos+nchars], "latin_1")
+        strg = unicode(data[pos:pos+nchars], "latin_1", errors)
         pos += nchars
     if richtext:
         pos += 4 * rt
@@ -554,7 +554,7 @@ def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout, unnumbered=False):
                 ofs, dlen, base, endpos, pos, endsub, substrg)
             break
         hexd = ''.join(["%02x " % BYTES_ORD(c) for c in substrg])
-        
+
         chard = ''
         for c in substrg:
             c = chr(BYTES_ORD(c))
@@ -565,7 +565,7 @@ def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout, unnumbered=False):
             chard += c
         if numbered:
             num_prefix = "%5d: " %  (base+pos-ofs)
-        
+
         fprintf(fout, "%s     %-48s %s\n", num_prefix, hexd, chard)
         pos = endsub
 

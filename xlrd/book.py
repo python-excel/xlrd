@@ -70,6 +70,7 @@ def open_workbook_xls(filename=None,
     file_contents=None,
     encoding_override=None,
     formatting_info=False, on_demand=False, ragged_rows=False,
+    unicode_errors="strict",
     ):
     t0 = time.clock()
     if TOGGLE_GC:
@@ -85,6 +86,7 @@ def open_workbook_xls(filename=None,
             formatting_info=formatting_info,
             on_demand=on_demand,
             ragged_rows=ragged_rows,
+            unicode_errors=unicode_errors
             )
         t1 = time.clock()
         bk.load_time_stage_1 = t1 - t0
@@ -473,15 +475,15 @@ class Book(BaseObject):
             except ValueError:
                 raise XLRDError('No sheet named <%r>' % sheet_name_or_index)
         self._sheet_list[sheetx] = None
-        
+
     ##
     # This method has a dual purpose. You can call it to release
     # memory-consuming objects and (possibly) a memory-mapped file
     # (mmap.mmap object) when you have finished loading sheets in
     # on_demand mode, but still require the Book object to examine the
     # loaded sheets. It is also called automatically (a) when open_workbook
-    # raises an exception and (b) if you are using a "with" statement, when 
-    # the "with" block is exited. Calling this method multiple times on the 
+    # raises an exception and (b) if you are using a "with" statement, when
+    # the "with" block is exited. Calling this method multiple times on the
     # same object has no ill effect.
     def release_resources(self):
         self._resources_released = 1
@@ -494,13 +496,13 @@ class Book(BaseObject):
         self.filestr = None
         self._sharedstrings = None
         self._rich_text_runlist_map = None
-    
+
     def __enter__(self):
         return self
-        
+
     def __exit__(self, exc_type, exc_value, exc_tb):
         self.release_resources()
-        # return false        
+        # return false
 
     ##
     # A mapping from (lower_case_name, scope) to a single Name object.
@@ -553,6 +555,7 @@ class Book(BaseObject):
         formatting_info=False,
         on_demand=False,
         ragged_rows=False,
+        unicode_errors="strict",
         ):
         # DEBUG = 0
         self.logfile = logfile
@@ -562,6 +565,7 @@ class Book(BaseObject):
         self.formatting_info = formatting_info
         self.on_demand = on_demand
         self.ragged_rows = ragged_rows
+        self.unicode_errors = unicode_errors
 
         if not file_contents:
             with open(filename, "rb") as f:
@@ -695,7 +699,7 @@ class Book(BaseObject):
         if bv == 45: # BIFF4W
             #### Not documented in OOo docs ...
             # In fact, the *only* data is the name of the sheet.
-            sheet_name = unpack_string(data, 0, self.encoding, lenlen=1)
+            sheet_name = unpack_string(data, 0, self.encoding, self.unicode_errors, lenlen=1)
             visibility = 0
             sheet_type = XL_BOUNDSHEET_WORKSHEET # guess, patch later
             if len(self._sh_abs_posn) == 0:
@@ -709,9 +713,9 @@ class Book(BaseObject):
             offset, visibility, sheet_type = unpack('<iBB', data[0:6])
             abs_posn = offset + self.base # because global BOF is always at posn 0 in the stream
             if bv < BIFF_FIRST_UNICODE:
-                sheet_name = unpack_string(data, 6, self.encoding, lenlen=1)
+                sheet_name = unpack_string(data, 6, self.encoding, self.unicode_errors, lenlen=1)
             else:
-                sheet_name = unpack_unicode(data, 6, lenlen=1)
+                sheet_name = unpack_unicode(data, 6, self.unicode_errors, lenlen=1)
 
         if DEBUG or self.verbosity >= 2:
             fprintf(self.logfile,
@@ -779,7 +783,7 @@ class Book(BaseObject):
                     self.codepage, self.encoding, type(e).__name__.split(".")[-1], e)
                 raise
         if self.raw_user_name:
-            strg = unpack_string(self.user_name, 0, self.encoding, lenlen=1)
+            strg = unpack_string(self.user_name, 0, self.encoding, self.unicode_errors, lenlen=1)
             strg = strg.rstrip()
             # if DEBUG:
             #     print "CODEPAGE: user name decoded from %r to %r" % (self.user_name, strg)
@@ -812,7 +816,7 @@ class Book(BaseObject):
         if self.biff_version >= 80:
             option_flags, other_info =unpack("<HI", data[:6])
             pos = 6
-            name, pos = unpack_unicode_update_pos(data, pos, lenlen=1)
+            name, pos = unpack_unicode_update_pos(data, pos, self.unicode_errors, lenlen=1)
             extra = data[pos:]
             if self._supbook_types[-1] == SUPBOOK_ADDIN:
                 self.addin_func_names.append(name)
@@ -865,7 +869,7 @@ class Book(BaseObject):
                     }.get(ty, "Not encoded")
                 print("   %3d chars, type is %d (%s)" % (nc, ty, msg), file=self.logfile)
             if ty == 3:
-                sheet_name = unicode(data[2:nc+2], self.encoding)
+                sheet_name = unicode(data[2:nc+2], self.encoding, self.unicode_errors)
                 self._extnsht_name_from_num[self._extnsht_count] = sheet_name
                 if blah2: print(self._extnsht_name_from_num, file=self.logfile)
             if not (1 <= ty <= 4):
@@ -927,9 +931,11 @@ class Book(BaseObject):
 
         macro_flag = " M"[nobj.macro]
         if bv < 80:
-            internal_name, pos = unpack_string_update_pos(data, 14, self.encoding, known_len=name_len)
+            internal_name, pos = unpack_string_update_pos(data, 14, self.encoding, self.unicode_errors,
+                                                          known_len=name_len)
         else:
-            internal_name, pos = unpack_unicode_update_pos(data, 14, known_len=name_len)
+            internal_name, pos = unpack_unicode_update_pos(data, 14, self.unicode_errors,
+                                                           known_len=name_len)
         nobj.extn_sheet_num = extsht_index
         nobj.excel_sheet_index = sheet_index
         nobj.scope = None # patched up in the names_epilogue() method
@@ -1058,7 +1064,7 @@ class Book(BaseObject):
             self._supbook_addins_inx = self._supbook_count - 1
             if blah: print("SUPBOOK[%d]: add-in functions" % sbn, file=self.logfile)
             return
-        url, pos = unpack_unicode_update_pos(data, 2, lenlen=2)
+        url, pos = unpack_unicode_update_pos(data, 2, self.unicode_errors, lenlen=2)
         if num_sheets == 0:
             self._supbook_types[-1] = SUPBOOK_DDEOLE
             if blah: fprintf(self.logfile, "SUPBOOK[%d]: DDE/OLE document = %r\n", sbn, url)
@@ -1068,13 +1074,13 @@ class Book(BaseObject):
         sheet_names = []
         for x in range(num_sheets):
             try:
-                shname, pos = unpack_unicode_update_pos(data, pos, lenlen=2)
+                shname, pos = unpack_unicode_update_pos(data, pos, self.unicode_errors, lenlen=2)
             except struct.error:
                 # #### FIX ME ####
                 # Should implement handling of CONTINUE record(s) ...
                 if self.verbosity:
                     print((
-                        "*** WARNING: unpack failure in sheet %d of %d in SUPBOOK record for file %r" 
+                        "*** WARNING: unpack failure in sheet %d of %d in SUPBOOK record for file %r"
                         % (x, num_sheets, url)
                         ), file=self.logfile)
                 break
@@ -1088,7 +1094,7 @@ class Book(BaseObject):
         # DEBUG = 1
         self.derive_encoding()
         sheet_len = unpack('<i', data[:4])[0]
-        sheet_name = unpack_string(data, 4, self.encoding, lenlen=1)
+        sheet_name = unpack_string(data, 4, self.encoding, self.unicode_errors, lenlen=1)
         sheetno = self._sheethdr_count
         assert sheet_name == self._sheet_names[sheetno]
         self._sheethdr_count += 1
@@ -1126,9 +1132,9 @@ class Book(BaseObject):
             if DEBUG >= 2:
                 fprintf(self.logfile, "CONTINUE: adding %d bytes to SST -> %d\n", nb, nbt)
             strlist.append(data)
-        self._sharedstrings, rt_runlist = unpack_SST_table(strlist, uniquestrings)
+        self._sharedstrings, rt_runlist = unpack_SST_table(strlist, uniquestrings, self.unicode_errors)
         if self.formatting_info:
-            self._rich_text_runlist_map = rt_runlist        
+            self._rich_text_runlist_map = rt_runlist
         if DEBUG:
             t1 = time.time()
             print("SST processing took %.2f seconds" % (t1 - t0, ), file=self.logfile)
@@ -1140,9 +1146,9 @@ class Book(BaseObject):
                 self.raw_user_name = True
                 self.user_name = data
                 return
-            strg = unpack_string(data, 0, self.encoding, lenlen=1)
+            strg = unpack_string(data, 0, self.encoding, self.unicode_errors, lenlen=1)
         else:
-            strg = unpack_unicode(data, 0, lenlen=2)
+            strg = unpack_unicode(data, 0, self.unicode_errors, lenlen=2)
         if DEBUG: fprintf(self.logfile, "WRITEACCESS: %d bytes; raw=%s %r\n", len(data), self.raw_user_name, strg)
         strg = strg.rstrip()
         self.user_name = strg
@@ -1332,7 +1338,7 @@ def display_cell_address(rowx, colx, relrow, relcol):
         colpart = "$" + colname(colx)
     return colpart + rowpart
 
-def unpack_SST_table(datatab, nstrings):
+def unpack_SST_table(datatab, nstrings, errors):
     "Return list of strings"
     datainx = 0
     ndatas = len(datatab)
@@ -1369,7 +1375,7 @@ def unpack_SST_table(datatab, nstrings):
                 rawstrg = data[pos:pos+2*charsavail]
                 # if DEBUG: print "SST U16: nchars=%d pos=%d rawstrg=%r" % (nchars, pos, rawstrg)
                 try:
-                    accstrg += unicode(rawstrg, "utf_16_le")
+                    accstrg += unicode(rawstrg, "utf_16_le", errors)
                 except:
                     # print "SST U16: nchars=%d pos=%d rawstrg=%r" % (nchars, pos, rawstrg)
                     # Probable cause: dodgy data e.g. unfinished surrogate pair.
@@ -1383,7 +1389,7 @@ def unpack_SST_table(datatab, nstrings):
                 charsavail = local_min(datalen - pos, charsneed)
                 rawstrg = data[pos:pos+charsavail]
                 # if DEBUG: print "SST CMPRSD: nchars=%d pos=%d rawstrg=%r" % (nchars, pos, rawstrg)
-                accstrg += unicode(rawstrg, latin_1)
+                accstrg += unicode(rawstrg, latin_1, errors)
                 pos += charsavail
             charsgot += charsavail
             if charsgot == nchars:
@@ -1393,7 +1399,7 @@ def unpack_SST_table(datatab, nstrings):
             datalen = len(data)
             options = local_BYTES_ORD(data[0])
             pos = 1
-        
+
         if rtcount:
             runs = []
             for runindex in xrange(rtcount):
@@ -1405,7 +1411,7 @@ def unpack_SST_table(datatab, nstrings):
                 runs.append(local_unpack("<HH", data[pos:pos+4]))
                 pos += 4
             richtext_runs[len(strings)] = runs
-                
+
         pos += phosz # size of the phonetic stuff to skip
         if pos >= datalen:
             # adjust to correct position in next record
