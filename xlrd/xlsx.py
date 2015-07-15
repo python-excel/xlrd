@@ -758,36 +758,36 @@ def open_workbook_2007_xml(
     bk.ragged_rows = ragged_rows
 
     x12book = X12Book(bk, logfile, verbosity)
-    zflo = zf.open('xl/_rels/workbook.xml.rels')
+    zflo = zf.open(component_names['xl/_rels/workbook.xml.rels'])
     x12book.process_rels(zflo)
     del zflo
-    zflo = zf.open('xl/workbook.xml')
+    zflo = zf.open(component_names['xl/workbook.xml'])
     x12book.process_stream(zflo, 'Workbook')
     del zflo
-    props_name = 'docProps/core.xml'
+    props_name = 'docprops/core.xml'
     if props_name in component_names:
-        zflo = zf.open(props_name)
+        zflo = zf.open(component_names[props_name])
         x12book.process_coreprops(zflo)
 
     x12sty = X12Styles(bk, logfile, verbosity)
     if 'xl/styles.xml' in component_names:
-        zflo = zf.open('xl/styles.xml')
+        zflo = zf.open(component_names['xl/styles.xml'])
         x12sty.process_stream(zflo, 'styles')
         del zflo
     else:
         # seen in MS sample file MergedCells.xlsx
         pass
 
-    sst_fname = 'xl/sharedStrings.xml'
+    sst_fname = 'xl/sharedstrings.xml'
     x12sst = X12SST(bk, logfile, verbosity)
     if sst_fname in component_names:
-        zflo = zf.open(sst_fname)
+        zflo = zf.open(component_names[sst_fname])
         x12sst.process_stream(zflo, 'SST')
         del zflo
 
     for sheetx in range(bk.nsheets):
         fname = x12book.sheet_targets[sheetx]
-        zflo = zf.open(fname)
+        zflo = zf.open(component_names[fname])
         sheet = bk._sheet_list[sheetx]
         x12sheet = X12Sheet(sheet, logfile, verbosity)
         heading = "Sheet %r (sheetx=%d) from %r" % (sheet.name, sheetx, fname)
@@ -795,7 +795,7 @@ def open_workbook_2007_xml(
         del zflo
         comments_fname = 'xl/comments%d.xml' % (sheetx + 1)
         if comments_fname in component_names:
-            comments_stream = zf.open(comments_fname)
+            comments_stream = zf.open(component_names[comments_fname])
             x12sheet.process_comments_stream(comments_stream)
             del comments_stream
 
