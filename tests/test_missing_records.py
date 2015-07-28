@@ -16,3 +16,7 @@ class TestMissingRecords(TestCase):
     def test_default_format(self):
         cell = self.sheet.cell(0, 0)
         self.assertEqual(cell.ctype, XL_CELL_TEXT)
+
+    def test_default_window2_options(self):
+        self.assertEqual(self.sheet.cached_page_break_preview_mag_factor, 0)
+        self.assertEqual(self.sheet.cached_normal_view_mag_factor, 0)
