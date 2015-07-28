@@ -18,7 +18,7 @@ from struct import unpack
 from .timemachine import *
 from .biffh import BaseObject, unpack_unicode, unpack_string, \
     upkbits, upkbitsL, fprintf, \
-    FUN, FDT, FNU, FGE, FTX, XL_CELL_NUMBER, XL_CELL_DATE, \
+    FUN, FDT, FNU, FGE, FTX, XL_CELL_NUMBER, XL_CELL_DATE, XL_CELL_TEXT, \
     XL_FORMAT, XL_FORMAT2, \
     XLRDError
 
@@ -979,14 +979,12 @@ def xf_epilogue(self):
 
     for xfx in xrange(num_xfs):
         xf = self.xf_list[xfx]
-        if xf.format_key not in self.format_map:
-            msg = "ERROR *** XF[%d] unknown format key (%d, 0x%04x)\n"
-            fprintf(self.logfile, msg,
-                    xf.xf_index, xf.format_key, xf.format_key)
-            xf.format_key = 0
 
-        fmt = self.format_map[xf.format_key]
-        cellty = _cellty_from_fmtty[fmt.type]
+        try:
+            fmt = self.format_map[xf.format_key]
+            cellty = _cellty_from_fmtty[fmt.type]
+        except KeyError:
+            cellty = XL_CELL_TEXT
         self._xf_index_to_xl_type_map[xf.xf_index] = cellty
         # Now for some assertions etc
         if not self.formatting_info:
