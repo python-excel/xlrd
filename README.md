@@ -8,7 +8,7 @@
 
 **Version of xlrd**: 0.7.1 -- 2009-05-31
 
-**Versions of Python supported**: 2.6-2.7.
+**Versions of Python supported**: 2.6, 2.7, 3.2+.
 
 **External modules required**:
 
