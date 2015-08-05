@@ -793,12 +793,16 @@ def open_workbook_2007_xml(
         heading = "Sheet %r (sheetx=%d) from %r" % (sheet.name, sheetx, fname)
         x12sheet.process_stream(zflo, heading)
         del zflo
-        comments_fname = 'xl/comments%d.xml' % (sheetx + 1)
-        if comments_fname in component_names:
-            comments_stream = zf.open(component_names[comments_fname])
-            x12sheet.process_comments_stream(comments_stream)
-            del comments_stream
-
+        rel_name = 'xl/worksheets/_rels/sheet%d.xml.rels' % (sheetx + 1)
+        if rel_name in  component_names:
+            comments_rel = zf.open(component_names[rel_name])
+            for rel in  ET.parse(comments_rel).getroot():
+                find_comment = re.search('comments[0-9]+.xml',rel.attrib['Target'])
+                if find_comment:
+                    comments_fname = "xl/" +  find_comment.group(0)
+                    comments_stream = zf.open(component_names[comments_fname])
+                    x12sheet.process_comments_stream(comments_stream)
+                    del comments_stream
         sheet.tidy_dimensions()
 
     return bk
