@@ -37,3 +37,18 @@ class TestXlsxParse(unittest.TestCase):
         cell = worksheet.cell(0, 0)
         self.assertEqual(cell.value, 'one')
         self.assertEqual(cell.ctype, xlrd.book.XL_CELL_TEXT)
+
+    def test_for_github_issue_150(self):
+        # Test for non-Excel file with a non-lowercase worksheet filename.
+        # https://github.com/python-excel/xlrd/issues/150
+        workbook = xlrd.open_workbook(from_this_dir('issue150.xlsx'))
+        worksheet = workbook.sheet_by_index(0)
+
+        # Test reading sample data from the worksheet.
+        cell = worksheet.cell(0, 1)
+        self.assertEqual(cell.value, 'Cycle')
+        self.assertEqual(cell.ctype, xlrd.book.XL_CELL_TEXT)
+
+        cell = worksheet.cell(1, 1)
+        self.assertEqual(cell.value, 1)
+        self.assertEqual(cell.ctype, xlrd.book.XL_CELL_NUMBER)

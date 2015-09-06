@@ -306,6 +306,10 @@ class X12Book(X12General):
             fprintf(self.logfile, "props: %r\n", props)
         self.finish_off()
 
+    @staticmethod
+    def convert_filename(name):
+        return name.replace('\\', '/').lower()
+
     def process_rels(self, stream):
         if self.verbosity >= 2:
             fprintf(self.logfile, "\n=== Relationships ===\n")
@@ -313,7 +317,7 @@ class X12Book(X12General):
         r_tag = U_PKGREL + 'Relationship'
         for elem in tree.findall(r_tag):
             rid = elem.get('Id')
-            target = elem.get('Target')
+            target = X12Book.convert_filename(elem.get('Target'))
             reltype = elem.get('Type').split('/')[-1]
             if self.verbosity >= 2:
                 self.dumpout('Id=%r Type=%r Target=%r', rid, reltype, target)
