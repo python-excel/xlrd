@@ -577,6 +577,7 @@ class Sheet(BaseObject):
                 if chi > nc: nc = chi
             if nc > self.ncols:
                 self.ncols = nc
+                self._first_full_rowx = -2
             if nr > self.nrows:
                 # we put one empty cell at (nr-1,0) to make sure
                 # we have the right number of rows. The ragged rows
