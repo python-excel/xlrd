@@ -19,20 +19,24 @@ class TestOpen(TestCase):
         # For now, we just check this doesn't raise an error.
         open_workbook(from_this_dir('issue20.xls'),
                       formatting_info=True)
-        
+
     def test_BYTES_X00(self):
         # For now, we just check this doesn't raise an error.
         open_workbook(from_this_dir('picture_in_cell.xls'),
                       formatting_info=True)
-        
+
     def test_xlsx_simple(self):
         # For now, we just check this doesn't raise an error.
         open_workbook(from_this_dir('text_bar.xlsx'))
         # we should make assertions here that data has been
         # correctly processed.
-        
+
     def test_xlsx(self):
         # For now, we just check this doesn't raise an error.
         open_workbook(from_this_dir('reveng1.xlsx'))
         # we should make assertions here that data has been
         # correctly processed.
+
+    def test_sap_generate_xls(self):
+        open_workbook(from_this_dir('issue85.xls'),
+                      formatting_info=True)
