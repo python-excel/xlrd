@@ -364,8 +364,8 @@ class Sheet(BaseObject):
         self.cooked_normal_view_mag_factor = 100
 
         # Values (if any) actually stored on the XLS file
-        self.cached_page_break_preview_mag_factor = None # from WINDOW2 record
-        self.cached_normal_view_mag_factor = None # from WINDOW2 record
+        self.cached_page_break_preview_mag_factor = 0  # default (60%), from WINDOW2 record
+        self.cached_normal_view_mag_factor = 0  # default (100%), from WINDOW2 record
         self.scl_mag_factor = None # from SCL record
 
         self._ixfe = None # BIFF2 only
@@ -1252,8 +1252,6 @@ class Sheet(BaseObject):
                     self.gridline_colour_rgb = unpack("<BBB", data[6:9])
                     self.gridline_colour_index = nearest_colour_index(
                         self.book.colour_map, self.gridline_colour_rgb, debug=0)
-                    self.cached_page_break_preview_mag_factor = 0 # default (60%)
-                    self.cached_normal_view_mag_factor = 0 # default (100%)
                 # options -- Bit, Mask, Contents:
                 # 0 0001H 0 = Show formula results 1 = Show formulas
                 # 1 0002H 0 = Do not show grid lines 1 = Show grid lines
@@ -1464,8 +1462,6 @@ class Sheet(BaseObject):
                     self.gridline_colour_rgb = unpack("<BBB", data[10:13])
                     self.gridline_colour_index = nearest_colour_index(
                         self.book.colour_map, self.gridline_colour_rgb, debug=0)
-                    self.cached_page_break_preview_mag_factor = 0 # default (60%)
-                    self.cached_normal_view_mag_factor = 0 # default (100%)
             else:
                 # if DEBUG: print "SHEET.READ: Unhandled record type %02x %d bytes %r" % (rc, data_len, data)
                 pass
