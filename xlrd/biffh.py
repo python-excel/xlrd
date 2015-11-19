@@ -3,7 +3,7 @@
 ##
 # Support module for the xlrd package.
 #
-# <p>Portions copyright © 2005-2010 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Portions copyright Â© 2005-2010 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 
@@ -300,7 +300,14 @@ def unpack_unicode(data, pos, lenlen=2):
         # Uncompressed UTF-16-LE
         rawstrg = data[pos:pos+2*nchars]
         # if DEBUG: print "nchars=%d pos=%d rawstrg=%r" % (nchars, pos, rawstrg)
-        strg = unicode(rawstrg, 'utf_16_le')
+        # HACK: sometimes the last byte should be NUL and isn't
+        try:
+            strg = unicode(rawstrg, 'utf_16_le')
+        except UnicodeDecodeError as e:
+            if e.end == len(rawstrg):
+                strg = unicode(rawstrg[:-1] + b'\0', 'utf_16_le')
+            else:
+                raise
         # pos += 2*nchars
     else:
         # Note: this is COMPRESSED (not ASCII!) encoding!!!
@@ -340,7 +347,13 @@ def unpack_unicode_update_pos(data, pos, lenlen=2, known_len=None):
         pos += 4
     if options & 0x01:
         # Uncompressed UTF-16-LE
-        strg = unicode(data[pos:pos+2*nchars], 'utf_16_le')
+        try:
+            strg = unicode(rawstrg, 'utf_16_le')
+        except UnicodeDecodeError as e:
+            if e.end == len(rawstrg):
+                strg = unicode(rawstrg[:-1] + b'\0', 'utf_16_le')
+            else:
+                raise
         pos += 2*nchars
     else:
         # Note: this is COMPRESSED (not ASCII!) encoding!!!
