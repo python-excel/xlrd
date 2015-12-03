@@ -6,8 +6,6 @@
 
 **Licence**: BSD-style (see licences.py)
 
-**Version of xlrd**: 0.7.1 -- 2009-05-31
-
 **Versions of Python supported**: 2.6, 2.7, 3.2+.
 
 **External modules required**:
@@ -17,8 +15,6 @@
 <dd>The package itself is pure Python with no dependencies on modules or packages outside the standard Python distribution.</dd>
 
 </dl>
-
-**Versions of Excel supported**: 2004, 2003, XP, 2000, 97, 95, 5.0, 4.0, 3.0, 2.1, 2.0. Support for Excel 2007 .xlsx files scheduled for version 0.7.1.
 
 **Outside the current scope**: xlrd will safely and reliably ignore any of these if present in the file:
 
