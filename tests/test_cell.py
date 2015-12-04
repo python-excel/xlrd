@@ -14,6 +14,13 @@ class TestCell(unittest.TestCase):
         self.book = xlrd.open_workbook(from_this_dir('profiles.xls'), formatting_info=True)
         self.sheet = self.book.sheet_by_name('PROFILEDEF')
         
+    def test_empty_cell(self):
+        sheet = self.book.sheet_by_name('TRAVERSALCHAINAGE')
+        cell = sheet.cell(0, 0)
+        self.assertEqual(cell.ctype, xlrd.book.XL_CELL_EMPTY)
+        self.assertEqual(cell.value, '')
+        self.assertTrue(cell.xf_index > 0)
+
     def test_string_cell(self):
         cell = self.sheet.cell(0, 0)
         self.assertEqual(cell.ctype, xlrd.book.XL_CELL_TEXT)
