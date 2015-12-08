@@ -2263,9 +2263,6 @@ class Cell(BaseObject):
         else:
             return "%s:%r (XF:%r)" % (ctype_text[self.ctype], self.value, self.xf_index)
 
-##
-# There is one and only one instance of an empty cell -- it's a singleton. This is it.
-# You may use a test like "acell is empty_cell".
 empty_cell = Cell(XL_CELL_EMPTY, UNICODE_LITERAL(''))
 
 ##### =============== Colinfo and Rowinfo ============================== #####
