@@ -12,6 +12,8 @@ av = sys.argv
 if len(av) > 1 and av[1].lower() == "--egg":
     del av[1]
     from setuptools import setup
+if len(av) > 1 and av[1].lower() == "bdist_wheel":
+    from setuptools import setup
 else:
     from distutils.core import setup
 
