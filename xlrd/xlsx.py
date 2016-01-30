@@ -14,6 +14,7 @@ from .book import Book, Name
 from .biffh import error_text_from_code, XLRDError, XL_CELL_BLANK, XL_CELL_TEXT, XL_CELL_BOOLEAN, XL_CELL_ERROR
 from .formatting import is_date_format_string, Format, XF
 from .sheet import Sheet
+from .xldate import xldate_strict_to_number
 
 DLF = sys.stdout # Default Log File
 
@@ -245,6 +246,29 @@ class X12General(object):
         if self.verbosity >= 2 and heading is not None:
             fprintf(self.logfile, "\n=== %s ===\n", heading)
         self.tree = ET.parse(stream)
+
+        # Change the namespace variable in "strict" conformance mode.
+        if heading == "Workbook":
+            global U_SSML12
+            global U_ODREL
+            global V_TAG
+            global F_TAG
+            global IS_TAG
+
+            attrib = self.tree.getroot().attrib
+            if attrib.get('conformance') == 'strict':
+                U_SSML12 = "{http://purl.oclc.org/ooxml/spreadsheetml/main}"
+                U_ODREL = "{http://purl.oclc.org/ooxml/officeDocument/relationships}"
+            else:
+                U_SSML12 = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
+                U_ODREL = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
+
+            V_TAG = U_SSML12 + 'v'  # cell child: value
+            F_TAG = U_SSML12 + 'f'  # cell child: formula
+            IS_TAG = U_SSML12 + 'is'  # cell child: inline string
+
+        augment_keys(self.tag2meth, U_SSML12)
+
         getmethod = self.tag2meth.get
         for elem in self.tree.iter() if Element_has_iter else self.tree.getiterator():
             if self.verbosity >= 3:
@@ -399,7 +423,6 @@ class X12Book(X12General):
         'workbookPr':   do_workbookpr,
         'sheet':        do_sheet,
         }
-    augment_keys(tag2meth, U_SSML12)
 
 class X12SST(X12General):
 
@@ -464,6 +487,7 @@ class X12Styles(X12General):
         # dummy entry for XF 0 in case no Styles section
         self.bk._xf_index_to_xl_type_map[0] = 2
         # fill_in_standard_formats(bk) #### pre-integration kludge
+        augment_keys(self.tag2meth, U_SSML12)
 
     def do_cellstylexfs(self, elem):
         self.xf_type = 0
@@ -507,7 +531,6 @@ class X12Styles(X12General):
         'numFmt':       do_numfmt,
         'xf':           do_xf,
         }
-    augment_keys(tag2meth, U_SSML12)
 
 class X12Sheet(X12General):
 
@@ -523,6 +546,8 @@ class X12Sheet(X12General):
         self.warned_no_row_num = 0
         if ET_has_iterparse:
             self.process_stream = self.own_process_stream
+        augment_keys(self.tag2meth, U_SSML12)
+
 
     def own_process_stream(self, stream, heading=None):
         if self.verbosity >= 2 and heading is not None:
@@ -724,17 +749,39 @@ class X12Sheet(X12General):
                     child_tag = child.tag
                     if child_tag == IS_TAG:
                         tvalue = get_text_from_si_or_is(self, child)
+                    elif child_tag == F_TAG:
+                        formula = cooked_text(self, child)
                     else:
                         bad_child_tag(child_tag)
                 assert tvalue is not None
                 self.sheet.put_cell(rowx, colx, XL_CELL_TEXT, tvalue, xf_index)
+            elif cell_type == 'd':
+                # Cell contains a date in the Excel Strict ISO 8601 format.
+                # Only seen in Excel >= 2013 and some third party files.
+                for child in cell_elem:
+                    child_tag = child.tag
+                    if child_tag == V_TAG:
+                        tvalue = child.text
+                    elif child_tag == F_TAG:
+                        formula = cooked_text(self, child)
+                    else:
+                        raise Exception('unexpected tag %r' % child_tag)
+                if not tvalue:
+                    if self.bk.formatting_info:
+                        self.sheet.put_cell(rowx, colx, XL_CELL_BLANK, '',
+                                            xf_index)
+                else:
+                    # Convert the ISO date to a serial number date and handle
+                    # it like a standard Excel date.
+                    number = xldate_strict_to_number(tvalue, self.bk.datemode)
+                    self.sheet.put_cell(rowx, colx, None, number, xf_index)
             else:
-                raise Exception("Unknown cell type %r in rowx=%d colx=%d" % (cell_type, rowx, colx))
+                raise Exception("Unknown cell type %r in rowx=%d colx=%d" %
+                                (cell_type, rowx, colx))
 
     tag2meth = {
         'row':          do_row,
         }
-    augment_keys(tag2meth, U_SSML12)
 
 def open_workbook_2007_xml(
     zf,
