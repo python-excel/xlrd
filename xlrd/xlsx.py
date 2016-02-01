@@ -717,17 +717,23 @@ class X12Sheet(X12General):
                 self.sheet.put_cell(rowx, colx, XL_CELL_ERROR, value, xf_index)
             elif cell_type == "inlineStr":
                 # Not expected in files produced by Excel.
-                # Only possible child is <is>.
                 # It's a way of allowing 3rd party s/w to write text (including rich text) cells
                 # without having to build a shared string table
                 for child in cell_elem:
                     child_tag = child.tag
                     if child_tag == IS_TAG:
                         tvalue = get_text_from_si_or_is(self, child)
+                    elif child_tag == V_TAG:
+                        tvalue = child.text
+                    elif child_tag == F_TAG:
+                        formula = child.text
                     else:
                         bad_child_tag(child_tag)
-                assert tvalue is not None
-                self.sheet.put_cell(rowx, colx, XL_CELL_TEXT, tvalue, xf_index)
+                if not tvalue:
+                    if self.bk.formatting_info:
+                        self.sheet.put_cell(rowx, colx, XL_CELL_BLANK, '', xf_index)
+                else:
+                    self.sheet.put_cell(rowx, colx, XL_CELL_TEXT, tvalue, xf_index)
             else:
                 raise Exception("Unknown cell type %r in rowx=%d colx=%d" % (cell_type, rowx, colx))
 
