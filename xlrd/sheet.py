@@ -857,8 +857,8 @@ class Sheet(BaseObject):
                 if not fmt_info: continue
                 rowx, bits1, bits2 = local_unpack('<H4xH4xi', data[0:16])
                 if not(0 <= rowx < self.utter_max_rows):
-                    print("*** NOTE: ROW record has row index %d; " \
-                        "should have 0 <= rowx < %d -- record ignored!" \
+                    print("*** NOTE: ROW record has row index %d; "
+                        "should have 0 <= rowx < %d -- record ignored!"
                         % (rowx, self.utter_max_rows), file=self.logfile)
                     continue
                 key = (bits1, bits2)
@@ -998,8 +998,8 @@ class Sheet(BaseObject):
                 if not(0 <= first_colx <= last_colx <= 256):
                     # Note: 256 instead of 255 is a common mistake.
                     # We silently ignore the non-existing 257th column in that case.
-                    print("*** NOTE: COLINFO record has first col index %d, last %d; " \
-                        "should have 0 <= first <= last <= 255 -- record ignored!" \
+                    print("*** NOTE: COLINFO record has first col index %d, last %d; "
+                        "should have 0 <= first <= last <= 255 -- record ignored!"
                         % (first_colx, last_colx), file=self.logfile)
                     del c
                     continue
@@ -1112,7 +1112,7 @@ class Sheet(BaseObject):
             elif rc in bofcodes: ##### EMBEDDED BOF #####
                 version, boftype = local_unpack('<HH', data[0:4])
                 if boftype != 0x20: # embedded chart
-                    print("*** Unexpected embedded BOF (0x%04x) at offset %d: version=0x%04x type=0x%04x" \
+                    print("*** Unexpected embedded BOF (0x%04x) at offset %d: version=0x%04x type=0x%04x"
                         % (rc, bk._position - data_len - 4, version, boftype), file=self.logfile)
                 while 1:
                     code, data_len, data = bk.get_record_parts()
@@ -1150,9 +1150,9 @@ class Sheet(BaseObject):
                     unpack("<6H", data[0:12])
                 if self.verbosity >= 1:
                     fprintf(self.logfile,
-                        "\n*** WARNING: Ignoring CONDFMT (conditional formatting) record\n" \
-                        "*** in Sheet %d (%r).\n" \
-                        "*** %d CF record(s); needs_recalc_or_redraw = %d\n" \
+                        "\n*** WARNING: Ignoring CONDFMT (conditional formatting) record\n"
+                        "*** in Sheet %d (%r).\n"
+                        "*** %d CF record(s); needs_recalc_or_redraw = %d\n"
                         "*** Bounding box is %s\n",
                         self.number, self.name, num_CFs, needs_recalc,
                         rangename2d(browx1, browx2+1, bcolx1, bcolx2+1),
@@ -1163,7 +1163,7 @@ class Sheet(BaseObject):
                 # print >> self.logfile, repr(result), len(result)
                 if self.verbosity >= 1:
                     fprintf(self.logfile,
-                        "*** %d individual range(s):\n" \
+                        "*** %d individual range(s):\n"
                         "*** %s\n",
                         len(olist),
                         ", ".join([rangename2d(*coords) for coords in olist]),
@@ -1176,8 +1176,8 @@ class Sheet(BaseObject):
                 patt_block = (flags >> 29) & 1
                 if self.verbosity >= 1:
                     fprintf(self.logfile,
-                        "\n*** WARNING: Ignoring CF (conditional formatting) sub-record.\n" \
-                        "*** cf_type=%d, cmp_op=%d, sz1=%d, sz2=%d, flags=0x%08x\n" \
+                        "\n*** WARNING: Ignoring CF (conditional formatting) sub-record.\n"
+                        "*** cf_type=%d, cmp_op=%d, sz1=%d, sz2=%d, flags=0x%08x\n"
                         "*** optional data blocks: font=%d, border=%d, pattern=%d\n",
                         cf_type, cmp_op, sz1, sz2, flags,
                         font_block, bord_block, patt_block,
@@ -1194,8 +1194,8 @@ class Sheet(BaseObject):
                     cancellation = (font_options > 7) & 1
                     if self.verbosity >= 1:
                         fprintf(self.logfile,
-                            "*** Font info: height=%d, weight=%d, escapement=%d,\n" \
-                            "*** underline=%d, colour_index=%d, esc=%d, underl=%d,\n" \
+                            "*** Font info: height=%d, weight=%d, escapement=%d,\n"
+                            "*** underline=%d, colour_index=%d, esc=%d, underl=%d,\n"
                             "*** style=%d, posture=%d, canc=%d, cancellation=%d\n",
                             font_height, weight, escapement, underline,
                             font_colour_index, font_esc, font_underl,
@@ -1228,12 +1228,12 @@ class Sheet(BaseObject):
                     self.default_row_height, = unpack("<H", data)
                     bits = 0
                     fprintf(self.logfile,
-                        "*** WARNING: DEFAULTROWHEIGHT record len is 2, " \
+                        "*** WARNING: DEFAULTROWHEIGHT record len is 2, "
                         "should be 4; assuming BIFF2 format\n")
                 else:
                     bits = 0
                     fprintf(self.logfile,
-                        "*** WARNING: DEFAULTROWHEIGHT record len is %d, " \
+                        "*** WARNING: DEFAULTROWHEIGHT record len is %d, "
                         "should be 4; ignoring this record\n",
                         data_len)
                 self.default_row_height_mismatch = bits & 1
@@ -1381,8 +1381,8 @@ class Sheet(BaseObject):
                     if not fmt_info: continue
                     rowx, bits1, bits2 = local_unpack('<H4xH2xB', data[0:11])
                     if not(0 <= rowx < self.utter_max_rows):
-                        print("*** NOTE: ROW_B2 record has row index %d; " \
-                            "should have 0 <= rowx < %d -- record ignored!" \
+                        print("*** NOTE: ROW_B2 record has row index %d; "
+                            "should have 0 <= rowx < %d -- record ignored!"
                             % (rowx, self.utter_max_rows), file=self.logfile)
                         continue
                     if not (bits2 & 1):  # has_default_xf_index is false
@@ -1422,8 +1422,8 @@ class Sheet(BaseObject):
                     first_colx, last_colx, width\
                         = local_unpack("<BBH", data[:4])
                     if not(first_colx <= last_colx):
-                        print("*** NOTE: COLWIDTH record has first col index %d, last %d; " \
-                            "should have first <= last -- record ignored!" \
+                        print("*** NOTE: COLWIDTH record has first col index %d, last %d; "
+                            "should have first <= last -- record ignored!"
                             % (first_colx, last_colx), file=self.logfile)
                         continue
                     for colx in xrange(first_colx, last_colx+1):
@@ -1450,8 +1450,8 @@ class Sheet(BaseObject):
                             self.number, first_colx, last_colx
                             )
                     if not(0 <= first_colx < last_colx <= 256):
-                        print("*** NOTE: COLUMNDEFAULT record has first col index %d, last %d; " \
-                            "should have 0 <= first < last <= 256" \
+                        print("*** NOTE: COLUMNDEFAULT record has first col index %d, last %d; "
+                            "should have 0 <= first < last <= 256"
                             % (first_colx, last_colx), file=self.logfile)
                         last_colx = min(last_colx, 256)
                     for colx in xrange(first_colx, last_colx):
@@ -1479,7 +1479,7 @@ class Sheet(BaseObject):
                 # if DEBUG: print "SHEET.READ: Unhandled record type %02x %d bytes %r" % (rc, data_len, data)
                 pass
         if not eof_found:
-            raise XLRDError("Sheet %d (%r) missing EOF record" \
+            raise XLRDError("Sheet %d (%r) missing EOF record"
                 % (self.number, self.name))
         self.tidy_dimensions()
         self.update_cooked_mag_factors()
@@ -2073,8 +2073,8 @@ class Sheet(BaseObject):
         (lt, idList, crwHeader, crwTotals, idFieldNext, cbFSData,
         rupBuild, unusedShort, listFlags, lPosStmCache, cbStmCache,
         cchStmCache, lem, rgbHashParam, cchName) = unpack('<iiiiiiHHiiiii16sH', data[35:35+66])
-        print("lt=%d  idList=%d crwHeader=%d  crwTotals=%d  idFieldNext=%d cbFSData=%d\n"\
-            "rupBuild=%d  unusedShort=%d listFlags=%04X  lPosStmCache=%d  cbStmCache=%d\n"\
+        print("lt=%d  idList=%d crwHeader=%d  crwTotals=%d  idFieldNext=%d cbFSData=%d\n"
+            "rupBuild=%d  unusedShort=%d listFlags=%04X  lPosStmCache=%d  cbStmCache=%d\n"
             "cchStmCache=%d  lem=%d  rgbHashParam=%r  cchName=%d" % (
             lt, idList, crwHeader, crwTotals, idFieldNext, cbFSData,
             rupBuild, unusedShort,listFlags, lPosStmCache, cbStmCache,

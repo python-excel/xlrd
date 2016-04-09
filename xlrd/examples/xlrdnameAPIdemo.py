@@ -87,7 +87,7 @@ def showable_cell_value(celltype, cellvalue, datemode):
     return showval
 
 def show_name_object(book, nobj, show_contents=0, f=sys.stdout):
-    print("\nName: %s, scope: %s (%s)" \
+    print("\nName: %s, scope: %s (%s)"
         % (REPR(nobj.name), REPR(nobj.scope), scope_as_string(book, nobj.scope)), file=f)
     res = nobj.result
     print("Formula eval result: %s" % REPR(res), file=f)

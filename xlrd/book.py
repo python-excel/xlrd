@@ -732,7 +732,7 @@ class Book(BaseObject):
         bv = self.biff_version
         self.derive_encoding()
         if DEBUG:
-            fprintf(self.logfile, "BOUNDSHEET: bv=%d data %r\n", bv, data);
+            fprintf(self.logfile, "BOUNDSHEET: bv=%d data %r\n", bv, data)
         if bv == 45: # BIFF4W
             #### Not documented in OOo docs ...
             # In fact, the *only* data is the name of the sheet.
@@ -1277,7 +1277,7 @@ class Book(BaseObject):
                 'Invalid length (%d) for BOF record type 0x%04x'
                 % (length, opcode))
         padding = b'\0' * max(0, boflen[opcode] - length)
-        data = self.read(self._position, length);
+        data = self.read(self._position, length)
         if DEBUG: fprintf(self.logfile, "\ngetbof(): data=%r\n", data)
         if len(data) < length:
             bof_error('Incomplete BOF record[2]; met end of file')
@@ -1285,11 +1285,11 @@ class Book(BaseObject):
         version1 = opcode >> 8
         version2, streamtype = unpack('<HH', data[0:4])
         if DEBUG:
-            print("getbof(): op=0x%04x version2=0x%04x streamtype=0x%04x" \
+            print("getbof(): op=0x%04x version2=0x%04x streamtype=0x%04x"
                 % (opcode, version2, streamtype), file=self.logfile)
         bof_offset = self._position - 4 - length
         if DEBUG:
-            print("getbof(): BOF found at offset %d; savpos=%d" \
+            print("getbof(): BOF found at offset %d; savpos=%d"
                 % (bof_offset, savpos), file=self.logfile)
         version = build = year = 0
         if version1 == 0x08:
@@ -1317,7 +1317,7 @@ class Book(BaseObject):
             version = 45 # i.e. 4W
 
         if DEBUG or self.verbosity >= 2:
-            print("BOF: op=0x%04x vers=0x%04x stream=0x%04x buildid=%d buildyr=%d -> BIFF%d" \
+            print("BOF: op=0x%04x vers=0x%04x stream=0x%04x buildid=%d buildyr=%d -> BIFF%d"
                 % (opcode, version2, streamtype, build, year, version), file=self.logfile)
         got_globals = streamtype == XL_WORKBOOK_GLOBALS or (
             version == 45 and streamtype == XL_WORKBOOK_GLOBALS_4W)
@@ -1328,7 +1328,7 @@ class Book(BaseObject):
         if version >= 50 and streamtype == 0x0100:
             bof_error("Workspace file -- no spreadsheet data")
         bof_error(
-            'BOF not workbook/worksheet: op=0x%04x vers=0x%04x strm=0x%04x build=%d year=%d -> BIFF%d' \
+            'BOF not workbook/worksheet: op=0x%04x vers=0x%04x strm=0x%04x build=%d year=%d -> BIFF%d'
             % (opcode, version2, streamtype, build, year, version)
             )
 

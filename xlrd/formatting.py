@@ -145,7 +145,7 @@ def nearest_colour_index(colour_map, rgb, debug=0):
             if metric == 0:
                 break
     if 0 and debug:
-        print("nearest_colour_index for %r is %r -> %r; best_metric is %d" \
+        print("nearest_colour_index for %r is %r -> %r; best_metric is %d"
             % (rgb, best_colourx, colour_map[best_colourx], best_metric))
     return best_colourx
 
@@ -657,7 +657,7 @@ def handle_style(book, data):
             try:
                 name = unpack_unicode(data, 2, lenlen=2)
             except UnicodeDecodeError:
-                print("STYLE: built_in=%d xf_index=%d built_in_id=%d level=%d" \
+                print("STYLE: built_in=%d xf_index=%d built_in_id=%d level=%d"
                     % (built_in, xf_index, built_in_id, level), file=book.logfile)
                 print("raw bytes:", repr(data[2:]), file=book.logfile)
                 raise
@@ -680,7 +680,7 @@ def check_colour_indexes_in_obj(book, obj, orig_index):
                 book.colour_indexes_used[nobj] = 1
                 continue
             oname = obj.__class__.__name__
-            print("*** xf #%d : %s.%s =  0x%04x (unknown)" \
+            print("*** xf #%d : %s.%s =  0x%04x (unknown)"
                 % (orig_index, oname, attr, nobj), file=book.logfile)
 
 def fill_in_standard_formats(book):
