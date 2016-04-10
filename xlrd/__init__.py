@@ -392,9 +392,8 @@ def open_workbook(filename=None,
     if file_contents:
         peek = file_contents[:peeksz]
     else:
-        f = open(filename, "rb")
-        peek = f.read(peeksz)
-        f.close()
+        with open(filename, "rb") as f:
+            peek = f.read(peeksz)
     if peek == b"PK\x03\x04": # a ZIP file
         if file_contents:
             zf = zipfile.ZipFile(timemachine.BYTES_IO(file_contents))
