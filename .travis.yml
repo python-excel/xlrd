@@ -1,9 +1,12 @@
 language: python
 python:
+  - "3.5"
   - "3.4"
   - "3.3"
   - "3.2"
+  - "pypy3"
   - "2.7"
   - "2.6"
+  - "pypy"
 # command to run tests, e.g. python setup.py test
 script: nosetests
