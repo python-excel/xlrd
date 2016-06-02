@@ -1534,7 +1534,7 @@ class Sheet(BaseObject):
             else:
                 self.cooked_normal_view_mag_factor = self.scl_mag_factor
             zoom = self.cached_page_break_preview_mag_factor
-            if zoom == 0:
+            if not zoom:
                 # VALID, defaults to 60
                 zoom = 60
             elif not (10 <= zoom <= 400):
