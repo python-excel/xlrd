@@ -10,7 +10,7 @@
 
 # No part of the content of this file was derived from the works of David Giffin.
 
-from __future__ import print_function 
+from __future__ import print_function
 import copy
 from struct import unpack
 from .timemachine import *
@@ -968,10 +968,10 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
             elif opcode == 0x17: # tStr
                 if bv <= 70:
                     strg, newpos = unpack_string_update_pos(
-                                        data, pos+1, bk.encoding, lenlen=1)
+                                        data, pos+1, bk.encoding, bk.unicode_errors, lenlen=1)
                 else:
                     strg, newpos = unpack_unicode_update_pos(
-                                        data, pos+1, lenlen=1)
+                                        data, pos+1, bk.unicode_errors, lenlen=1)
                 sz = newpos - pos
                 if blah: print("   sz=%d strg=%r" % (sz, strg), file=bk.logfile)
                 text = '"' + strg.replace('"', '""') + '"'
@@ -1541,10 +1541,10 @@ def decompile_formula(bk, fmla, fmlalen,
             elif opcode == 0x17: # tStr
                 if bv <= 70:
                     strg, newpos = unpack_string_update_pos(
-                                        data, pos+1, bk.encoding, lenlen=1)
+                                        data, pos+1, bk.encoding, bk.unicode_errors, lenlen=1)
                 else:
                     strg, newpos = unpack_unicode_update_pos(
-                                        data, pos+1, lenlen=1)
+                                        data, pos+1, bk.unicode_errors, lenlen=1)
                 sz = newpos - pos
                 if blah: print("   sz=%d strg=%r" % (sz, strg), file=bk.logfile)
                 text = '"' + strg.replace('"', '""') + '"'
@@ -1943,7 +1943,7 @@ def dump_formula(bk, data, fmlalen, bv, reldelta, blah=0, isname=0):
                     strg = data[pos+2:pos+2+nc] # left in 8-bit encoding
                     sz = nc + 2
                 else:
-                    strg, newpos = unpack_unicode_update_pos(data, pos+1, lenlen=1)
+                    strg, newpos = unpack_unicode_update_pos(data, pos+1, bk.unicode_errors, lenlen=1)
                     sz = newpos - pos
                 if blah: print("   sz=%d strg=%r" % (sz, strg), file=bk.logfile)
             else:

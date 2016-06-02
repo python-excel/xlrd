@@ -387,6 +387,7 @@ def open_workbook(filename=None,
     formatting_info=False,
     on_demand=False,
     ragged_rows=False,
+    unicode_errors="strict",
     ):
     peeksz = 4
     if file_contents:
@@ -439,6 +440,7 @@ def open_workbook(filename=None,
         formatting_info=formatting_info,
         on_demand=on_demand,
         ragged_rows=ragged_rows,
+        unicode_errors=unicode_errors,
         )
     return bk
 

@@ -28,8 +28,8 @@ _cellty_from_fmtty = {
     FGE: XL_CELL_NUMBER,
     FDT: XL_CELL_DATE,
     FTX: XL_CELL_NUMBER, # Yes, a number can be formatted as text.
-    }    
-    
+    }
+
 excel_default_palette_b5 = (
     (  0,   0,   0), (255, 255, 255), (255,   0,   0), (  0, 255,   0),
     (  0,   0, 255), (255, 255,   0), (255,   0, 255), (  0, 255, 255),
@@ -277,9 +277,9 @@ def handle_font(book, data):
         f.outline = (option_flags & 16) >> 4
         f.shadow = (option_flags & 32) >> 5
         if bv >= 80:
-            f.name = unpack_unicode(data, 14, lenlen=1)
+            f.name = unpack_unicode(data, 14, book.unicode_errors, lenlen=1)
         else:
-            f.name = unpack_string(data, 14, book.encoding, lenlen=1)
+            f.name = unpack_string(data, 14, book.encoding, book.unicode_errors, lenlen=1)
     elif bv >= 30:
         f.height, option_flags, f.colour_index = unpack('<HHH', data[0:6])
         f.bold = option_flags & 1
@@ -288,7 +288,7 @@ def handle_font(book, data):
         f.struck_out = (option_flags & 8) >> 3
         f.outline = (option_flags & 16) >> 4
         f.shadow = (option_flags & 32) >> 5
-        f.name = unpack_string(data, 6, book.encoding, lenlen=1)
+        f.name = unpack_string(data, 6, book.encoding, book.unicode_errors, lenlen=1)
         # Now cook up the remaining attributes ...
         f.weight = [400, 700][f.bold]
         f.escapement = 0 # None
@@ -304,7 +304,7 @@ def handle_font(book, data):
         f.struck_out = (option_flags & 8) >> 3
         f.outline = 0
         f.shadow = 0
-        f.name = unpack_string(data, 4, book.encoding, lenlen=1)
+        f.name = unpack_string(data, 4, book.encoding, book.unicode_errors, lenlen=1)
         # Now cook up the remaining attributes ...
         f.weight = [400, 700][f.bold]
         f.escapement = 0 # None
@@ -456,7 +456,7 @@ def is_date_format_string(book, fmt):
     # TODO: u'[h]\\ \\h\\o\\u\\r\\s' ([h] means don't care about hours > 23)
     state = 0
     s = ''
-    
+
     for c in fmt:
         if state == 0:
             if c == UNICODE_LITERAL('"'):
@@ -523,9 +523,9 @@ def handle_format(self, data, rectype=XL_FORMAT):
             strpos = 0
     self.actualfmtcount += 1
     if bv >= 80:
-        unistrg = unpack_unicode(data, 2)
+        unistrg = unpack_unicode(data, 2, self.unicode_errors)
     else:
-        unistrg = unpack_string(data, strpos, self.encoding, lenlen=1)
+        unistrg = unpack_string(data, strpos, self.encoding, self.unicode_errors, lenlen=1)
     blah = DEBUG or self.verbosity >= 3
     if blah:
         fprintf(self.logfile,
@@ -645,7 +645,7 @@ def handle_style(book, data):
         level = 0
         if bv >= 80:
             try:
-                name = unpack_unicode(data, 2, lenlen=2)
+                name = unpack_unicode(data, 2, book.unicode_errors, lenlen=2)
             except UnicodeDecodeError:
                 print("STYLE: built_in=%d xf_index=%d built_in_id=%d level=%d" \
                     % (built_in, xf_index, built_in_id, level), file=book.logfile)
@@ -1007,7 +1007,7 @@ def xf_epilogue(self):
                 elif not self.xf_list[xf.parent_style_index].is_style:
                     fprintf(self.logfile,
                         "NOTE !!! XF[%d]: parent_style_index is %d; style flag not set\n",
-                        xf.xf_index, xf.parent_style_index)                
+                        xf.xf_index, xf.parent_style_index)
             if blah1 and xf.parent_style_index > xf.xf_index:
                 fprintf(self.logfile,
                     "NOTE !!! XF[%d]: parent_style_index is %d; out of order?\n",
