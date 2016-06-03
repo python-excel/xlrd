@@ -7,11 +7,8 @@ python:
   - "3.5"
   - "3.4"
   - "3.3"
-  - "3.2"
-  - "pypy3"
   - "2.7"
   - "2.6"
-  - "pypy"
 
 # command to install dependencies
 install: "pip install -Ur requirements.txt"
