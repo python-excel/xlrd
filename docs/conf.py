@@ -4,6 +4,7 @@ import os, pkginfo
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 pkg_info = pkginfo.Develop(os.path.join(os.path.dirname(__file__), os.pardir))
 
+intersphinx_mapping = {'http://docs.python.org': None}
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx']
 source_suffix = '.rst'
 master_doc = 'index'
