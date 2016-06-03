@@ -72,7 +72,7 @@ from .biffh import (
     XL_CELL_NUMBER
     )
 from .formula import * # is constrained by __all__
-from .book import Book, colname #### TODO #### formula also has `colname` (restricted to 256 cols)
+from .book import Book, colname
 from .sheet import empty_cell
 from .xldate import XLDateError, xldate_as_tuple, xldate_as_datetime
 from .xlsx import X12Book
