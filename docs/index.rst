@@ -9,6 +9,7 @@ files, whether they are .xls or .xlsx files.
 
    unicode.rst
    dates.rst
+   references.rst
    api.rst
 
 You may also wish to consult the `tutorial`__.

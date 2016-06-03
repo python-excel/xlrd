@@ -5,44 +5,7 @@ from .info import __VERSION__
 
 
 # <h2>General information</h2>
-#
-#
-#
-# <h3> Named references, constants, formulas, and macros</h3>
-#
-# <p>
-# A name is used to refer to a cell, a group of cells, a constant
-# value, a formula, or a macro. Usually the scope of a name is global
-# across the whole workbook. However it can be local to a worksheet.
-# For example, if the sales figures are in different cells in
-# different sheets, the user may define the name "Sales" in each
-# sheet. There are built-in names, like "Print_Area" and
-# "Print_Titles"; these two are naturally local to a sheet.
-# </p><p>
-# To inspect the names with a user interface like MS Excel, OOo Calc,
-# or Gnumeric, click on Insert/Names/Define. This will show the global
-# names, plus those local to the currently selected sheet.
-# </p><p>
-# A Book object provides two dictionaries (name_map and
-# name_and_scope_map) and a list (name_obj_list) which allow various
-# ways of accessing the Name objects. There is one Name object for
-# each NAME record found in the workbook. Name objects have many
-# attributes, several of which are relevant only when obj.macro is 1.
-# </p><p>
-# In the examples directory you will find namesdemo.xls which
-# showcases the many different ways that names can be used, and
-# xlrdnamesAPIdemo.py which offers 3 different queries for inspecting
-# the names in your files, and shows how to extract whatever a name is
-# referring to. There is currently one "convenience method",
-# Name.cell(), which extracts the value in the case where the name
-# refers to a single cell. More convenience methods are planned. The
-# source code for Name.cell (in __init__.py) is an extra source of
-# information on how the Name attributes hang together.
-# </p>
-#
-# <p><i>Name information is <b>not</b> extracted from files older than
-# Excel 5.0 (Book.biff_version < 50)</i></p>
-#
+
 # <h3>Formatting</h3>
 #
 # <h4>Introduction</h4>
