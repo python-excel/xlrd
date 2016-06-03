@@ -725,8 +725,6 @@ class X12Sheet(X12General):
             elif cell_type == "b":
                 # b = boolean
                 # <v> child contains "0" or "1"
-                # Maybe the data should be converted with cnv_xsd_boolean;
-                # ECMA standard is silent; Excel 2007 writes 0 or 1
                 for child in cell_elem:
                     child_tag = child.tag
                     if child_tag == V_TAG:
@@ -735,7 +733,7 @@ class X12Sheet(X12General):
                         formula = cooked_text(self, child)
                     else:
                         bad_child_tag(child_tag)
-                self.sheet.put_cell(rowx, colx, XL_CELL_BOOLEAN, int(tvalue), xf_index)
+                self.sheet.put_cell(rowx, colx, XL_CELL_BOOLEAN, cnv_xsd_boolean(tvalue), xf_index)
             elif cell_type == "e":
                 # e = error
                 # <v> child contains e.g. "#REF!"
