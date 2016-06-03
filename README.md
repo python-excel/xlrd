@@ -6,7 +6,7 @@
 
 **Licence**: BSD-style (see licences.py)
 
-**Versions of Python supported**: 2.6, 2.7, 3.2+.
+**Versions of Python supported**: 2.6, 2.7, 3.3+.
 
 **External modules required**:
 
