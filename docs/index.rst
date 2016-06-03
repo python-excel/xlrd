@@ -8,6 +8,7 @@ files, whether they are .xls or .xlsx files.
    :maxdepth: 1
 
    unicode.rst
+   dates.rst
    api.rst
 
 You may also wish to consult the `tutorial`__.
