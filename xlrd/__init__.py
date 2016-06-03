@@ -35,50 +35,6 @@ except ImportError:
     MMAP_AVAILABLE = 0
 USE_MMAP = MMAP_AVAILABLE
 
-##
-#
-# Open a spreadsheet file for data extraction.
-#
-# @param filename The path to the spreadsheet file to be opened.
-#
-# @param logfile An open file to which messages and diagnostics are written.
-#
-# @param verbosity Increases the volume of trace material written to the logfile.
-#
-# @param use_mmap Whether to use the mmap module is determined heuristically.
-# Use this arg to override the result. Current heuristic: mmap is used if it exists.
-#
-# @param file_contents ... as a string or an mmap.mmap object or some other behave-alike object.
-# If file_contents is supplied, filename will not be used, except (possibly) in messages.
-#
-# @param encoding_override Used to overcome missing or bad codepage information
-# in older-version files. Refer to discussion in the <b>Unicode</b> section above.
-# <br /> -- New in version 0.6.0
-#
-# @param formatting_info Governs provision of a reference to an XF (eXtended Format) object
-# for each cell in the worksheet.
-# <br /> Default is <i>False</i>. This is backwards compatible and saves memory.
-# "Blank" cells (those with their own formatting information but no data) are treated as empty
-# (by ignoring the file's BLANK and MULBLANK records).
-# It cuts off any bottom "margin" of rows of empty (and blank) cells and
-# any right "margin" of columns of empty (and blank) cells.
-# Only cell_value and cell_type are available.
-# <br /> <i>True</i> provides all cells, including empty and blank cells.
-# XF information is available for each cell.
-# <br /> -- New in version 0.6.1
-#
-# @param on_demand Governs whether sheets are all loaded initially or when demanded
-# by the caller. Please refer back to the section "Loading worksheets on demand" for details.
-# <br /> -- New in version 0.7.1
-#
-# @param ragged_rows False (the default) means all rows are padded out with empty cells so that all
-# rows have the same size (Sheet.ncols). True means that there are no empty cells at the ends of rows.
-# This can result in substantial memory savings if rows are of widely varying sizes. See also the
-# Sheet.row_len() method.
-# <br /> -- New in version 0.7.2
-#
-# @return An instance of the Book class.
-
 def open_workbook(filename=None,
     logfile=sys.stdout,
     verbosity=0,
@@ -89,6 +45,67 @@ def open_workbook(filename=None,
     on_demand=False,
     ragged_rows=False,
     ):
+    """
+    Open a spreadsheet file for data extraction.
+
+    :param filename: The path to the spreadsheet file to be opened.
+
+    :param logfile: An open file to which messages and diagnostics are written.
+
+    :param verbosity: Increases the volume of trace material written to the
+                      logfile.
+
+    :param use_mmap:
+
+      Whether to use the mmap module is determined heuristically.
+      Use this arg to override the result.
+
+      Current heuristic: mmap is used if it exists.
+
+    :param file_contents:
+
+      A string or an :class:`mmap.mmap` object or some other behave-alike
+      object. If ``file_contents`` is supplied, ``filename`` will not be used,
+      except (possibly) in messages.
+
+    :param encoding_override:
+
+      Used to overcome missing or bad codepage information
+      in older-version files. See :doc:`unicode`.
+
+    :param formatting_info:
+
+      The default is ``False``, which saves memory.
+      In this case, "Blank" cells, which are those with their own formatting
+      information but no data, are treated as empty by ignoring the file's
+      ``BLANK`` and ``MULBLANK`` records.
+      This cuts off any bottom or right "margin" of rows of empty or blank
+      cells.
+      Only :meth:`~xlrd.sheet.Sheet.cell_value` and
+      :meth:`~xlrd.sheet.Sheet.cell_type` are available.
+
+      When ``True``, formatting information will be read from the spreadsheet
+      file. This provides all cells, including empty and blank cells.
+      Formatting information is available for each cell.
+
+    :param on_demand:
+
+      Governs whether sheets are all loaded initially or when demanded
+      by the caller. See :doc:`on_demand`.
+
+    :param ragged_rows:
+
+      The default of ``False`` means all rows are padded out with empty cells so
+      that all rows have the same size as found in
+      :attr:`~xlrd.sheet.Sheet.ncols`.
+
+      ``True`` means that there are no empty cells at the ends of rows.
+      This can result in substantial memory savings if rows are of widely
+      varying sizes. See also the :meth:`~xlrd.sheet.Sheet.row_len` method.
+
+    :returns: An instance of the :class:`~xlrd.book.Book` class.
+    """
+
     peeksz = 4
     if file_contents:
         peek = file_contents[:peeksz]
@@ -143,25 +160,29 @@ def open_workbook(filename=None,
         )
     return bk
 
-##
-# For debugging: dump an XLS file's BIFF records in char & hex.
-# @param filename The path to the file to be dumped.
-# @param outfile An open file, to which the dump is written.
-# @param unnumbered If true, omit offsets (for meaningful diffs).
 
 def dump(filename, outfile=sys.stdout, unnumbered=False):
+    """
+    For debugging: dump an XLS file's BIFF records in char & hex.
+
+    :param filename: The path to the file to be dumped.
+    :param outfile: An open file, to which the dump is written.
+    :param unnumbered: If true, omit offsets (for meaningful diffs).
+    """
     from .biffh import biff_dump
     bk = Book()
     bk.biff2_8_load(filename=filename, logfile=outfile, )
     biff_dump(bk.mem, bk.base, bk.stream_len, 0, outfile, unnumbered)
 
-##
-# For debugging and analysis: summarise the file's BIFF records.
-# I.e. produce a sorted file of (record_name, count).
-# @param filename The path to the file to be summarised.
-# @param outfile An open file, to which the summary is written.
 
 def count_records(filename, outfile=sys.stdout):
+    """
+    For debugging and analysis: summarise the file's BIFF records.
+    ie: produce a sorted file of ``(record_name, count)``.
+
+    :param filename: The path to the file to be summarised.
+    :param outfile: An open file, to which the summary is written.
+    """
     from .biffh import biff_count_records
     bk = Book()
     bk.biff2_8_load(filename=filename, logfile=outfile, )

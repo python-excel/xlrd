@@ -1,6 +1,9 @@
 API Reference
 =============
 
+.. automodule:: xlrd
+   :members:
+
 .. automodule:: xlrd.biffh
    :members:
 
