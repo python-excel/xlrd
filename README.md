@@ -1,3 +1,8 @@
+[![Build Status](https://travis-ci.org/python-excel/xlrd.svg?branch=master)](https://travis-ci.org/python-excel/xlrd)
+[![Coverage Status](https://coveralls.io/repos/github/python-excel/xlrd/badge.svg?branch=master)](https://coveralls.io/github/python-excel/xlrd?branch=master)
+[![Documentation Status](https://readthedocs.org/projects/xlrd/badge/?version=latest)](http://xlrd.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/xlrd.svg)](https://badge.fury.io/py/xlrd)
+
 ### Python package "xlrd"
 
 **Purpose**: Provide a library for developers to use to extract data from Microsoft Excel (tm) spreadsheet files. It is not an end-user tool.
@@ -10,11 +15,7 @@
 
 **External modules required**:
 
-<dl>
-
-<dd>The package itself is pure Python with no dependencies on modules or packages outside the standard Python distribution.</dd>
-
-</dl>
+The package itself is pure Python with no dependencies on modules or packages outside the standard Python distribution.
 
 **Outside the current scope**: xlrd will safely and reliably ignore any of these if present in the file:
 
@@ -38,7 +39,6 @@
 
 **Quick start**:
 
-```
     import xlrd
     book = xlrd.open_workbook("myfile.xls")
     print "The number of worksheets is", book.nsheets
@@ -48,16 +48,10 @@
     print "Cell D30 is", sh.cell_value(rowx=29, colx=3)
     for rx in range(sh.nrows):
         print sh.row(rx)
-    # Refer to docs for more details.
-    # Feedback on API is welcomed.
-
-```
 
 **Another quick start**: This will show the first, second and last rows of each sheet in each file:
 
-```
     OS-prompt>python PYDIR/scripts/runxlrd.py 3rows *blah*.xls
-```
 
 **Installation**:
 
@@ -65,11 +59,6 @@
 *   Any OS: Unzip the .zip file into a suitable directory, chdir to that directory, then do "python setup.py install".
 *   If PYDIR is your Python installation directory: the main files are in PYDIR/Lib/site-packages/xlrd the docs are in the doc subdirectory, and there's a sample script: PYDIR/Scripts/runxlrd.py
 *   If os.sep != "/": make the appropriate adjustments.
-
-**Download URLs**:
-
-*   http://pypi.python.org/pypi/xlrd
-*   http://www.lexicon.net/sjmachin/xlrd.htm
 
 **Acknowledgements**:
 
