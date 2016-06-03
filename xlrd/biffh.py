@@ -1,47 +1,36 @@
 # -*- coding: cp1252 -*-
-
-##
-# Support module for the xlrd package.
-#
-# <p>Portions copyright © 2005-2010 Stephen John Machin, Lingfo Pty Ltd</p>
-# <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
-##
-
-# 2010-03-01 SJM Reading SCL record
-# 2010-03-01 SJM Added more record IDs for biff_dump & biff_count
-# 2008-02-10 SJM BIFF2 BLANK record
-# 2008-02-08 SJM Preparation for Excel 2.0 support
-# 2008-02-02 SJM Added suffixes (_B2, _B2_ONLY, etc) on record names for biff_dump & biff_count
-# 2007-12-04 SJM Added support for Excel 2.x (BIFF2) files.
-# 2007-09-08 SJM Avoid crash when zero-length Unicode string missing options byte.
-# 2007-04-22 SJM Remove experimental "trimming" facility.
-
+# Portions copyright © 2005-2010 Stephen John Machin, Lingfo Pty Ltd
+# This module is part of the xlrd package, which is released under a
+# BSD-style licence.
 from __future__ import print_function
 
 DEBUG = 0
 
 from struct import unpack
-import sys
 from .timemachine import *
+import sys
+
 
 class XLRDError(Exception):
     pass
 
-##
-# Parent of almost all other classes in the package. Defines a common "dump" method
-# for debugging.
 
 class BaseObject(object):
+    """
+    Parent of almost all other classes in the package. Defines a common
+    :meth:`dump` method for debugging.
+    """
 
     _repr_these = []
 
-    ##
-    # @param f open file object, to which the dump is written
-    # @param header text to write before the dump
-    # @param footer text to write after the dump
-    # @param indent number of leading spaces (for recursive calls)
 
     def dump(self, f=None, header=None, footer=None, indent=0):
+        """
+        :param f: open file object, to which the dump is written
+        :param header: text to write before the dump
+        :param footer: text to write after the dump
+        :param indent: number of leading spaces (for recursive calls)
+        """
         if f is None:
             f = sys.stderr
         if hasattr(self, "__slots__"):
@@ -95,19 +84,8 @@ biff_text_from_num = {
     85: "8X",
     }
 
-##
-# <p>This dictionary can be used to produce a text version of the internal codes
-# that Excel uses for error cells. Here are its contents:
-# <pre>
-# 0x00: '#NULL!',  # Intersection of two cell ranges is empty
-# 0x07: '#DIV/0!', # Division by zero
-# 0x0F: '#VALUE!', # Wrong type of operand
-# 0x17: '#REF!',   # Illegal or deleted cell reference
-# 0x1D: '#NAME?',  # Wrong function or range name
-# 0x24: '#NUM!',   # Value range overflow
-# 0x2A: '#N/A',    # Argument or function not available
-# </pre></p>
-
+#: This dictionary can be used to produce a text version of the internal codes
+#: that Excel uses for error cells.
 error_text_from_code = {
     0x00: '#NULL!',  # Intersection of two cell ranges is empty
     0x07: '#DIV/0!', # Division by zero
