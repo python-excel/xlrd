@@ -8,3 +8,8 @@ build/
 /*.xml
 /htmlcov
 MANIFEST
+/bin
+.Python
+/include
+/lib
+
