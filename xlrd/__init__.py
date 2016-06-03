@@ -1,12 +1,8 @@
-from os import path
-
 from .info import __VERSION__
 
 # <p>Copyright (c) 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a
 # BSD-style licence.</p>
-
-from . import licences
 
 ##
 # <p><b>A Python module for extracting data from MS Excel (TM) spreadsheet files.

@@ -2,6 +2,7 @@
 /dist
 *.egg-info
 build/
+_build/
 *.pyc
 /.coverage
 /.tox
