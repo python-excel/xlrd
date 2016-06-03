@@ -48,4 +48,6 @@ setup(
             'Topic :: Office/Business',
             'Topic :: Software Development :: Libraries :: Python Modules',
             ],
-    )
+    zip_safe=False,
+    include_package_data=True
+)
