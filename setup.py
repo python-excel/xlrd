@@ -1,19 +1,14 @@
 #!/usr/bin/env python
 
 from os import path
+from setuptools import setup
 import sys
+
 python_version = sys.version_info[:2]
 
 if python_version < (2, 6):
     raise Exception("This version of xlrd requires Python 2.6 or above. "
                     "For older versions of Python, you can use the 0.8 series.")
-
-av = sys.argv
-if len(av) > 1 and av[1].lower() == "--egg":
-    del av[1]
-    from setuptools import setup
-else:
-    from distutils.core import setup
 
 from xlrd.info import __VERSION__
 
