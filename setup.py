@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from os import path
 from setuptools import setup
 import sys
 
@@ -33,7 +32,7 @@ setup(
     description = 'Library for developers to extract data from Microsoft Excel (tm) spreadsheet files',
     long_description = \
         "Extract data from Excel spreadsheets (.xls and .xlsx, versions 2.0 onwards) on any platform. " \
-        "Pure Python (2.6, 2.7, 3.2+). Strong support for Excel dates. Unicode-aware.",
+        "Pure Python (2.6, 2.7, 3.3+). Strong support for Excel dates. Unicode-aware.",
     platforms = ["Any platform -- don't need Windows"],
     license = 'BSD',
     keywords = ['xls', 'excel', 'spreadsheet', 'workbook'],
