@@ -4,59 +4,6 @@
 from .info import __VERSION__
 
 
-# <h2>General information</h2>
-
-# <h3>Loading worksheets on demand</h3>
-#
-# <p>This feature, new in version 0.7.1, is governed by the on_demand argument
-# to the open_workbook() function and allows saving memory and time by loading
-# only those sheets that the caller is interested in, and releasing sheets
-# when no longer required.</p>
-#
-# <p>on_demand=False (default): No change. open_workbook() loads global data
-# and all sheets, releases resources no longer required (principally the
-# str or mmap object containing the Workbook stream), and returns.</p>
-#
-# <p>on_demand=True and BIFF version < 5.0: A warning message is emitted,
-# on_demand is recorded as False, and the old process is followed.</p>
-#
-# <p>on_demand=True and BIFF version >= 5.0: open_workbook() loads global
-# data and returns without releasing resources. At this stage, the only
-# information available about sheets is Book.nsheets and Book.sheet_names().</p>
-#
-# <p>Book.sheet_by_name() and Book.sheet_by_index() will load the requested
-# sheet if it is not already loaded.</p>
-#
-# <p>Book.sheets() will load all/any unloaded sheets.</p>
-#
-# <p>The caller may save memory by calling
-# Book.unload_sheet(sheet_name_or_index) when finished with the sheet.
-# This applies irrespective of the state of on_demand.</p>
-#
-# <p>The caller may re-load an unloaded sheet by calling Book.sheet_by_xxxx()
-#  -- except if those required resources have been released (which will
-# have happened automatically when on_demand is false). This is the only
-# case where an exception will be raised.</p>
-#
-# <p>The caller may query the state of a sheet:
-# Book.sheet_loaded(sheet_name_or_index) -> a bool</p>
-#
-# <p> Book.release_resources() may used to save memory and close
-# any memory-mapped file before proceding to examine already-loaded
-# sheets. Once resources are released, no further sheets can be loaded.</p>
-#
-# <p> When using on-demand, it is advisable to ensure that
-# Book.release_resources() is always called even if an exception
-# is raised in your own code; otherwise if the input file has been
-# memory-mapped, the mmap.mmap object will not be closed and you will
-# not be able to access the physical file until your Python process
-# terminates. This can be done by calling Book.release_resources()
-# explicitly in the finally suite of a try/finally block.
-# New in xlrd 0.7.2: the Book object is a "context manager", so if
-# using Python 2.5 or later, you can wrap your code in a "with"
-# statement.</p>
-##
-
 import sys, zipfile, pprint
 from . import timemachine
 from .biffh import (

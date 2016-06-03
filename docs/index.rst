@@ -11,6 +11,7 @@ files, whether they are .xls or .xlsx files.
    dates.rst
    references.rst
    formatting.rst
+   on_demand.rst
    api.rst
 
 You may also wish to consult the `tutorial`__.
