@@ -138,28 +138,6 @@ def open_workbook_xls(filename=None,
     return bk
 
 ##
-# For debugging: dump the file's BIFF records in char & hex.
-# @param filename The path to the file to be dumped.
-# @param outfile An open file, to which the dump is written.
-# @param unnumbered If true, omit offsets (for meaningful diffs).
-
-def dump(filename, outfile=sys.stdout, unnumbered=False):
-    bk = Book()
-    bk.biff2_8_load(filename=filename, logfile=outfile, )
-    biff_dump(bk.mem, bk.base, bk.stream_len, 0, outfile, unnumbered)
-
-##
-# For debugging and analysis: summarise the file's BIFF records.
-# I.e. produce a sorted file of (record_name, count).
-# @param filename The path to the file to be summarised.
-# @param outfile An open file, to which the summary is written.
-
-def count_records(filename, outfile=sys.stdout):
-    bk = Book()
-    bk.biff2_8_load(filename=filename, logfile=outfile, )
-    biff_count_records(bk.mem, bk.base, bk.stream_len, outfile)
-
-##
 # Information relating to a named reference, formula, macro, etc.
 # <br />  -- New in version 0.6.0
 # <br />  -- <i>Name information is <b>not</b> extracted from files older than
