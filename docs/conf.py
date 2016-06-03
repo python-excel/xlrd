@@ -8,7 +8,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx']
 source_suffix = '.rst'
 master_doc = 'index'
 project = u'xlrd'
-copyright = '2005-%s 2005-2012 Stephen John Machin, Lingfo Pty Ltd' % datetime.datetime.now().year
+copyright = '2005-%s Stephen John Machin, Lingfo Pty Ltd' % datetime.datetime.now().year
 version = release = pkg_info.version
 exclude_patterns = ['_build']
 pygments_style = 'sphinx'
