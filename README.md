@@ -39,19 +39,21 @@ The package itself is pure Python with no dependencies on modules or packages ou
 
 **Quick start**:
 
-    import xlrd
-    book = xlrd.open_workbook("myfile.xls")
-    print "The number of worksheets is", book.nsheets
-    print "Worksheet name(s):", book.sheet_names()
-    sh = book.sheet_by_index(0)
-    print sh.name, sh.nrows, sh.ncols
-    print "Cell D30 is", sh.cell_value(rowx=29, colx=3)
-    for rx in range(sh.nrows):
-        print sh.row(rx)
+```python
+import xlrd
+book = xlrd.open_workbook("myfile.xls")
+print "The number of worksheets is", book.nsheets
+print "Worksheet name(s):", book.sheet_names()
+sh = book.sheet_by_index(0)
+print sh.name, sh.nrows, sh.ncols
+print "Cell D30 is", sh.cell_value(rowx=29, colx=3)
+for rx in range(sh.nrows):
+    print sh.row(rx)
+```
 
 **Another quick start**: This will show the first, second and last rows of each sheet in each file:
 
-    OS-prompt>python PYDIR/scripts/runxlrd.py 3rows *blah*.xls
+    python PYDIR/scripts/runxlrd.py 3rows *blah*.xls
 
 **Installation**:
 
