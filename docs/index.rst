@@ -4,11 +4,10 @@ xlrd documentation
 xlrd is a library for reading data and formatting information from Excel
 files, whether they are .xls or .xlsx files.
 
-Documentation is being migrated, for now there's this:
-
 .. toctree::
    :maxdepth: 1
 
+   unicode.rst
    api.rst
 
 You may also wish to consult the `tutorial`__.
