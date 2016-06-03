@@ -1,4 +1,8 @@
+# for container-y goodness:
+sudo: false
+
 language: python
+
 python:
   - "3.5"
   - "3.4"
@@ -8,5 +12,24 @@ python:
   - "2.7"
   - "2.6"
   - "pypy"
+
+# command to install dependencies
+install: "pip install -Ur requirements.txt"
+
 # command to run tests, e.g. python setup.py test
-script: nosetests
+script: nosetests --with-cov --cov=xlrd
+
+after_success:
+  - coveralls
+
+deploy:
+  provider: pypi
+  user: chrisw
+  password:
+    secure: BManEisxNCN966HPz8J/oYzFBPuTPFP212d8rUjv9p/W96pT0zWlO9paDce67nZiYWb7Khzg7fF5WSFpYRKsvB4a370KpTYbsAb8EPx7DUBPsz7qFC8B6EUbCXfwbe68XwPugenREby8vEtywUqxzge2SNVRPfH+wKio2hUcfEo=
+  on:
+    tags: true
+    repo: python-excel/xlrd
+    python: "3.5"
+  skip_cleanup: true
+  distributions: "sdist bdist_wheel"
