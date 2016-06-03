@@ -1,43 +1,10 @@
+# Copyright (c) 2005-2012 Stephen John Machin, Lingfo Pty Ltd
+# This module is part of the xlrd package, which is released under a
+# BSD-style licence.
 from .info import __VERSION__
 
-# <p>Copyright (c) 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
-# <p>This module is part of the xlrd package, which is released under a
-# BSD-style licence.</p>
 
-##
-# <p><b>A Python module for extracting data from MS Excel (TM) spreadsheet files.
-# <br /><br />
-# Version 0.7.4 -- April 2012
-# </b></p>
-#
 # <h2>General information</h2>
-#
-# <h3>Acknowledgements</h3>
-#
-# <p>
-# Development of this module would not have been possible without the document
-# "OpenOffice.org's Documentation of the Microsoft Excel File Format"
-# ("OOo docs" for short).
-# The latest version is available from OpenOffice.org in
-# <a href=http://sc.openoffice.org/excelfileformat.pdf> PDF format</a>
-# and
-# <a href=http://sc.openoffice.org/excelfileformat.odt> ODT format.</a>
-# Small portions of the OOo docs are reproduced in this
-# document. A study of the OOo docs is recommended for those who wish a
-# deeper understanding of the Excel file layout than the xlrd docs can provide.
-# </p>
-#
-# <p>Backporting to Python 2.1 was partially funded by
-#   <a href=http://journyx.com/>
-#       Journyx - provider of timesheet and project accounting solutions.
-#   </a>
-# </p>
-#
-# <p>Provision of formatting information in version 0.6.1 was funded by
-#   <a href=http://www.simplistix.co.uk>
-#       Simplistix Ltd.
-#   </a>
-# </p>
 #
 # <h3>Unicode</h3>
 #
