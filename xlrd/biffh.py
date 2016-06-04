@@ -12,7 +12,9 @@ import sys
 
 
 class XLRDError(Exception):
-    pass
+    """
+    An exception indicating problems reading data from an Excel file.
+    """
 
 
 class BaseObject(object):

@@ -137,85 +137,87 @@ def open_workbook_xls(filename=None,
         bk.release_resources()
     return bk
 
-##
-# Information relating to a named reference, formula, macro, etc.
-# <br />  -- New in version 0.6.0
-# <br />  -- <i>Name information is <b>not</b> extracted from files older than
-# Excel 5.0 (Book.biff_version < 50)</i>
 
 class Name(BaseObject):
+    """
+    Information relating to a named reference, formula, macro, etc.
 
+    .. note::
+
+      Name information is **not** extracted from files older than
+      Excel 5.0 (``Book.biff_version < 50``)
+    """
     _repr_these = ['stack']
     book = None # parent
 
-    ##
-    # 0 = Visible; 1 = Hidden
+    #: 0 = Visible; 1 = Hidden
     hidden = 0
 
-    ##
-    # 0 = Command macro; 1 = Function macro. Relevant only if macro == 1
+    #: 0 = Command macro; 1 = Function macro. Relevant only if macro == 1
     func = 0
 
-    ##
-    # 0 = Sheet macro; 1 = VisualBasic macro. Relevant only if macro == 1
+    #: 0 = Sheet macro; 1 = VisualBasic macro. Relevant only if macro == 1
     vbasic = 0
 
-    ##
-    # 0 = Standard name; 1 = Macro name
+    #: 0 = Standard name; 1 = Macro name
     macro = 0
 
-    ##
-    # 0 = Simple formula; 1 = Complex formula (array formula or user defined)<br />
-    # <i>No examples have been sighted.</i>
+    #: 0 = Simple formula; 1 = Complex formula (array formula or user defined).
+    #:
+    #: .. note:: No examples have been sighted.
     complex = 0
 
-    ##
-    # 0 = User-defined name; 1 = Built-in name
-    # (common examples: Print_Area, Print_Titles; see OOo docs for full list)
+    #: 0 = User-defined name; 1 = Built-in name
+    #:
+    #: Common examples: ``Print_Area``, ``Print_Titles``; see OOo docs for
+    #: full list
     builtin = 0
 
-    ##
-    # Function group. Relevant only if macro == 1; see OOo docs for values.
+    #: Function group. Relevant only if macro == 1; see OOo docs for values.
     funcgroup = 0
 
-    ##
-    # 0 = Formula definition; 1 = Binary data<br />  <i>No examples have been sighted.</i>
+    #: 0 = Formula definition; 1 = Binary data
+    #:
+    #: .. note:: No examples have been sighted.
     binary = 0
 
-    ##
-    # The index of this object in book.name_obj_list
+    #: The index of this object in book.name_obj_list
     name_index = 0
 
-    ##
     # A Unicode string. If builtin, decoded as per OOo docs.
     name = UNICODE_LITERAL("")
 
-    ##
-    # An 8-bit string.
+    #: An 8-bit string.
     raw_formula = b''
 
-    ##
-    # -1: The name is global (visible in all calculation sheets).<br />
-    # -2: The name belongs to a macro sheet or VBA sheet.<br />
-    # -3: The name is invalid.<br />
-    # 0 <= scope < book.nsheets: The name is local to the sheet whose index is scope.
+    #: ``-1``:
+    #:    The name is global (visible in all calculation sheets).
+    #: ``-2``:
+    #:    The name belongs to a macro sheet or VBA sheet.
+    #: ``-3``:
+    #:    The name is invalid.
+    #: ``0 <= scope < book.nsheets``:
+    #:    The name is local to the sheet whose index is scope.
     scope = -1
 
-    ##
-    # The result of evaluating the formula, if any.
-    # If no formula, or evaluation of the formula encountered problems,
-    # the result is None. Otherwise the result is a single instance of the
-    # Operand class.
+    #: The result of evaluating the formula, if any.
+    #: If no formula, or evaluation of the formula encountered problems,
+    #: the result is ``None``. Otherwise the result is a single instance of the
+    #: :class:`~xlrd.formula.Operand` class.
     #
     result = None
 
-    ##
-    # This is a convenience method for the frequent use case where the name
-    # refers to a single cell.
-    # @return An instance of the Cell class.
-    # @throws XLRDError The name is not a constant absolute reference
-    # to a single cell.
     def cell(self):
+        """
+        This is a convenience method for the frequent use case where the name
+        refers to a single cell.
+
+        :returns: An instance of the :class:`~xlrd.sheet.Cell` class.
+
+        :raises xlrd.biffh.XLRDError:
+          The name is not a constant absolute reference
+          to a single cell.
+        """
         res = self.result
         if res:
             # result should be an instance of the Operand class
@@ -234,17 +236,24 @@ class Name(BaseObject):
             )
         raise XLRDError("Not a constant absolute reference to a single cell")
 
-    ##
-    # This is a convenience method for the use case where the name
-    # refers to one rectangular area in one worksheet.
-    # @param clipped If true (the default), the returned rectangle is clipped
-    # to fit in (0, sheet.nrows, 0, sheet.ncols) -- it is guaranteed that
-    # 0 <= rowxlo <= rowxhi <= sheet.nrows and that the number of usable rows
-    # in the area (which may be zero) is rowxhi - rowxlo; likewise for columns.
-    # @return a tuple (sheet_object, rowxlo, rowxhi, colxlo, colxhi).
-    # @throws XLRDError The name is not a constant absolute reference
-    # to a single area in a single sheet.
     def area2d(self, clipped=True):
+        """
+        This is a convenience method for the use case where the name
+        refers to one rectangular area in one worksheet.
+
+        :param clipped:
+          If ``True``, the default, the returned rectangle is clipped
+          to fit in ``(0, sheet.nrows, 0, sheet.ncols)``.
+          it is guaranteed that ``0 <= rowxlo <= rowxhi <= sheet.nrows`` and
+          that the number of usable rows in the area (which may be zero) is
+          ``rowxhi - rowxlo``; likewise for columns.
+
+        :returns: a tuple ``(sheet_object, rowxlo, rowxhi, colxlo, colxhi)``.
+
+        :raises xlrd.biffh.XLRDError:
+           The name is not a constant absolute reference
+           to a single area in a single sheet.
+        """
         res = self.result
         if res:
             # result should be an instance of the Operand class
@@ -269,167 +278,216 @@ class Name(BaseObject):
             )
         raise XLRDError("Not a constant absolute reference to a single area in a single sheet")
 
-##
-# Contents of a "workbook".
-# <p>WARNING: You don't call this class yourself. You use the Book object that
-# was returned when you called xlrd.open_workbook("myfile.xls").</p>
 
 class Book(BaseObject):
+    """
+    Contents of a "workbook".
 
-    ##
-    # The number of worksheets present in the workbook file.
-    # This information is available even when no sheets have yet been loaded.
+    .. warning::
+
+      You should not instantiate this class yourself. You use the :class:`Book`
+      object that was returned when you called :func:`~xlrd.open_workbook`.
+    """
+
+    #: The number of worksheets present in the workbook file.
+    #: This information is available even when no sheets have yet been loaded.
     nsheets = 0
 
-    ##
-    # Which date system was in force when this file was last saved.<br />
-    #    0 => 1900 system (the Excel for Windows default).<br />
-    #    1 => 1904 system (the Excel for Macintosh default).<br />
-    datemode = 0 # In case it's not specified in the file.
+    #: Which date system was in force when this file was last saved.
+    #:
+    #: 0:
+    #:   1900 system (the Excel for Windows default).
+    #:
+    #: 1:
+    #:   1904 system (the Excel for Macintosh default).
+    #:
+    #: Defaults to 0 in case it's not specified in the file.
+    datemode = 0
 
-    ##
-    # Version of BIFF (Binary Interchange File Format) used to create the file.
-    # Latest is 8.0 (represented here as 80), introduced with Excel 97.
-    # Earliest supported by this module: 2.0 (represented as 20).
+    #: Version of BIFF (Binary Interchange File Format) used to create the file.
+    #: Latest is 8.0 (represented here as 80), introduced with Excel 97.
+    #: Earliest supported by this module: 2.0 (represented as 20).
     biff_version = 0
 
-    ##
-    # List containing a Name object for each NAME record in the workbook.
-    # <br />  -- New in version 0.6.0
+    #: List containing a :class:`Name` object for each ``NAME`` record in the
+    #: workbook.
+    #:
+    #: .. versionadded:: 0.6.0
     name_obj_list = []
 
-    ##
-    # An integer denoting the character set used for strings in this file.
-    # For BIFF 8 and later, this will be 1200, meaning Unicode; more precisely, UTF_16_LE.
-    # For earlier versions, this is used to derive the appropriate Python encoding
-    # to be used to convert to Unicode.
-    # Examples: 1252 -> 'cp1252', 10000 -> 'mac_roman'
+    #: An integer denoting the character set used for strings in this file.
+    #: For BIFF 8 and later, this will be 1200, meaning Unicode;
+    #: more precisely, UTF_16_LE.
+    #: For earlier versions, this is used to derive the appropriate Python
+    #: encoding to be used to convert to Unicode.
+    #: Examples: ``1252 -> 'cp1252'``, ``10000 -> 'mac_roman'``
     codepage = None
 
-    ##
-    # The encoding that was derived from the codepage.
+    #: The encoding that was derived from the codepage.
     encoding = None
 
-    ##
-    # A tuple containing the (telephone system) country code for:<br />
-    #    [0]: the user-interface setting when the file was created.<br />
-    #    [1]: the regional settings.<br />
-    # Example: (1, 61) meaning (USA, Australia).
-    # This information may give a clue to the correct encoding for an unknown codepage.
-    # For a long list of observed values, refer to the OpenOffice.org documentation for
-    # the COUNTRY record.
+    #: A tuple containing the telephone country code for:
+    #:
+    #: ``[0]``:
+    #:   the user-interface setting when the file was created.
+    #:
+    #: ``[1]``:
+    #:    the regional settings.
+    #:
+    #: Example: ``(1, 61)`` meaning ``(USA, Australia)``.
+    #:
+    #: This information may give a clue to the correct encoding for an
+    #: unknown codepage. For a long list of observed values, refer to the
+    #: OpenOffice.org documentation for the ``COUNTRY`` record.
     countries = (0, 0)
 
-    ##
-    # What (if anything) is recorded as the name of the last user to save the file.
+    #: What (if anything) is recorded as the name of the last user to
+    #: save the file.
     user_name = UNICODE_LITERAL('')
 
-    ##
-    # A list of Font class instances, each corresponding to a FONT record.
-    # <br /> -- New in version 0.6.1
+    #: A list of :class:`~xlrd.formatting.Font` class instances,
+    #: each corresponding to a FONT record.
+    #:
+    #: .. versionadded:: 0.6.1
     font_list = []
 
-    ##
-    # A list of XF class instances, each corresponding to an XF record.
-    # <br /> -- New in version 0.6.1
+    #: A list of :class:`~xlrd.formatting.XF` class instances,
+    #: each corresponding to an ``XF`` record.
+    #:
+    #: .. versionadded:: 0.6.1
     xf_list = []
 
-    ##
-    # A list of Format objects, each corresponding to a FORMAT record, in
-    # the order that they appear in the input file.
-    # It does <i>not</i> contain builtin formats.
-    # If you are creating an output file using (for example) pyExcelerator,
-    # use this list.
-    # The collection to be used for all visual rendering purposes is format_map.
-    # <br /> -- New in version 0.6.1
+    #: A list of :class:`~xlrd.formatting.Format` objects, each corresponding to
+    #: a ``FORMAT`` record, in the order that they appear in the input file.
+    #: It does *not* contain builtin formats.
+    #:
+    #: If you are creating an output file using (for example) :mod:`xlwt`,
+    #: use this list.
+    #:
+    #: The collection to be used for all visual rendering purposes is
+    #: :attr:`format_map`.
+    #:
+    #: .. versionadded:: 0.6.1
     format_list = []
 
     ##
-    # The mapping from XF.format_key to Format object.
-    # <br /> -- New in version 0.6.1
+    #: The mapping from :attr:`~xlrd.formatting.XF.format_key` to
+    #: :class:`~xlrd.formatting.Format` object.
+    #:
+    #: .. versionadded:: 0.6.1
     format_map = {}
 
-    ##
-    # This provides access via name to the extended format information for
-    # both built-in styles and user-defined styles.<br />
-    # It maps <i>name</i> to (<i>built_in</i>, <i>xf_index</i>), where:<br />
-    # <i>name</i> is either the name of a user-defined style,
-    # or the name of one of the built-in styles. Known built-in names are
-    # Normal, RowLevel_1 to RowLevel_7,
-    # ColLevel_1 to ColLevel_7, Comma, Currency, Percent, "Comma [0]",
-    # "Currency [0]", Hyperlink, and "Followed Hyperlink".<br />
-    # <i>built_in</i> 1 = built-in style, 0 = user-defined<br />
-    # <i>xf_index</i> is an index into Book.xf_list.<br />
-    # References: OOo docs s6.99 (STYLE record); Excel UI Format/Style
-    # <br /> -- New in version 0.6.1; since 0.7.4, extracted only if
-    # open_workbook(..., formatting_info=True)
+    #: This provides access via name to the extended format information for
+    #: both built-in styles and user-defined styles.
+    #:
+    #: It maps ``name`` to ``(built_in, xf_index)``, where
+    #: ``name`` is either the name of a user-defined style,
+    #: or the name of one of the built-in styles. Known built-in names are
+    #: Normal, RowLevel_1 to RowLevel_7,
+    #: ColLevel_1 to ColLevel_7, Comma, Currency, Percent, "Comma [0]",
+    #: "Currency [0]", Hyperlink, and "Followed Hyperlink".
+    #:
+    #: ``built_in`` has the following meanings
+    #:
+    #: 1:
+    #:     built-in style
+    #:
+    #: 0:
+    #:     user-defined
+    #:
+    #: ``xf_index`` is an index into :attr:`Book.xf_list`.
+    #:
+    #: References: OOo docs s6.99 (``STYLE`` record); Excel UI Format/Style
+    #:
+    #: .. versionadded:: 0.6.1
+    #:
+    #: Extracted only if ``open_workbook(..., formatting_info=True)``
+    #:
+    #: .. versionadded:: 0.7.4
     style_name_map = {}
 
-    ##
-    # This provides definitions for colour indexes. Please refer to the
-    # above section "The Palette; Colour Indexes" for an explanation
-    # of how colours are represented in Excel.<br />
-    # Colour indexes into the palette map into (red, green, blue) tuples.
-    # "Magic" indexes e.g. 0x7FFF map to None.
-    # <i>colour_map</i> is what you need if you want to render cells on screen or in a PDF
-    # file. If you are writing an output XLS file, use <i>palette_record</i>.
-    # <br /> -- New in version 0.6.1. Extracted only if open_workbook(..., formatting_info=True)
+    #: This provides definitions for colour indexes. Please refer to
+    #: :ref:`palette` for an explanation
+    #: of how colours are represented in Excel.
+    #:
+    #: Colour indexes into the palette map into ``(red, green, blue)`` tuples.
+    #: "Magic" indexes e.g. ``0x7FFF`` map to ``None``.
+    #:
+    #: :attr:`colour_map` is what you need if you want to render cells on screen
+    #: or in a PDF file. If you are writing an output XLS file, use
+    #: :attr:`palette_record`.
+    #:
+    #: .. note:: Extracted only if ``open_workbook(..., formatting_info=True)``
+    #:
+    #: .. versionadded:: 0.6.1
     colour_map = {}
 
-    ##
-    # If the user has changed any of the colours in the standard palette, the XLS
-    # file will contain a PALETTE record with 56 (16 for Excel 4.0 and earlier)
-    # RGB values in it, and this list will be e.g. [(r0, b0, g0), ..., (r55, b55, g55)].
-    # Otherwise this list will be empty. This is what you need if you are
-    # writing an output XLS file. If you want to render cells on screen or in a PDF
-    # file, use colour_map.
-    # <br /> -- New in version 0.6.1. Extracted only if open_workbook(..., formatting_info=True)
+    #: If the user has changed any of the colours in the standard palette, the
+    #: XLS file will contain a ``PALETTE`` record with 56 (16 for Excel 4.0 and
+    #: earlier) RGB values in it, and this list will be e.g.
+    #: ``[(r0, b0, g0), ..., (r55, b55, g55)]``.
+    #: Otherwise this list will be empty. This is what you need if you are
+    #: writing an output XLS file. If you want to render cells on screen or in a
+    #: PDF file, use :attr:`colour_map`.
+    #:
+    #: .. note:: Extracted only if ``open_workbook(..., formatting_info=True)``
+    #:
+    #: .. versionadded:: 0.6.1
     palette_record = []
 
-    ##
-    # Time in seconds to extract the XLS image as a contiguous string (or mmap equivalent).
+    #: Time in seconds to extract the XLS image as a contiguous string
+    #: (or mmap equivalent).
     load_time_stage_1 = -1.0
 
-    ##
-    # Time in seconds to parse the data from the contiguous string (or mmap equivalent).
+    #: Time in seconds to parse the data from the contiguous string
+    #: (or mmap equivalent).
     load_time_stage_2 = -1.0
 
-    ##
-    # @return A list of all sheets in the book.
-    # All sheets not already loaded will be loaded.
     def sheets(self):
+        """
+        :returns: A list of all sheets in the book.
+
+        All sheets not already loaded will be loaded.
+        """
         for sheetx in xrange(self.nsheets):
             if not self._sheet_list[sheetx]:
                 self.get_sheet(sheetx)
         return self._sheet_list[:]
 
-    ##
-    # @param sheetx Sheet index in range(nsheets)
-    # @return An object of the Sheet class
     def sheet_by_index(self, sheetx):
+        """
+        :param sheetx: Sheet index in ``range(nsheets)``
+        :returns: A :class:`~xlrd.sheet.Sheet`.
+        """
         return self._sheet_list[sheetx] or self.get_sheet(sheetx)
 
-    ##
-    # @param sheet_name Name of sheet required
-    # @return An object of the Sheet class
     def sheet_by_name(self, sheet_name):
+        """
+        :param sheet_name: Name of the sheet required.
+        :returns: A :class:`~xlrd.sheet.Sheet`.
+        """
         try:
             sheetx = self._sheet_names.index(sheet_name)
         except ValueError:
             raise XLRDError('No sheet named <%r>' % sheet_name)
         return self.sheet_by_index(sheetx)
 
-    ##
-    # @return A list of the names of all the worksheets in the workbook file.
-    # This information is available even when no sheets have yet been loaded.
     def sheet_names(self):
+        """
+        :returns:
+          A list of the names of all the worksheets in the workbook file.
+          This information is available even when no sheets have yet been
+          loaded.
+        """
         return self._sheet_names[:]
 
-    ##
-    # @param sheet_name_or_index Name or index of sheet enquired upon
-    # @return true if sheet is loaded, false otherwise
-    # <br />  -- New in version 0.7.1
     def sheet_loaded(self, sheet_name_or_index):
+        """
+        :param sheet_name_or_index: Name or index of sheet enquired upon
+        :returns: ``True`` if sheet is loaded, ``False`` otherwise.
+
+        .. versionadded:: 0.7.1
+        """
         if isinstance(sheet_name_or_index, int):
             sheetx = sheet_name_or_index
         else:
@@ -439,10 +497,12 @@ class Book(BaseObject):
                 raise XLRDError('No sheet named <%r>' % sheet_name_or_index)
         return bool(self._sheet_list[sheetx])
 
-    ##
-    # @param sheet_name_or_index Name or index of sheet to be unloaded.
-    # <br />  -- New in version 0.7.1
     def unload_sheet(self, sheet_name_or_index):
+        """
+        :param sheet_name_or_index: Name or index of sheet to be unloaded.
+
+        .. versionadded:: 0.7.1
+        """
         if isinstance(sheet_name_or_index, int):
             sheetx = sheet_name_or_index
         else:
@@ -452,16 +512,18 @@ class Book(BaseObject):
                 raise XLRDError('No sheet named <%r>' % sheet_name_or_index)
         self._sheet_list[sheetx] = None
         
-    ##
-    # This method has a dual purpose. You can call it to release
-    # memory-consuming objects and (possibly) a memory-mapped file
-    # (mmap.mmap object) when you have finished loading sheets in
-    # on_demand mode, but still require the Book object to examine the
-    # loaded sheets. It is also called automatically (a) when open_workbook
-    # raises an exception and (b) if you are using a "with" statement, when 
-    # the "with" block is exited. Calling this method multiple times on the 
-    # same object has no ill effect.
     def release_resources(self):
+        """
+        This method has a dual purpose. You can call it to release
+        memory-consuming objects and (possibly) a memory-mapped file
+        (:class:`mmap.mmap` object) when you have finished loading sheets in
+        ``on_demand`` mode, but still require the :class:`Book` object to
+        examine the loaded sheets. It is also called automatically (a) when
+        :func:`~xlrd.open_workbook`
+        raises an exception and (b) if you are using a ``with`` statement, when
+        the ``with`` block is exited. Calling this method multiple times on the
+        same object has no ill effect.
+        """
         self._resources_released = 1
         if hasattr(self.mem, "close"):
             # must be a mmap.mmap object
@@ -478,18 +540,19 @@ class Book(BaseObject):
         
     def __exit__(self, exc_type, exc_value, exc_tb):
         self.release_resources()
-        # return false        
+        # return false
 
-    ##
-    # A mapping from (lower_case_name, scope) to a single Name object.
-    # <br />  -- New in version 0.6.0
+    #: A mapping from ``(lower_case_name, scope)`` to a single :class:`Name`
+    #:  object.
+    #:
+    #: .. versionadded:: 0.6.0
     name_and_scope_map = {}
 
-    ##
-    # A mapping from lower_case_name to a list of Name objects. The list is
-    # sorted in scope order. Typically there will be one item (of global scope)
-    # in the list.
-    # <br />  -- New in version 0.6.0
+    #: A mapping from `lower_case_name` to a list of :class:`Name` objects.
+    #: The list is sorted in scope order. Typically there will be one item
+    #: (of global scope) in the list.
+    #:
+    #: .. versionadded:: 0.6.0
     name_map = {}
 
     def __init__(self):

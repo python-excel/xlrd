@@ -11,6 +11,8 @@ to provide the information needed to:
 - copy spreadsheet data to another file without losing the ability to
   display/render it.
 
+.. _palette:
+
 The Palette; Colour Indexes
 ---------------------------
 
