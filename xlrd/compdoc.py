@@ -1,28 +1,21 @@
 # -*- coding: cp1252 -*-
-
-##
-# Implements the minimal functionality required
-# to extract a "Workbook" or "Book" stream (as one big string)
-# from an OLE2 Compound Document file.
-# <p>Copyright � 2005-2012 Stephen John Machin, Lingfo Pty Ltd</p>
-# <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
-##
-
-# No part of the content of this file was derived from the works of David Giffin.
-
-# 2008-11-04 SJM Avoid assertion error when -1 used instead of -2 for first_SID of empty SCSS [Frank Hoffsuemmer]
-# 2007-09-08 SJM Warning message if sector sizes are extremely large.
-# 2007-05-07 SJM Meaningful exception instead of IndexError if a SAT (sector allocation table) is corrupted.
-# 2007-04-22 SJM Missing "<" in a struct.unpack call => can't open files on bigendian platforms.
-
+# Copyright (c) 2005-2012 Stephen John Machin, Lingfo Pty Ltd
+# This module is part of the xlrd package, which is released under a
+# BSD-style licence.
+# No part of the content of this file was derived from the works of
+# David Giffin.
+"""
+Implements the minimal functionality required
+to extract a "Workbook" or "Book" stream (as one big string)
+from an OLE2 Compound Document file.
+"""
 from __future__ import print_function
 import sys
 from struct import unpack
 from .timemachine import *
 import array
 
-##
-# Magic cookie that should appear in the first 8 bytes of the file.
+#: Magic cookie that should appear in the first 8 bytes of the file.
 SIGNATURE = b"\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1"
 
 EOCSID = -2
@@ -75,12 +68,16 @@ def _build_family_tree(dirlist, parent_DID, child_DID):
     if dirlist[child_DID].etype == 1: # storage
         _build_family_tree(dirlist, child_DID, dirlist[child_DID].root_DID)
 
-##
-# Compound document handler.
-# @param mem The raw contents of the file, as a string, or as an mmap.mmap() object. The
-# only operation it needs to support is slicing.
 
 class CompDoc(object):
+    """
+    Compound document handler.
+
+    :param mem:
+      The raw contents of the file, as a string, or as an :class:`mmap.mmap`
+      object. The only operation it needs to support is slicing.
+    """
+
 
     def __init__(self, mem, logfile=sys.stdout, DEBUG=0):
         self.logfile = logfile
@@ -350,12 +347,16 @@ class CompDoc(object):
                 raise CompDocError("Requested stream is not a 'user stream'")
         return None
 
-    ##
-    # Interrogate the compound document's directory; return the stream as a string if found, otherwise
-    # return None.
-    # @param qname Name of the desired stream e.g. u'Workbook'. Should be in Unicode or convertible thereto.
 
     def get_named_stream(self, qname):
+        """
+        Interrogate the compound document's directory; return the stream as a
+        string if found, otherwise return ``None``.
+
+        :param qname:
+          Name of the desired stream e.g. ``u'Workbook'``.
+          Should be in Unicode or convertible thereto.
+        """
         d = self._dir_search(qname.split("/"))
         if d is None:
             return None
@@ -368,16 +369,23 @@ class CompDoc(object):
                 self.SSCS, 0, self.SSAT, self.short_sec_size, d.first_SID,
                 d.tot_size, name=qname + " (from SSCS)", seen_id=None)
 
-    ##
-    # Interrogate the compound document's directory.
-    # If the named stream is not found, (None, 0, 0) will be returned.
-    # If the named stream is found and is contiguous within the original byte sequence ("mem")
-    # used when the document was opened,
-    # then (mem, offset_to_start_of_stream, length_of_stream) is returned.
-    # Otherwise a new string is built from the fragments and (new_string, 0, length_of_stream) is returned.
-    # @param qname Name of the desired stream e.g. u'Workbook'. Should be in Unicode or convertible thereto.
-
     def locate_named_stream(self, qname):
+        """
+        Interrogate the compound document's directory.
+
+        If the named stream is not found, ``(None, 0, 0)`` will be returned.
+
+        If the named stream is found and is contiguous within the original
+        byte sequence (``mem``) used when the document was opened,
+        then ``(mem, offset_to_start_of_stream, length_of_stream)`` is returned.
+
+        Otherwise a new string is built from the fragments and
+        ``(new_string, 0, length_of_stream)`` is returned.
+
+        :param qname:
+          Name of the desired stream e.g. ``u'Workbook'``.
+          Should be in Unicode or convertible thereto.
+        """
         d = self._dir_search(qname.split("/"))
         if d is None:
             return (None, 0, 0)
