@@ -1403,7 +1403,7 @@ class Sheet(BaseObject):
                             "**ROW %d %d %d\n",
                             self.number, rowx, r.xf_index)
                     if blah_rows:
-                        print('ROW_B2', rowx, bits1, has_defaults, file=self.logfile)
+                        print('ROW_B2', rowx, bits1, file=self.logfile)
                         r.dump(self.logfile,
                             header="--- sh #%d, rowx=%d ---" % (self.number, rowx))
                 elif rc == XL_COLWIDTH: # BIFF2 only
