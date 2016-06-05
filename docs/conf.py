@@ -21,3 +21,5 @@ else:
 
 htmlhelp_basename = project+'doc'
 intersphinx_mapping = {'python': ('http://docs.python.org', None)}
+
+autodoc_member_order = 'bysource'
