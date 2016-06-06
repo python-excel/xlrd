@@ -47,17 +47,17 @@ class Sheet(BaseObject):
     """
     Contains the data for one worksheet.
 
-    In the cell access functions, ``rowx`` is a row index, counting from 
+    In the cell access functions, ``rowx`` is a row index, counting from
     zero, and ``colx`` is a column index, counting from zero.
-    Negative values for row/column indexes and slice positions are supported in 
+    Negative values for row/column indexes and slice positions are supported in
     the expected fashion.
 
-    For information about cell types and cell values, refer to the documentation 
+    For information about cell types and cell values, refer to the documentation
     of the :class:`Cell` class.
 
-    .. warning:: 
-    
-      You don't instantiate this class yourself. You access :class:`Sheet` 
+    .. warning::
+
+      You don't instantiate this class yourself. You access :class:`Sheet`
       objects via the :class:`~xlrd.book.Book` object that
       was returned when you called :func:`xlrd.open_workbook`.
     """
@@ -155,7 +155,7 @@ class Sheet(BaseObject):
     #:               # for the top left cell (e.g. border, pattern) to all cells in
     #:               # the range.
     merged_cells = []
-    
+
     #: Mapping of ``(rowx, colx)`` to list of ``(offset, font_index)`` tuples.
     #: The offset defines where in the string the font begins to be used.
     #: Offsets are expected to be in ascending order.
@@ -255,7 +255,7 @@ class Sheet(BaseObject):
     #: A sparse mapping from ``(rowx, colx)`` to an item in
     #: :attr:`~xlrd.sheet.Sheet.hyperlink_list`.
     #: Cells not covered by a hyperlink are not mapped.
-    #: It is possible using the Excel UI to set up a hyperlink that 
+    #: It is possible using the Excel UI to set up a hyperlink that
     #: covers a larger-than-1x1 rectangle of cells.
     #: Hyperlink rectangles may overlap (Excel doesn't check).
     #: When a multiply-covered cell is clicked on, the hyperlink that is
@@ -270,7 +270,7 @@ class Sheet(BaseObject):
     #: Cells not containing a note ("comment") are not mapped.
     #:
     #: .. versionadded:: 0.7.2
-    cell_note_map = {}    
+    cell_note_map = {}
 
     #: Number of columns in left pane (frozen panes; for split panes, see
     #: comments in code)
@@ -857,8 +857,8 @@ class Sheet(BaseObject):
                 if not fmt_info: continue
                 rowx, bits1, bits2 = local_unpack('<H4xH4xi', data[0:16])
                 if not(0 <= rowx < self.utter_max_rows):
-                    print("*** NOTE: ROW record has row index %d; " \
-                        "should have 0 <= rowx < %d -- record ignored!" \
+                    print("*** NOTE: ROW record has row index %d; "
+                        "should have 0 <= rowx < %d -- record ignored!"
                         % (rowx, self.utter_max_rows), file=self.logfile)
                     continue
                 key = (bits1, bits2)
@@ -998,8 +998,8 @@ class Sheet(BaseObject):
                 if not(0 <= first_colx <= last_colx <= 256):
                     # Note: 256 instead of 255 is a common mistake.
                     # We silently ignore the non-existing 257th column in that case.
-                    print("*** NOTE: COLINFO record has first col index %d, last %d; " \
-                        "should have 0 <= first <= last <= 255 -- record ignored!" \
+                    print("*** NOTE: COLINFO record has first col index %d, last %d; "
+                        "should have 0 <= first <= last <= 255 -- record ignored!"
                         % (first_colx, last_colx), file=self.logfile)
                     del c
                     continue
@@ -1112,7 +1112,7 @@ class Sheet(BaseObject):
             elif rc in bofcodes: ##### EMBEDDED BOF #####
                 version, boftype = local_unpack('<HH', data[0:4])
                 if boftype != 0x20: # embedded chart
-                    print("*** Unexpected embedded BOF (0x%04x) at offset %d: version=0x%04x type=0x%04x" \
+                    print("*** Unexpected embedded BOF (0x%04x) at offset %d: version=0x%04x type=0x%04x"
                         % (rc, bk._position - data_len - 4, version, boftype), file=self.logfile)
                 while 1:
                     code, data_len, data = bk.get_record_parts()
@@ -1150,9 +1150,9 @@ class Sheet(BaseObject):
                     unpack("<6H", data[0:12])
                 if self.verbosity >= 1:
                     fprintf(self.logfile,
-                        "\n*** WARNING: Ignoring CONDFMT (conditional formatting) record\n" \
-                        "*** in Sheet %d (%r).\n" \
-                        "*** %d CF record(s); needs_recalc_or_redraw = %d\n" \
+                        "\n*** WARNING: Ignoring CONDFMT (conditional formatting) record\n"
+                        "*** in Sheet %d (%r).\n"
+                        "*** %d CF record(s); needs_recalc_or_redraw = %d\n"
                         "*** Bounding box is %s\n",
                         self.number, self.name, num_CFs, needs_recalc,
                         rangename2d(browx1, browx2+1, bcolx1, bcolx2+1),
@@ -1163,7 +1163,7 @@ class Sheet(BaseObject):
                 # print >> self.logfile, repr(result), len(result)
                 if self.verbosity >= 1:
                     fprintf(self.logfile,
-                        "*** %d individual range(s):\n" \
+                        "*** %d individual range(s):\n"
                         "*** %s\n",
                         len(olist),
                         ", ".join([rangename2d(*coords) for coords in olist]),
@@ -1176,8 +1176,8 @@ class Sheet(BaseObject):
                 patt_block = (flags >> 29) & 1
                 if self.verbosity >= 1:
                     fprintf(self.logfile,
-                        "\n*** WARNING: Ignoring CF (conditional formatting) sub-record.\n" \
-                        "*** cf_type=%d, cmp_op=%d, sz1=%d, sz2=%d, flags=0x%08x\n" \
+                        "\n*** WARNING: Ignoring CF (conditional formatting) sub-record.\n"
+                        "*** cf_type=%d, cmp_op=%d, sz1=%d, sz2=%d, flags=0x%08x\n"
                         "*** optional data blocks: font=%d, border=%d, pattern=%d\n",
                         cf_type, cmp_op, sz1, sz2, flags,
                         font_block, bord_block, patt_block,
@@ -1194,8 +1194,8 @@ class Sheet(BaseObject):
                     cancellation = (font_options > 7) & 1
                     if self.verbosity >= 1:
                         fprintf(self.logfile,
-                            "*** Font info: height=%d, weight=%d, escapement=%d,\n" \
-                            "*** underline=%d, colour_index=%d, esc=%d, underl=%d,\n" \
+                            "*** Font info: height=%d, weight=%d, escapement=%d,\n"
+                            "*** underline=%d, colour_index=%d, esc=%d, underl=%d,\n"
                             "*** style=%d, posture=%d, canc=%d, cancellation=%d\n",
                             font_height, weight, escapement, underline,
                             font_colour_index, font_esc, font_underl,
@@ -1228,12 +1228,12 @@ class Sheet(BaseObject):
                     self.default_row_height, = unpack("<H", data)
                     bits = 0
                     fprintf(self.logfile,
-                        "*** WARNING: DEFAULTROWHEIGHT record len is 2, " \
+                        "*** WARNING: DEFAULTROWHEIGHT record len is 2, "
                         "should be 4; assuming BIFF2 format\n")
                 else:
                     bits = 0
                     fprintf(self.logfile,
-                        "*** WARNING: DEFAULTROWHEIGHT record len is %d, " \
+                        "*** WARNING: DEFAULTROWHEIGHT record len is %d, "
                         "should be 4; ignoring this record\n",
                         data_len)
                 self.default_row_height_mismatch = bits & 1
@@ -1381,8 +1381,8 @@ class Sheet(BaseObject):
                     if not fmt_info: continue
                     rowx, bits1, bits2 = local_unpack('<H4xH2xB', data[0:11])
                     if not(0 <= rowx < self.utter_max_rows):
-                        print("*** NOTE: ROW_B2 record has row index %d; " \
-                            "should have 0 <= rowx < %d -- record ignored!" \
+                        print("*** NOTE: ROW_B2 record has row index %d; "
+                            "should have 0 <= rowx < %d -- record ignored!"
                             % (rowx, self.utter_max_rows), file=self.logfile)
                         continue
                     if not (bits2 & 1):  # has_default_xf_index is false
@@ -1422,8 +1422,8 @@ class Sheet(BaseObject):
                     first_colx, last_colx, width\
                         = local_unpack("<BBH", data[:4])
                     if not(first_colx <= last_colx):
-                        print("*** NOTE: COLWIDTH record has first col index %d, last %d; " \
-                            "should have first <= last -- record ignored!" \
+                        print("*** NOTE: COLWIDTH record has first col index %d, last %d; "
+                            "should have first <= last -- record ignored!"
                             % (first_colx, last_colx), file=self.logfile)
                         continue
                     for colx in xrange(first_colx, last_colx+1):
@@ -1450,8 +1450,8 @@ class Sheet(BaseObject):
                             self.number, first_colx, last_colx
                             )
                     if not(0 <= first_colx < last_colx <= 256):
-                        print("*** NOTE: COLUMNDEFAULT record has first col index %d, last %d; " \
-                            "should have 0 <= first < last <= 256" \
+                        print("*** NOTE: COLUMNDEFAULT record has first col index %d, last %d; "
+                            "should have 0 <= first < last <= 256"
                             % (first_colx, last_colx), file=self.logfile)
                         last_colx = min(last_colx, 256)
                     for colx in xrange(first_colx, last_colx):
@@ -1479,13 +1479,13 @@ class Sheet(BaseObject):
                 # if DEBUG: print "SHEET.READ: Unhandled record type %02x %d bytes %r" % (rc, data_len, data)
                 pass
         if not eof_found:
-            raise XLRDError("Sheet %d (%r) missing EOF record" \
+            raise XLRDError("Sheet %d (%r) missing EOF record"
                 % (self.number, self.name))
         self.tidy_dimensions()
         self.update_cooked_mag_factors()
         bk._position = oldpos
         return 1
-    
+
     def string_record_contents(self, data):
         bv = self.biff_version
         bk = self.book
@@ -1507,7 +1507,7 @@ class Sheet(BaseObject):
             if nchars_found == nchars_expected:
                 return result
             if nchars_found > nchars_expected:
-                msg = ("STRING/CONTINUE: expected %d chars, found %d" 
+                msg = ("STRING/CONTINUE: expected %d chars, found %d"
                     % (nchars_expected, nchars_found))
                 raise XLRDError(msg)
             rc, _unused_len, data = bk.get_record_parts()
@@ -1733,10 +1733,10 @@ class Sheet(BaseObject):
 
         if options & 0x14: # has a description
             h.desc, offset = get_nul_terminated_unicode(data, offset)
-            
+
         if options & 0x80: # has a target
             h.target, offset = get_nul_terminated_unicode(data, offset)
-            
+
         if (options & 1) and not (options & 0x100): # HasMoniker and not MonikerSavedAsString
             # an OLEMoniker structure
             clsid, = unpack('<16s', data[offset:offset + 16])
@@ -1758,7 +1758,7 @@ class Sheet(BaseObject):
                 extra_nbytes = nbytes - true_nbytes
                 extra_data = data[offset:offset + extra_nbytes]
                 offset += extra_nbytes
-                if DEBUG: 
+                if DEBUG:
                     fprintf(
                         self.logfile,
                         "url=%r\nextra=%r\nnbytes=%d true_nbytes=%d extra_nbytes=%d\n",
@@ -1798,14 +1798,14 @@ class Sheet(BaseObject):
             h.type = UNICODE_LITERAL('workbook')
         else:
             h.type = UNICODE_LITERAL('unknown')
-            
+
         if options & 0x8: # has textmark
             h.textmark, offset = get_nul_terminated_unicode(data, offset)
 
         if DEBUG:
-            h.dump(header="... object dump ...") 
+            h.dump(header="... object dump ...")
             print("offset=%d record_size=%d" % (offset, record_size))
-            
+
         extra_nbytes = record_size - offset
         if extra_nbytes > 0:
             fprintf(
@@ -1817,14 +1817,14 @@ class Sheet(BaseObject):
                 REPR(data[-extra_nbytes:])
                 )
             # Seen: b"\x00\x00" also b"A\x00", b"V\x00"
-        elif extra_nbytes < 0:        
+        elif extra_nbytes < 0:
             raise XLRDError("Bug or corrupt file, send copy of input file for debugging")
 
         self.hyperlink_list.append(h)
         for rowx in xrange(h.frowx, h.lrowx+1):
             for colx in xrange(h.fcolx, h.lcolx+1):
                 self.hyperlink_map[rowx, colx] = h
-                
+
     def handle_quicktip(self, data):
         rcx, frowx, lrowx, fcolx, lcolx = unpack('<5H', data[:10])
         assert rcx == XL_QUICKTIP
@@ -1959,7 +1959,7 @@ class Sheet(BaseObject):
             o.col_hidden = 0
             o.author = UNICODE_LITERAL('')
             o._object_id = None
-            self.cell_note_map[o.rowx, o.colx] = o        
+            self.cell_note_map[o.rowx, o.colx] = o
             return
         # Excel 8.0+
         o.rowx, o.colx, option_flags, o._object_id = unpack('<4H', data[:8])
@@ -1979,7 +1979,7 @@ class Sheet(BaseObject):
         if txo:
             o.text = txo.text
             o.rich_text_runlist = txo.rich_text_runlist
-            self.cell_note_map[o.rowx, o.colx] = o        
+            self.cell_note_map[o.rowx, o.colx] = o
 
     def handle_txo(self, data):
         if self.biff_version < 80:
@@ -2073,8 +2073,8 @@ class Sheet(BaseObject):
         (lt, idList, crwHeader, crwTotals, idFieldNext, cbFSData,
         rupBuild, unusedShort, listFlags, lPosStmCache, cbStmCache,
         cchStmCache, lem, rgbHashParam, cchName) = unpack('<iiiiiiHHiiiii16sH', data[35:35+66])
-        print("lt=%d  idList=%d crwHeader=%d  crwTotals=%d  idFieldNext=%d cbFSData=%d\n"\
-            "rupBuild=%d  unusedShort=%d listFlags=%04X  lPosStmCache=%d  cbStmCache=%d\n"\
+        print("lt=%d  idList=%d crwHeader=%d  crwTotals=%d  idFieldNext=%d cbFSData=%d\n"
+            "rupBuild=%d  unusedShort=%d listFlags=%04X  lPosStmCache=%d  cbStmCache=%d\n"
             "cchStmCache=%d  lem=%d  rgbHashParam=%r  cchName=%d" % (
             lt, idList, crwHeader, crwTotals, idFieldNext, cbFSData,
             rupBuild, unusedShort,listFlags, lPosStmCache, cbStmCache,
@@ -2105,7 +2105,7 @@ class Note(BaseObject):
     author = UNICODE_LITERAL('')
 
     #: ``True`` if the containing column is hidden
-    col_hidden = 0 
+    col_hidden = 0
 
     #: Column index
     colx = 0
@@ -2153,7 +2153,7 @@ class Hyperlink(BaseObject):
     #: 'local file', 'workbook', 'unknown'
     type = None
 
-    #: The URL or file-path, depending in the type. Unicode string, except 
+    #: The URL or file-path, depending in the type. Unicode string, except
     #: in the rare case of a local but non-existent file with non-ASCII
     #: characters in the name, in which case only the "8.3" filename is
     #: available, as a :class:`bytes` (3.x) or :class:`str` (2.x) string,

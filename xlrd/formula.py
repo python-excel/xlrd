@@ -8,7 +8,7 @@
 Module for parsing/evaluating Microsoft Excel formulas.
 """
 
-from __future__ import print_function 
+from __future__ import print_function
 import copy
 from struct import unpack
 from .timemachine import *
@@ -468,7 +468,7 @@ def get_externsheet_local_range(bk, refx, blah=0):
     try:
         info = bk._externsheet_info[refx]
     except IndexError:
-        print("!!! get_externsheet_local_range: refx=%d, not in range(%d)" \
+        print("!!! get_externsheet_local_range: refx=%d, not in range(%d)"
             % (refx, len(bk._externsheet_info)), file=bk.logfile)
         return (-101, -101)
     ref_recordx, ref_first_sheetx, ref_last_sheetx = info
@@ -512,7 +512,7 @@ def get_externsheet_local_range_b57(
     nsheets = len(bk._all_sheets_map)
     if not(0 <= ref_first_sheetx <= ref_last_sheetx < nsheets):
         if blah:
-            print("/// get_externsheet_local_range_b57(%d, %d, %d) -> ???" \
+            print("/// get_externsheet_local_range_b57(%d, %d, %d) -> ???"
                 % (raw_extshtx, ref_first_sheetx, ref_last_sheetx), file=bk.logfile)
             print("--- first/last sheet not in range(%d)" % nsheets, file=bk.logfile)
         return (-103, -103) # stuffed up somewhere :-(
@@ -753,7 +753,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
     bv = bk.biff_version
     reldelta = 1 # All defined name formulas use "Method B" [OOo docs]
     if blah:
-        print("::: evaluate_name_formula %r %r %d %d %r level=%d" \
+        print("::: evaluate_name_formula %r %r %d %d %r level=%d"
             % (namex, nobj.name, fmlalen, bv, data, level), file=bk.logfile)
         hex_char_dump(data, 0, fmlalen, fout=bk.logfile)
     if level > STACK_PANIC_LEVEL:
@@ -835,7 +835,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
         oname = onames[opx] # + [" RVA"][optype]
         sz = sztab[opx]
         if blah:
-            print("Pos:%d Op:0x%02x Name:t%s Sz:%d opcode:%02xh optype:%02xh" \
+            print("Pos:%d Op:0x%02x Name:t%s Sz:%d opcode:%02xh optype:%02xh"
                 % (pos, op, oname, sz, opcode, optype), file=bk.logfile)
             print("Stack =", stack, file=bk.logfile)
         if sz == -2:
@@ -1010,7 +1010,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                 else:
                     sz = 4
                 if blah:
-                    print("   subop=%02xh subname=t%s sz=%d nc=%02xh" \
+                    print("   subop=%02xh subname=t%s sz=%d nc=%02xh"
                         % (subop, subname, sz, nc), file=bk.logfile)
             elif 0x1A <= opcode <= 0x1B: # tSheet, tEndSheet
                 assert bv < 50
@@ -1043,13 +1043,13 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
             funcx = unpack("<" + " BH"[nb], data[pos+1:pos+1+nb])[0]
             func_attrs = func_defs.get(funcx, None)
             if not func_attrs:
-                print("*** formula/tFunc unknown FuncID:%d" \
+                print("*** formula/tFunc unknown FuncID:%d"
                       % funcx, file=bk.logfile)
                 spush(unk_opnd)
             else:
                 func_name, nargs = func_attrs[:2]
                 if blah:
-                    print("    FuncID=%d name=%s nargs=%d" \
+                    print("    FuncID=%d name=%s nargs=%d"
                           % (funcx, func_name, nargs), file=bk.logfile)
                 assert len(stack) >= nargs
                 if nargs:
@@ -1066,17 +1066,17 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
             prompt, nargs = divmod(nargs, 128)
             macro, funcx = divmod(funcx, 32768)
             if blah:
-                print("   FuncID=%d nargs=%d macro=%d prompt=%d" \
+                print("   FuncID=%d nargs=%d macro=%d prompt=%d"
                       % (funcx, nargs, macro, prompt), file=bk.logfile)
             func_attrs = func_defs.get(funcx, None)
             if not func_attrs:
-                print("*** formula/tFuncVar unknown FuncID:%d" \
+                print("*** formula/tFuncVar unknown FuncID:%d"
                       % funcx, file=bk.logfile)
                 spush(unk_opnd)
             else:
                 func_name, minargs, maxargs = func_attrs[:3]
                 if blah:
-                    print("    name: %r, min~max args: %d~%d" \
+                    print("    name: %r, min~max args: %d~%d"
                         % (func_name, minargs, maxargs), file=bk.logfile)
                 assert minargs <= nargs <= maxargs
                 assert len(stack) >= nargs
@@ -1281,7 +1281,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                 else:
                     dodgy = 1
             if blah:
-                print("   origrefx=%d refx=%d tgtnamex=%d dodgy=%d" \
+                print("   origrefx=%d refx=%d tgtnamex=%d dodgy=%d"
                     % (origrefx, refx, tgtnamex, dodgy), file=bk.logfile)
             if tgtnamex == namex:
                 if blah: print("!!!! Self-referential !!!!", file=bk.logfile)
@@ -1366,7 +1366,7 @@ def decompile_formula(bk, fmla, fmlalen,
     data = fmla
     bv = bk.biff_version
     if blah:
-        print("::: decompile_formula len=%d fmlatype=%r browx=%r bcolx=%r reldelta=%d %r level=%d" \
+        print("::: decompile_formula len=%d fmlatype=%r browx=%r bcolx=%r reldelta=%d %r level=%d"
             % (fmlalen, fmlatype, browx, bcolx, reldelta, data, level), file=bk.logfile)
         hex_char_dump(data, 0, fmlalen, fout=bk.logfile)
     if level > STACK_PANIC_LEVEL:
@@ -1431,7 +1431,7 @@ def decompile_formula(bk, fmla, fmlalen,
         oname = onames[opx] # + [" RVA"][optype]
         sz = sztab[opx]
         if blah:
-            print("Pos:%d Op:0x%02x opname:t%s Sz:%d opcode:%02xh optype:%02xh" \
+            print("Pos:%d Op:0x%02x opname:t%s Sz:%d opcode:%02xh optype:%02xh"
                 % (pos, op, oname, sz, opcode, optype), file=bk.logfile)
             print("Stack =", stack, file=bk.logfile)
         if sz == -2:
@@ -1583,7 +1583,7 @@ def decompile_formula(bk, fmla, fmlalen,
                 else:
                     sz = 4
                 if blah:
-                    print("   subop=%02xh subname=t%s sz=%d nc=%02xh" \
+                    print("   subop=%02xh subname=t%s sz=%d nc=%02xh"
                         % (subop, subname, sz, nc), file=bk.logfile)
             elif 0x1A <= opcode <= 0x1B: # tSheet, tEndSheet
                 assert bv < 50
@@ -1621,7 +1621,7 @@ def decompile_formula(bk, fmla, fmlalen,
             else:
                 func_name, nargs = func_attrs[:2]
                 if blah:
-                    print("    FuncID=%d name=%s nargs=%d" \
+                    print("    FuncID=%d name=%s nargs=%d"
                           % (funcx, func_name, nargs), file=bk.logfile)
                 assert len(stack) >= nargs
                 if nargs:
@@ -1638,7 +1638,7 @@ def decompile_formula(bk, fmla, fmlalen,
             prompt, nargs = divmod(nargs, 128)
             macro, funcx = divmod(funcx, 32768)
             if blah:
-                print("   FuncID=%d nargs=%d macro=%d prompt=%d" \
+                print("   FuncID=%d nargs=%d macro=%d prompt=%d"
                       % (funcx, nargs, macro, prompt), file=bk.logfile)
             #### TODO #### if funcx == 255: # call add-in function
             if funcx == 255:
@@ -1646,13 +1646,13 @@ def decompile_formula(bk, fmla, fmlalen,
             else:
                 func_attrs = func_defs.get(funcx, None)
             if not func_attrs:
-                print("*** formula/tFuncVar unknown FuncID:%d" \
+                print("*** formula/tFuncVar unknown FuncID:%d"
                       % funcx, file=bk.logfile)
                 spush(unk_opnd)
             else:
                 func_name, minargs, maxargs = func_attrs[:3]
                 if blah:
-                    print("    name: %r, min~max args: %d~%d" \
+                    print("    name: %r, min~max args: %d~%d"
                         % (func_name, minargs, maxargs), file=bk.logfile)
                 assert minargs <= nargs <= maxargs
                 assert len(stack) >= nargs
@@ -1825,7 +1825,7 @@ def decompile_formula(bk, fmla, fmlalen,
                 else:
                     dodgy = 1
             if blah:
-                print("   origrefx=%d refx=%d tgtnamex=%d dodgy=%d" \
+                print("   origrefx=%d refx=%d tgtnamex=%d dodgy=%d"
                     % (origrefx, refx, tgtnamex, dodgy), file=bk.logfile)
             # if tgtnamex == namex:
             #     if blah: print >> bk.logfile, "!!!! Self-referential !!!!"
@@ -1873,7 +1873,7 @@ def decompile_formula(bk, fmla, fmlalen,
         pos += sz
     any_rel = not not any_rel
     if blah:
-        print("End of formula. level=%d any_rel=%d any_err=%d stack=%r" % \
+        print("End of formula. level=%d any_rel=%d any_err=%d stack=%r" %
             (level, not not any_rel, any_err, stack), file=bk.logfile)
         if len(stack) >= 2:
             print("*** Stack has unprocessed args", file=bk.logfile)
@@ -1909,7 +1909,7 @@ def dump_formula(bk, data, fmlalen, bv, reldelta, blah=0, isname=0):
 
         sz = sztab[opx]
         if blah:
-            print("Pos:%d Op:0x%02x Name:t%s Sz:%d opcode:%02xh optype:%02xh" \
+            print("Pos:%d Op:0x%02x Name:t%s Sz:%d opcode:%02xh optype:%02xh"
                 % (pos, op, oname, sz, opcode, optype), file=bk.logfile)
         if not optype:
             if 0x01 <= opcode <= 0x02: # tExp, tTbl
@@ -2037,7 +2037,7 @@ def dump_formula(bk, data, fmlalen, bv, reldelta, blah=0, isname=0):
             return
         pos += sz
     if blah:
-        print("End of formula. any_rel=%d any_err=%d stack=%r" % \
+        print("End of formula. any_rel=%d any_err=%d stack=%r" %
             (not not any_rel, any_err, stack), file=bk.logfile)
         if len(stack) >= 2:
             print("*** Stack has unprocessed args", file=bk.logfile)

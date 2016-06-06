@@ -92,11 +92,11 @@ class CompDoc(object):
         self.mem = mem
         ssz, sssz = unpack('<HH', mem[30:34])
         if ssz > 20: # allows for 2**20 bytes i.e. 1MB
-            print("WARNING: sector size (2**%d) is preposterous; assuming 512 and continuing ..." \
+            print("WARNING: sector size (2**%d) is preposterous; assuming 512 and continuing ..."
                 % ssz, file=logfile)
             ssz = 9
         if sssz > ssz:
-            print("WARNING: short stream sector size (2**%d) is preposterous; assuming 64 and continuing ..." \
+            print("WARNING: short stream sector size (2**%d) is preposterous; assuming 64 and continuing ..."
                 % sssz, file=logfile)
             sssz = 6
         self.sec_size = sec_size = 1 << ssz
@@ -114,7 +114,7 @@ class CompDoc(object):
         if left_over:
             #### raise CompDocError("Not a whole number of sectors")
             mem_data_secs += 1
-            print("WARNING *** file size (%d) not 512 + multiple of sector size (%d)" \
+            print("WARNING *** file size (%d) not 512 + multiple of sector size (%d)"
                 % (len(mem), sec_size), file=logfile)
         self.mem_data_secs = mem_data_secs # use for checking later
         self.mem_data_len = mem_data_len
@@ -123,7 +123,7 @@ class CompDoc(object):
         if DEBUG:
             print('sec sizes', ssz, sssz, sec_size, self.short_sec_size, file=logfile)
             print("mem data: %d bytes == %d sectors" % (mem_data_len, mem_data_secs), file=logfile)
-            print("SAT_tot_secs=%d, dir_first_sec_sid=%d, min_size_std_stream=%d" \
+            print("SAT_tot_secs=%d, dir_first_sec_sid=%d, min_size_std_stream=%d"
                 % (SAT_tot_secs, self.dir_first_sec_sid, self.min_size_std_stream,), file=logfile)
             print("SSAT_first_sec_sid=%d, SSAT_tot_secs=%d" % (SSAT_first_sec_sid, SSAT_tot_secs,), file=logfile)
             print("MSATX_first_sec_sid=%d, MSATX_tot_secs=%d" % (MSATX_first_sec_sid, MSATX_tot_secs,), file=logfile)
@@ -187,7 +187,7 @@ class CompDoc(object):
             if msid >= mem_data_secs:
                 if not trunc_warned:
                     print("WARNING *** File is truncated, or OLE2 MSAT is corrupt!!", file=logfile)
-                    print("INFO: Trying to access sector %d but only %d available" \
+                    print("INFO: Trying to access sector %d but only %d available"
                         % (msid, mem_data_secs), file=logfile)
                     trunc_warned = 1
                 MSAT[msidx] = EVILSID

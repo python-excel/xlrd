@@ -26,8 +26,8 @@ _cellty_from_fmtty = {
     FGE: XL_CELL_NUMBER,
     FDT: XL_CELL_DATE,
     FTX: XL_CELL_NUMBER, # Yes, a number can be formatted as text.
-    }    
-    
+    }
+
 excel_default_palette_b5 = (
     (  0,   0,   0), (255, 255, 255), (255,   0,   0), (  0, 255,   0),
     (  0,   0, 255), (255, 255,   0), (255,   0, 255), (  0, 255, 255),
@@ -145,7 +145,7 @@ def nearest_colour_index(colour_map, rgb, debug=0):
             if metric == 0:
                 break
     if 0 and debug:
-        print("nearest_colour_index for %r is %r -> %r; best_metric is %d" \
+        print("nearest_colour_index for %r is %r -> %r; best_metric is %d"
             % (rgb, best_colourx, colour_map[best_colourx], best_metric))
     return best_colourx
 
@@ -238,7 +238,7 @@ class Font(BaseObject, EqNeAttrs):
     #: 1 = Characters are underlined. Redundant; see
     #: :attr:`underline_type` attribute.
     underlined = 0
-    
+
     #: Font weight (100-1000). Standard values are 400 for normal text
     #: and 700 for bold text.
     weight = 400
@@ -330,13 +330,13 @@ def handle_font(book, data):
 class Format(BaseObject, EqNeAttrs):
     """
     "Number format" information from a ``FORMAT`` record.
-    
+
     .. versionadded:: 0.6.1
     """
 
     #: The key into :attr:`~xlrd.book.Book.format_map`
     format_key = 0
-    
+
     #: A classification that has been inferred from the format string.
     #: Currently, this is used only to distinguish between numbers and dates.
     #: Values::
@@ -466,7 +466,7 @@ def is_date_format_string(book, fmt):
     # TODO: u'[h]\\ \\h\\o\\u\\r\\s' ([h] means don't care about hours > 23)
     state = 0
     s = ''
-    
+
     for c in fmt:
         if state == 0:
             if c == UNICODE_LITERAL('"'):
@@ -657,7 +657,7 @@ def handle_style(book, data):
             try:
                 name = unpack_unicode(data, 2, lenlen=2)
             except UnicodeDecodeError:
-                print("STYLE: built_in=%d xf_index=%d built_in_id=%d level=%d" \
+                print("STYLE: built_in=%d xf_index=%d built_in_id=%d level=%d"
                     % (built_in, xf_index, built_in_id, level), file=book.logfile)
                 print("raw bytes:", repr(data[2:]), file=book.logfile)
                 raise
@@ -680,7 +680,7 @@ def check_colour_indexes_in_obj(book, obj, orig_index):
                 book.colour_indexes_used[nobj] = 1
                 continue
             oname = obj.__class__.__name__
-            print("*** xf #%d : %s.%s =  0x%04x (unknown)" \
+            print("*** xf #%d : %s.%s =  0x%04x (unknown)"
                 % (orig_index, oname, attr, nobj), file=book.logfile)
 
 def fill_in_standard_formats(book):
@@ -1017,7 +1017,7 @@ def xf_epilogue(self):
                 elif not self.xf_list[xf.parent_style_index].is_style:
                     fprintf(self.logfile,
                         "NOTE !!! XF[%d]: parent_style_index is %d; style flag not set\n",
-                        xf.xf_index, xf.parent_style_index)                
+                        xf.xf_index, xf.parent_style_index)
             if blah1 and xf.parent_style_index > xf.xf_index:
                 fprintf(self.logfile,
                     "NOTE !!! XF[%d]: parent_style_index is %d; out of order?\n",
@@ -1065,12 +1065,12 @@ class XFBorder(BaseObject, EqNeAttrs):
     """
     A collection of the border-related attributes of an ``XF`` record.
     Items correspond to those in the Excel UI's Format -> Cells -> Border tab.
-    
+
     An explanations of "colour index" is given in :ref:`palette`.
-    
+
     There are five line style attributes; possible values and the
     associated meanings are::
-    
+
       0 = No line,
       1 = Thin,
       2 = Medium,
@@ -1085,14 +1085,14 @@ class XFBorder(BaseObject, EqNeAttrs):
       11 = Thin dash-dot-dotted,
       12 = Medium dash-dot-dotted,
       13 = Slanted medium dash-dotted.
-      
+
     The line styles 8 to 13 appear in BIFF8 files (Excel 97 and later) only.
     For pictures of the line styles, refer to OOo docs s3.10 (p22)
     "Line Styles for Cell Borders (BIFF3-BIFF8)".</p>
 
     .. versionadded:: 0.6.1
     """
-    
+
     #: The colour index for the cell's top line
     top_colour_index = 0
     #: The colour index for the cell's bottom line

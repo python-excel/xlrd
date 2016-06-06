@@ -511,7 +511,7 @@ class Book(BaseObject):
             except ValueError:
                 raise XLRDError('No sheet named <%r>' % sheet_name_or_index)
         self._sheet_list[sheetx] = None
-        
+
     def release_resources(self):
         """
         This method has a dual purpose. You can call it to release
@@ -534,10 +534,10 @@ class Book(BaseObject):
         self.filestr = None
         self._sharedstrings = None
         self._rich_text_runlist_map = None
-    
+
     def __enter__(self):
         return self
-        
+
     def __exit__(self, exc_type, exc_value, exc_tb):
         self.release_resources()
         # return false
@@ -732,7 +732,7 @@ class Book(BaseObject):
         bv = self.biff_version
         self.derive_encoding()
         if DEBUG:
-            fprintf(self.logfile, "BOUNDSHEET: bv=%d data %r\n", bv, data);
+            fprintf(self.logfile, "BOUNDSHEET: bv=%d data %r\n", bv, data)
         if bv == 45: # BIFF4W
             #### Not documented in OOo docs ...
             # In fact, the *only* data is the name of the sheet.
@@ -1115,7 +1115,7 @@ class Book(BaseObject):
                 # Should implement handling of CONTINUE record(s) ...
                 if self.verbosity:
                     print((
-                        "*** WARNING: unpack failure in sheet %d of %d in SUPBOOK record for file %r" 
+                        "*** WARNING: unpack failure in sheet %d of %d in SUPBOOK record for file %r"
                         % (x, num_sheets, url)
                         ), file=self.logfile)
                 break
@@ -1169,7 +1169,7 @@ class Book(BaseObject):
             strlist.append(data)
         self._sharedstrings, rt_runlist = unpack_SST_table(strlist, uniquestrings)
         if self.formatting_info:
-            self._rich_text_runlist_map = rt_runlist        
+            self._rich_text_runlist_map = rt_runlist
         if DEBUG:
             t1 = time.time()
             print("SST processing took %.2f seconds" % (t1 - t0, ), file=self.logfile)
@@ -1277,7 +1277,7 @@ class Book(BaseObject):
                 'Invalid length (%d) for BOF record type 0x%04x'
                 % (length, opcode))
         padding = b'\0' * max(0, boflen[opcode] - length)
-        data = self.read(self._position, length);
+        data = self.read(self._position, length)
         if DEBUG: fprintf(self.logfile, "\ngetbof(): data=%r\n", data)
         if len(data) < length:
             bof_error('Incomplete BOF record[2]; met end of file')
@@ -1285,11 +1285,11 @@ class Book(BaseObject):
         version1 = opcode >> 8
         version2, streamtype = unpack('<HH', data[0:4])
         if DEBUG:
-            print("getbof(): op=0x%04x version2=0x%04x streamtype=0x%04x" \
+            print("getbof(): op=0x%04x version2=0x%04x streamtype=0x%04x"
                 % (opcode, version2, streamtype), file=self.logfile)
         bof_offset = self._position - 4 - length
         if DEBUG:
-            print("getbof(): BOF found at offset %d; savpos=%d" \
+            print("getbof(): BOF found at offset %d; savpos=%d"
                 % (bof_offset, savpos), file=self.logfile)
         version = build = year = 0
         if version1 == 0x08:
@@ -1317,7 +1317,7 @@ class Book(BaseObject):
             version = 45 # i.e. 4W
 
         if DEBUG or self.verbosity >= 2:
-            print("BOF: op=0x%04x vers=0x%04x stream=0x%04x buildid=%d buildyr=%d -> BIFF%d" \
+            print("BOF: op=0x%04x vers=0x%04x stream=0x%04x buildid=%d buildyr=%d -> BIFF%d"
                 % (opcode, version2, streamtype, build, year, version), file=self.logfile)
         got_globals = streamtype == XL_WORKBOOK_GLOBALS or (
             version == 45 and streamtype == XL_WORKBOOK_GLOBALS_4W)
@@ -1328,7 +1328,7 @@ class Book(BaseObject):
         if version >= 50 and streamtype == 0x0100:
             bof_error("Workspace file -- no spreadsheet data")
         bof_error(
-            'BOF not workbook/worksheet: op=0x%04x vers=0x%04x strm=0x%04x build=%d year=%d -> BIFF%d' \
+            'BOF not workbook/worksheet: op=0x%04x vers=0x%04x strm=0x%04x build=%d year=%d -> BIFF%d'
             % (opcode, version2, streamtype, build, year, version)
             )
 
@@ -1434,7 +1434,7 @@ def unpack_SST_table(datatab, nstrings):
             datalen = len(data)
             options = local_BYTES_ORD(data[0])
             pos = 1
-        
+
         if rtcount:
             runs = []
             for runindex in xrange(rtcount):
@@ -1446,7 +1446,7 @@ def unpack_SST_table(datatab, nstrings):
                 runs.append(local_unpack("<HH", data[pos:pos+4]))
                 pos += 4
             richtext_runs[len(strings)] = runs
-                
+
         pos += phosz # size of the phonetic stuff to skip
         if pos >= datalen:
             # adjust to correct position in next record

@@ -14,7 +14,7 @@ class TestCell(unittest.TestCase):
     def setUp(self):
         self.book = xlrd.open_workbook(from_this_dir('profiles.xls'), formatting_info=True)
         self.sheet = self.book.sheet_by_name('PROFILEDEF')
-        
+
     def test_empty_cell(self):
         sheet = self.book.sheet_by_name('TRAVERSALCHAINAGE')
         cell = sheet.cell(0, 0)
