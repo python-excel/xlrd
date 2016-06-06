@@ -3,7 +3,7 @@
 [![Documentation Status](https://readthedocs.org/projects/xlrd/badge/?version=latest)](http://xlrd.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/xlrd.svg)](https://badge.fury.io/py/xlrd)
 
-### Python package "xlrd"
+### xlrd
 
 **Purpose**: Provide a library for developers to use to extract data from Microsoft Excel (tm) spreadsheet files. It is not an end-user tool.
 
