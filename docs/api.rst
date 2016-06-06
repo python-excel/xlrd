@@ -43,9 +43,3 @@ API Reference
 
 .. automodule:: xlrd.xldate
    :members:
-
-
-.. currentmodule:: xlrd.xlsx
-
-.. automodule:: xlrd.xlsx
-   :members:
