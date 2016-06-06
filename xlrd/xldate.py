@@ -60,7 +60,7 @@ def xldate_as_tuple(xldate, datemode):
     """
     Convert an Excel number (presumed to represent a date, a datetime or a time) into
     a tuple suitable for feeding to datetime or mx.DateTime constructors.
-    
+
     :param xldate: The Excel number
     :param datemode: 0: 1900-based, 1: 1904-based.
     :raises xlrd.xldate.XLDateNegative:
@@ -70,14 +70,14 @@ def xldate_as_tuple(xldate, datemode):
     :raises xlrd.xldate.XLDateBadDatemode:
     :raises xlrd.xldate.XLDateError:
     :returns: Gregorian ``(year, month, day, hour, minute, nearest_second)``.
-    
+
     .. warning::
 
       When using this function to interpret the contents of a workbook, you
       should pass in the :attr:`~xlrd.book.Book.datemode`
       attribute of that workbook. Whether the workbook has ever been anywhere
       near a Macintosh is irrelevant.
-    
+
     .. admonition:: Special case
 
         If ``0.0 <= xldate < 1.0``, it is assumed to represent a time;
@@ -130,10 +130,10 @@ def xldate_as_tuple(xldate, datemode):
 def xldate_as_datetime(xldate, datemode):
     """
     Convert an Excel date/time number into a :class:`datetime.datetime` object.
-    
+
     :param xldate: The Excel number
     :param datemode: 0: 1900-based, 1: 1904-based.
-    
+
     :returns: A :class:`datetime.datetime` object.
     """
 
@@ -221,7 +221,7 @@ def xldate_from_time_tuple(time_tuple):
     """
     Convert a time tuple ``(hour, minute, second)`` to an Excel "date" value
     (fraction of a day).
-    
+
     :param hour: ``0 <= hour < 24``
     :param minute: ``0 <= minute < 60``
     :param second: ``0 <= second < 60``

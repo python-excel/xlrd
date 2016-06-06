@@ -24,7 +24,7 @@ class TestFormulas(TestCase):
     def setUp(self):
         book = xlrd.open_workbook(from_this_dir('formula_test_sjmachin.xls'))
         self.sheet = book.sheet_by_index(0)
-        
+
     def get_value(self, col, row):
         return ascii(self.sheet.col_values(col)[row])
 
@@ -60,24 +60,24 @@ class TestNameFormulas(TestCase):
     def setUp(self):
         book = xlrd.open_workbook(from_this_dir('formula_test_names.xls'))
         self.sheet = book.sheet_by_index(0)
-    
+
     def get_value(self, col, row):
         return ascii(self.sheet.col_values(col)[row])
-    
+
     def test_unaryop(self):
         self.assertEqual(self.get_value(1, 1), '-7.0')
-    
+
     def test_attrsum(self):
         self.assertEqual(self.get_value(1, 2), '4.0')
-    
+
     def test_func(self):
         self.assertEqual(self.get_value(1, 3), '6.0')
-    
+
     def test_func_var_args(self):
         self.assertEqual(self.get_value(1, 4), '3.0')
-    
+
     def test_if(self):
         self.assertEqual(self.get_value(1, 5), "'b'")
-    
+
     def test_choose(self):
         self.assertEqual(self.get_value(1, 6), "'C'")

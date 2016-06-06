@@ -154,7 +154,7 @@ Examples (script name and glob_pattern arg omitted for brevity)
 
 """
         sys.stdout.write(text)
-    
+
     if len(sys.argv) != 5:
         usage()
         sys.exit(0)

@@ -534,7 +534,7 @@ def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout, unnumbered=False):
                 ofs, dlen, base, endpos, pos, endsub, substrg)
             break
         hexd = ''.join(["%02x " % BYTES_ORD(c) for c in substrg])
-        
+
         chard = ''
         for c in substrg:
             c = chr(BYTES_ORD(c))
@@ -545,7 +545,7 @@ def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout, unnumbered=False):
             chard += c
         if numbered:
             num_prefix = "%5d: " %  (base+pos-ofs)
-        
+
         fprintf(fout, "%s     %-48s %s\n", num_prefix, hexd, chard)
         pos = endsub
 

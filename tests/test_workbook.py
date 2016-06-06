@@ -14,7 +14,7 @@ class TestWorkbook(TestCase):
 
     sheetnames = ['PROFILEDEF', 'AXISDEF', 'TRAVERSALCHAINAGE',
                   'AXISDATUMLEVELS', 'PROFILELEVELS']
-    
+
     def setUp(self):
         self.book = open_workbook(from_this_dir('profiles.xls'))
 
@@ -44,4 +44,3 @@ class TestWorkbook(TestCase):
 
     def test_sheet_names(self):
         self.assertEqual(self.sheetnames, self.book.sheet_names())
-

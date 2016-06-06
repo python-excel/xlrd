@@ -47,17 +47,17 @@ class Sheet(BaseObject):
     """
     Contains the data for one worksheet.
 
-    In the cell access functions, ``rowx`` is a row index, counting from 
+    In the cell access functions, ``rowx`` is a row index, counting from
     zero, and ``colx`` is a column index, counting from zero.
-    Negative values for row/column indexes and slice positions are supported in 
+    Negative values for row/column indexes and slice positions are supported in
     the expected fashion.
 
-    For information about cell types and cell values, refer to the documentation 
+    For information about cell types and cell values, refer to the documentation
     of the :class:`Cell` class.
 
-    .. warning:: 
-    
-      You don't instantiate this class yourself. You access :class:`Sheet` 
+    .. warning::
+
+      You don't instantiate this class yourself. You access :class:`Sheet`
       objects via the :class:`~xlrd.book.Book` object that
       was returned when you called :func:`xlrd.open_workbook`.
     """
@@ -155,7 +155,7 @@ class Sheet(BaseObject):
     #:               # for the top left cell (e.g. border, pattern) to all cells in
     #:               # the range.
     merged_cells = []
-    
+
     #: Mapping of ``(rowx, colx)`` to list of ``(offset, font_index)`` tuples.
     #: The offset defines where in the string the font begins to be used.
     #: Offsets are expected to be in ascending order.
@@ -255,7 +255,7 @@ class Sheet(BaseObject):
     #: A sparse mapping from ``(rowx, colx)`` to an item in
     #: :attr:`~xlrd.sheet.Sheet.hyperlink_list`.
     #: Cells not covered by a hyperlink are not mapped.
-    #: It is possible using the Excel UI to set up a hyperlink that 
+    #: It is possible using the Excel UI to set up a hyperlink that
     #: covers a larger-than-1x1 rectangle of cells.
     #: Hyperlink rectangles may overlap (Excel doesn't check).
     #: When a multiply-covered cell is clicked on, the hyperlink that is
@@ -270,7 +270,7 @@ class Sheet(BaseObject):
     #: Cells not containing a note ("comment") are not mapped.
     #:
     #: .. versionadded:: 0.7.2
-    cell_note_map = {}    
+    cell_note_map = {}
 
     #: Number of columns in left pane (frozen panes; for split panes, see
     #: comments in code)
@@ -1485,7 +1485,7 @@ class Sheet(BaseObject):
         self.update_cooked_mag_factors()
         bk._position = oldpos
         return 1
-    
+
     def string_record_contents(self, data):
         bv = self.biff_version
         bk = self.book
@@ -1507,7 +1507,7 @@ class Sheet(BaseObject):
             if nchars_found == nchars_expected:
                 return result
             if nchars_found > nchars_expected:
-                msg = ("STRING/CONTINUE: expected %d chars, found %d" 
+                msg = ("STRING/CONTINUE: expected %d chars, found %d"
                     % (nchars_expected, nchars_found))
                 raise XLRDError(msg)
             rc, _unused_len, data = bk.get_record_parts()
@@ -1733,10 +1733,10 @@ class Sheet(BaseObject):
 
         if options & 0x14: # has a description
             h.desc, offset = get_nul_terminated_unicode(data, offset)
-            
+
         if options & 0x80: # has a target
             h.target, offset = get_nul_terminated_unicode(data, offset)
-            
+
         if (options & 1) and not (options & 0x100): # HasMoniker and not MonikerSavedAsString
             # an OLEMoniker structure
             clsid, = unpack('<16s', data[offset:offset + 16])
@@ -1758,7 +1758,7 @@ class Sheet(BaseObject):
                 extra_nbytes = nbytes - true_nbytes
                 extra_data = data[offset:offset + extra_nbytes]
                 offset += extra_nbytes
-                if DEBUG: 
+                if DEBUG:
                     fprintf(
                         self.logfile,
                         "url=%r\nextra=%r\nnbytes=%d true_nbytes=%d extra_nbytes=%d\n",
@@ -1798,14 +1798,14 @@ class Sheet(BaseObject):
             h.type = UNICODE_LITERAL('workbook')
         else:
             h.type = UNICODE_LITERAL('unknown')
-            
+
         if options & 0x8: # has textmark
             h.textmark, offset = get_nul_terminated_unicode(data, offset)
 
         if DEBUG:
-            h.dump(header="... object dump ...") 
+            h.dump(header="... object dump ...")
             print("offset=%d record_size=%d" % (offset, record_size))
-            
+
         extra_nbytes = record_size - offset
         if extra_nbytes > 0:
             fprintf(
@@ -1817,14 +1817,14 @@ class Sheet(BaseObject):
                 REPR(data[-extra_nbytes:])
                 )
             # Seen: b"\x00\x00" also b"A\x00", b"V\x00"
-        elif extra_nbytes < 0:        
+        elif extra_nbytes < 0:
             raise XLRDError("Bug or corrupt file, send copy of input file for debugging")
 
         self.hyperlink_list.append(h)
         for rowx in xrange(h.frowx, h.lrowx+1):
             for colx in xrange(h.fcolx, h.lcolx+1):
                 self.hyperlink_map[rowx, colx] = h
-                
+
     def handle_quicktip(self, data):
         rcx, frowx, lrowx, fcolx, lcolx = unpack('<5H', data[:10])
         assert rcx == XL_QUICKTIP
@@ -1959,7 +1959,7 @@ class Sheet(BaseObject):
             o.col_hidden = 0
             o.author = UNICODE_LITERAL('')
             o._object_id = None
-            self.cell_note_map[o.rowx, o.colx] = o        
+            self.cell_note_map[o.rowx, o.colx] = o
             return
         # Excel 8.0+
         o.rowx, o.colx, option_flags, o._object_id = unpack('<4H', data[:8])
@@ -1979,7 +1979,7 @@ class Sheet(BaseObject):
         if txo:
             o.text = txo.text
             o.rich_text_runlist = txo.rich_text_runlist
-            self.cell_note_map[o.rowx, o.colx] = o        
+            self.cell_note_map[o.rowx, o.colx] = o
 
     def handle_txo(self, data):
         if self.biff_version < 80:
@@ -2105,7 +2105,7 @@ class Note(BaseObject):
     author = UNICODE_LITERAL('')
 
     #: ``True`` if the containing column is hidden
-    col_hidden = 0 
+    col_hidden = 0
 
     #: Column index
     colx = 0
@@ -2153,7 +2153,7 @@ class Hyperlink(BaseObject):
     #: 'local file', 'workbook', 'unknown'
     type = None
 
-    #: The URL or file-path, depending in the type. Unicode string, except 
+    #: The URL or file-path, depending in the type. Unicode string, except
     #: in the rare case of a local but non-existent file with non-ASCII
     #: characters in the name, in which case only the "8.3" filename is
     #: available, as a :class:`bytes` (3.x) or :class:`str` (2.x) string,

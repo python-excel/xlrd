@@ -127,7 +127,7 @@ class TestSheet(TestCase):
 
 
 class TestSheetRagged(TestCase):
-    
+
     def test_read_ragged(self):
         book = xlrd.open_workbook(from_this_dir('ragged.xls'), ragged_rows=True)
         sheet = book.sheet_by_index(0)

@@ -8,7 +8,7 @@
 Module for parsing/evaluating Microsoft Excel formulas.
 """
 
-from __future__ import print_function 
+from __future__ import print_function
 import copy
 from struct import unpack
 from .timemachine import *
