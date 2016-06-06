@@ -15,7 +15,7 @@ python:
 install: "pip install -Ur requirements.txt"
 
 # command to run tests, e.g. python setup.py test
-script: nosetests --with-cov --cov=xlrd
+script: nosetests --with-cov --cov=xlrd --verbosity=3
 
 after_success:
   - coveralls
