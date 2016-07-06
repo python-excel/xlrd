@@ -32,4 +32,4 @@ may be used for experimentation:
 The first place to look for an encoding, the "codec name", is
 `the Python documentation`__.
 
-__ http://docs.python.org/lib/standard-encodings.html
+__ https://docs.python.org/library/codecs.html#standard-encodings
