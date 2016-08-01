@@ -737,6 +737,7 @@ class X12Sheet(X12General):
             elif cell_type == "e":
                 # e = error
                 # <v> child contains e.g. "#REF!"
+                tvalue = '#N/A'
                 for child in cell_elem:
                     child_tag = child.tag
                     if child_tag == V_TAG:
