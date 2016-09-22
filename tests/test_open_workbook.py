@@ -36,7 +36,3 @@ class TestOpen(TestCase):
         open_workbook(from_this_dir('reveng1.xlsx'))
         # we should make assertions here that data has been
         # correctly processed.
-
-    def test_sap_generate_xls(self):
-        open_workbook(from_this_dir('issue85.xls'),
-                      formatting_info=True)
