@@ -37,9 +37,6 @@ class TestOpen(TestCase):
         # we should make assertions here that data has been
         # correctly processed.
 
-    def test_sap_generate_xls(self):
-        open_workbook(from_this_dir('issue85.xls'),
-                      formatting_info=True)
 
     def test_err_cell_empty(self):
         # For cell with type "e" (error) but without inner 'val' tags
