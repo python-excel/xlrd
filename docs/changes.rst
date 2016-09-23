@@ -89,7 +89,7 @@ Thanks to the following for their contributions to this release:
 
 - Read cell comments in .xlsx files.
 
-- Added xldate_to_datetime() function to convert from Excel
+- Added xldate_as_datetime() function to convert from Excel
   serial date/time to datetime.datetime object.
 
 Thanks to the following for their contributions to this release:
