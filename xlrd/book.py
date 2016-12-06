@@ -1186,7 +1186,7 @@ class Book(BaseObject):
             try:
                 strg = unpack_unicode(data, 0, lenlen=2)
             except:
-                strg = ""
+                strg = UNICODE_LITERAL("")
         if DEBUG: fprintf(self.logfile, "WRITEACCESS: %d bytes; raw=%s %r\n", len(data), self.raw_user_name, strg)
         strg = strg.rstrip()
         self.user_name = strg
