@@ -42,7 +42,7 @@ There are several problems with Excel dates:
    days out of kilter.
 
    Reference:
-   http://support.microsoft.com/default.aspx?scid=KB;EN-US;q180162
+   https://support.microsoft.com/en-us/help/180162/xl-the-1900-date-system-vs.-the-1904-date-system
 
 
 3. The Excel implementation of the Windows-default 1900-based date system
@@ -58,7 +58,7 @@ There are several problems with Excel dates:
    Save as an XLS file, then open the file with Excel and you'll see
    ``1900-02-28`` displayed.
 
-   Reference: http://support.microsoft.com/default.aspx?scid=kb;en-us;214326
+   Reference: https://support.microsoft.com/en-us/help/214326/excel-incorrectly-assumes-that-the-year-1900-is-a-leap-year
 
 4. The Macintosh-default 1904-based date system counts ``1904-01-02`` as day 1
    and ``1904-01-01`` as day zero. Thus any number such that
