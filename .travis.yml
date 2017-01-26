@@ -11,7 +11,9 @@ python:
   - "2.6"
 
 # command to install dependencies
-install: "pip install -Ur requirements.txt"
+install: 
+- "pip install -U pip setuptools"
+- "pip install -Ur requirements.txt"
 
 # command to run tests, e.g. python setup.py test
 script: nosetests --with-cov --cov=xlrd
