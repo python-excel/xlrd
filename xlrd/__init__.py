@@ -107,7 +107,7 @@ def open_workbook(filename=None,
     """
 
     peeksz = 4
-    if file_contents:
+    if file_contents is not None:
         peek = file_contents[:peeksz]
     else:
         with open(filename, "rb") as f:
