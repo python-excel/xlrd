@@ -84,7 +84,7 @@ class CompDoc(object):
         self.DEBUG = DEBUG
         if mem[0:8] != SIGNATURE:
             raise CompDocError('Not an OLE2 compound document')
-        if mem[28:30] != b'\xFE\xFF':
+        if mem[28:30] != b'\xFE\xFF' & mem[28:30] != b'\xff\xfe':
             raise CompDocError('Expected "little-endian" marker, found %r' % mem[28:30])
         revision, version = unpack('<HH', mem[24:28])
         if DEBUG:
