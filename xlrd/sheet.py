@@ -1810,9 +1810,9 @@ class Sheet(BaseObject):
         if extra_nbytes > 0:
             fprintf(
                 self.logfile,
-                "*** WARNING: hyperlink at r=%d c=%d has %d extra data bytes: %s\n",
-                h.frowx,
-                h.fcolx,
+                "*** WARNING: hyperlink at R%dC%d has %d extra data bytes: %s\n",
+                h.frowx + 1,
+                h.fcolx + 1,
                 extra_nbytes,
                 REPR(data[-extra_nbytes:])
                 )
