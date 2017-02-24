@@ -43,7 +43,10 @@ def ensure_elementtree_imported(verbosity, logfile):
                         except ImportError:
                             raise Exception("Failed to import an ElementTree implementation")
     if hasattr(ET, 'iterparse'):
-        _dummy_stream = BYTES_IO(b'')
+        if 'IronPython' in sys.version:
+            _dummy_stream = BYTES_IO('')
+        else:
+            _dummy_stream = BYTES_IO(b'')
         try:
             ET.iterparse(_dummy_stream)
             ET_has_iterparse = True
@@ -483,7 +486,11 @@ class X12Styles(X12General):
         self.xf_type = 1
 
     def do_numfmt(self, elem):
-        formatCode = ensure_unicode(elem.get('formatCode'))
+        el_get = elem.get('formatCode')
+        if 'IronPython' in sys.version:
+            formatCode = unicode(el_get)
+        else:
+            formatCode = ensure_unicode(el_get)
         numFmtId = int(elem.get('numFmtId'))
         is_date = is_date_format_string(self.bk, formatCode)
         self.fmt_is_date[numFmtId] = is_date
