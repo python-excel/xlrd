@@ -407,6 +407,8 @@ class Sheet(BaseObject):
         return Cell(
             self._cell_types[rowx][colx],
             self._cell_values[rowx][colx],
+            rowx,
+            colx,
             xfx,
             )
 
@@ -2287,11 +2289,13 @@ class Cell(BaseObject):
         </table>
     """
 
-    __slots__ = ['ctype', 'value', 'xf_index']
+    __slots__ = ['ctype', 'value', 'rowx', 'colx', 'xf_index']
 
     def __init__(self, ctype, value, xf_index=None):
         self.ctype = ctype
         self.value = value
+        self.rowx = rowx
+        self.colx = colx
         self.xf_index = xf_index
 
     def __repr__(self):
@@ -2300,7 +2304,7 @@ class Cell(BaseObject):
         else:
             return "%s:%r (XF:%r)" % (ctype_text[self.ctype], self.value, self.xf_index)
 
-empty_cell = Cell(XL_CELL_EMPTY, UNICODE_LITERAL(''))
+empty_cell = Cell(XL_CELL_EMPTY, UNICODE_LITERAL(''), rowx=None, colx=None)
 
 ##### =============== Colinfo and Rowinfo ============================== #####
 
