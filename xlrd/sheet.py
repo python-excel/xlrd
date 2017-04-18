@@ -1166,7 +1166,7 @@ class Sheet(BaseObject):
                         "*** %d individual range(s):\n"
                         "*** %s\n",
                         len(olist),
-                        ", ".join([rangename2d(*coords) for coords in olist]),
+                        ", ".join(rangename2d(*coords) for coords in olist),
                         )
             elif rc == XL_CF:
                 if not fmt_info: continue

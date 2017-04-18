@@ -533,7 +533,7 @@ def hex_char_dump(strg, ofs, dlen, base=0, fout=sys.stdout, unnumbered=False):
                 '??? hex_char_dump: ofs=%d dlen=%d base=%d -> endpos=%d pos=%d endsub=%d substrg=%r\n',
                 ofs, dlen, base, endpos, pos, endsub, substrg)
             break
-        hexd = ''.join(["%02x " % BYTES_ORD(c) for c in substrg])
+        hexd = ''.join("%02x " % BYTES_ORD(c) for c in substrg)
 
         chard = ''
         for c in substrg:
