@@ -467,7 +467,7 @@ class Book(BaseObject):
         :returns: A :class:`~xlrd.sheet.Sheet`.
         """
         try:
-            sheetx = self._sheet_names.index(sheet_name)
+            sheetx = self._sheet_names.index(sheet_name.decode('utf-8'))
         except ValueError:
             raise XLRDError('No sheet named <%r>' % sheet_name)
         return self.sheet_by_index(sheetx)
@@ -492,7 +492,7 @@ class Book(BaseObject):
             sheetx = sheet_name_or_index
         else:
             try:
-                sheetx = self._sheet_names.index(sheet_name_or_index)
+                sheetx = self._sheet_names.index(sheet_name_or_index.decode('utf-8'))
             except ValueError:
                 raise XLRDError('No sheet named <%r>' % sheet_name_or_index)
         return bool(self._sheet_list[sheetx])
@@ -507,7 +507,7 @@ class Book(BaseObject):
             sheetx = sheet_name_or_index
         else:
             try:
-                sheetx = self._sheet_names.index(sheet_name_or_index)
+                sheetx = self._sheet_names.index(sheet_name_or_index.decode('utf-8'))
             except ValueError:
                 raise XLRDError('No sheet named <%r>' % sheet_name_or_index)
         self._sheet_list[sheetx] = None
