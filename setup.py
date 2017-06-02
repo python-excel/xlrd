@@ -13,6 +13,7 @@ setup(
     version = about['__VERSION__'],
     author = 'John Machin',
     author_email = 'sjmachin@lexicon.net',
+    install_requires = ['olefile'],
     url = 'http://www.python-excel.org/',
     packages = ['xlrd'],
     scripts = [

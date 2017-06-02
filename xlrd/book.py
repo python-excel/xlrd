@@ -9,10 +9,13 @@ from .biffh import *
 import struct; unpack = struct.unpack
 import sys
 import time
+import os
+from contextlib import closing
+from olefile import OleFileIO, isOleFile
 from . import sheet
-from . import compdoc
 from .formula import *
 from . import formatting
+
 if sys.version.startswith("IronPython"):
     # print >> sys.stderr, "...importing encodings"
     import encodings
@@ -20,8 +23,6 @@ if sys.version.startswith("IronPython"):
 empty_cell = sheet.empty_cell # for exposure to the world ...
 
 DEBUG = 0
-
-USE_FANCY_CD = 1
 
 TOGGLE_GC = 0
 import gc
@@ -525,13 +526,7 @@ class Book(BaseObject):
         same object has no ill effect.
         """
         self._resources_released = 1
-        if hasattr(self.mem, "close"):
-            # must be a mmap.mmap object
-            self.mem.close()
         self.mem = None
-        if hasattr(self.filestr, "close"):
-            self.filestr.close()
-        self.filestr = None
         self._sharedstrings = None
         self._rich_text_runlist_map = None
 
@@ -586,7 +581,6 @@ class Book(BaseObject):
         self.xf_list = []
         self.style_name_map = {}
         self.mem = b''
-        self.filestr = b''
 
     def biff2_8_load(self, filename=None, file_contents=None,
         logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
@@ -598,57 +592,57 @@ class Book(BaseObject):
         # DEBUG = 0
         self.logfile = logfile
         self.verbosity = verbosity
-        self.use_mmap = use_mmap and MMAP_AVAILABLE
         self.encoding_override = encoding_override
         self.formatting_info = formatting_info
         self.on_demand = on_demand
         self.ragged_rows = ragged_rows
-
-        if not file_contents:
-            with open(filename, "rb") as f:
-                f.seek(0, 2) # EOF
-                size = f.tell()
-                f.seek(0, 0) # BOF
-                if size == 0:
-                    raise XLRDError("File size is 0 bytes")
-                if self.use_mmap:
-                    self.filestr = mmap.mmap(f.fileno(), size, access=mmap.ACCESS_READ)
-                    self.stream_len = size
-                else:
-                    self.filestr = f.read()
-                    self.stream_len = len(self.filestr)
-        else:
-            self.filestr = file_contents
-            self.stream_len = len(file_contents)
-
         self.base = 0
-        if self.filestr[:8] != compdoc.SIGNATURE:
-            # got this one at the antique store
-            self.mem = self.filestr
-        else:
-            cd = compdoc.CompDoc(self.filestr, logfile=self.logfile)
-            if USE_FANCY_CD:
-                for qname in ['Workbook', 'Book']:
-                    self.mem, self.base, self.stream_len = \
-                                cd.locate_named_stream(UNICODE_LITERAL(qname))
-                    if self.mem: break
-                else:
-                    raise XLRDError("Can't find workbook in OLE2 compound document")
+        with self._as_stream(file_contents, filename, use_mmap) as stream:
+            if isOleFile(stream):
+                self.mem = self._read_workbook(stream)
             else:
-                for qname in ['Workbook', 'Book']:
-                    self.mem = cd.get_named_stream(UNICODE_LITERAL(qname))
-                    if self.mem: break
-                else:
-                    raise XLRDError("Can't find workbook in OLE2 compound document")
-                self.stream_len = len(self.mem)
-            del cd
-            if self.mem is not self.filestr:
-                if hasattr(self.filestr, "close"):
-                    self.filestr.close()
-                self.filestr = b''
+                # got this one at the antique store
+                self.mem = self._read_stream(stream)
+            self.stream_len = len(self.mem)
         self._position = self.base
         if DEBUG:
             print("mem: %s, base: %d, len: %d" % (type(self.mem), self.base, self.stream_len), file=self.logfile)
+
+    @staticmethod
+    def _as_stream(file_contents=None, filename=None, use_mmap=USE_MMAP):
+        if file_contents:
+            return closing(BYTES_IO(file_contents))
+        if not filename:
+            raise TypeError('Expected file_contents or filename')
+
+        if not use_mmap or not MMAP_AVAILABLE:
+            return open(filename, 'rb')
+
+        with open(filename, 'rb') as f:
+            f.seek(0, os.SEEK_END)
+            size = f.tell()
+            f.seek(0, os.SEEK_SET)
+            if size == 0:
+                raise XLRDError("File size is 0 bytes")
+            return closing(mmap.mmap(f.fileno(), size, access=mmap.ACCESS_READ))
+
+    @staticmethod
+    def _read_workbook(stream):
+        o = OleFileIO(stream)
+        for qname in ['Workbook', 'Book']:
+            try:
+                return o.openstream(qname).read()
+            except IOError:
+                pass
+        raise XLRDError("Can't find workbook in OLE2 compound document")
+
+    @staticmethod
+    def _read_stream(stream):
+        """Supports reading mmap or file-like-object where read must be passed the number of bytes"""
+        stream.seek(0, os.SEEK_END)
+        size = stream.tell()
+        stream.seek(0, os.SEEK_SET)
+        return stream.read(size)
 
     def initialise_format_info(self):
         # needs to be done once per sheet for BIFF 4W :-(
