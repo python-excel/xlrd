@@ -1,7 +1,7 @@
 # Copyright (c) 2005-2012 Stephen John Machin, Lingfo Pty Ltd
 # This module is part of the xlrd package, which is released under a
 # BSD-style licence.
-from .info import __VERSION__
+from .__version__ import __VERSION__
 
 
 import sys, zipfile, pprint
