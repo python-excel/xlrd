@@ -1,3 +1,4 @@
+olefile
 # for testing
 nose
 nose_fixes
