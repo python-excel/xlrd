@@ -2,7 +2,9 @@ Handling of Unicode
 ===================
 
 This package presents all text strings as Python unicode objects.
-From Excel 97 onwards, text in Excel spreadsheets has been stored as Unicode.
+From Excel 97 onwards, text in Excel spreadsheets has been stored as `UTF-16LE
+<http://unicode.org/faq/utf_bom.html />`_
+(a 16-bit Unicode Transformation Format).
 Older files (Excel 95 and earlier) don't keep strings in Unicode;
 a ``CODEPAGE`` record provides a codepage number (for example, 1252) which is
 used by xlrd to derive the encoding (for same example: "cp1252") which is
