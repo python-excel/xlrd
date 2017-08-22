@@ -27,7 +27,7 @@ setup(
     long_description = (
         "Extract data from Excel spreadsheets "
         "(.xls and .xlsx, versions 2.0 onwards) on any platform. "
-        "Pure Python (2.6, 2.7, 3.3+). "
+        "Pure Python (2.7, 3.4+). "
         "Strong support for Excel dates. Unicode-aware."
     ),
     platforms = ["Any platform -- don't need Windows"],
@@ -41,7 +41,6 @@ setup(
             'Programming Language :: Python :: 2',
             'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.3',
             'Programming Language :: Python :: 3.4',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',

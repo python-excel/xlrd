@@ -13,7 +13,7 @@ Please read this before using this library: https://groups.google.com/d/msg/pyth
 
 **Licence**: BSD-style (see licences.py)
 
-**Versions of Python supported**: 2.6, 2.7, 3.3+.
+**Versions of Python supported**: 2.7, 3.4+.
 
 **External modules required**:
 
