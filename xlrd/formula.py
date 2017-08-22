@@ -395,10 +395,10 @@ tRangeFuncs = (min, max, min, max, min, max)
 tIsectFuncs = (max, min, max, min, max, min)
 
 def do_box_funcs(box_funcs, boxa, boxb):
-    return tuple([
+    return tuple(
         func(numa, numb)
         for func, numa, numb in zip(box_funcs, boxa.coords, boxb.coords)
-        ])
+        )
 
 def adjust_cell_addr_biff8(rowval, colval, reldelta, browx=None, bcolx=None):
     row_rel = (colval >> 15) & 1
@@ -1053,7 +1053,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                           % (funcx, func_name, nargs), file=bk.logfile)
                 assert len(stack) >= nargs
                 if nargs:
-                    argtext = listsep.join([arg.text for arg in stack[-nargs:]])
+                    argtext = listsep.join(arg.text for arg in stack[-nargs:])
                     otext = "%s(%s)" % (func_name, argtext)
                     del stack[-nargs:]
                 else:
@@ -1081,7 +1081,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                 assert minargs <= nargs <= maxargs
                 assert len(stack) >= nargs
                 assert len(stack) >= nargs
-                argtext = listsep.join([arg.text for arg in stack[-nargs:]])
+                argtext = listsep.join(arg.text for arg in stack[-nargs:])
                 otext = "%s(%s)" % (func_name, argtext)
                 res = Operand(oUNK, None, FUNC_RANK, otext)
                 if funcx == 1: # IF
@@ -1625,7 +1625,7 @@ def decompile_formula(bk, fmla, fmlalen,
                           % (funcx, func_name, nargs), file=bk.logfile)
                 assert len(stack) >= nargs
                 if nargs:
-                    argtext = listsep.join([arg.text for arg in stack[-nargs:]])
+                    argtext = listsep.join(arg.text for arg in stack[-nargs:])
                     otext = "%s(%s)" % (func_name, argtext)
                     del stack[-nargs:]
                 else:
@@ -1657,7 +1657,7 @@ def decompile_formula(bk, fmla, fmlalen,
                 assert minargs <= nargs <= maxargs
                 assert len(stack) >= nargs
                 assert len(stack) >= nargs
-                argtext = listsep.join([arg.text for arg in stack[-nargs:]])
+                argtext = listsep.join(arg.text for arg in stack[-nargs:])
                 otext = "%s(%s)" % (func_name, argtext)
                 res = Operand(oUNK, None, FUNC_RANK, otext)
                 del stack[-nargs:]

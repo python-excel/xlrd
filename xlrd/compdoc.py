@@ -451,7 +451,7 @@ class CompDoc(object):
             return (mem, start_pos, expected_stream_size)
         slices.append((start_pos, end_pos))
         # print >> self.logfile, "+++>>> %d fragments" % len(slices)
-        return (b''.join([mem[start_pos:end_pos] for start_pos, end_pos in slices]), 0, expected_stream_size)
+        return (b''.join(mem[start_pos:end_pos] for start_pos, end_pos in slices), 0, expected_stream_size)
 
 # ==========================================================================================
 def x_dump_line(alist, stride, f, dpos, equal=0):
