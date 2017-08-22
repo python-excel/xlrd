@@ -3,6 +3,55 @@ Changes
 
 .. currentmodule:: xlrd
 
+1.1.0 (22 August 2017)
+----------------------
+
+- Fix for parsing of merged cells containing a single cell reference in xlsx
+  files.
+
+- Fix for "invalid literal for int() with base 10: 'true'" when reading some
+  xlsx files.
+
+- Make xldate_as_datetime available to import direct from xlrd.
+
+- Build universal wheels.
+
+- Sphinx documentation.
+
+- Document the problem with XML vulnerabilities in xlsx files and mitigation
+  measures.
+
+- Fix :class:`NameError` on ``has_defaults is not defined``.
+
+- Some whitespace and code style tweaks.
+
+- Make example in README compatible with both Python 2 and 3.
+
+- Add default value for cells containing errors that causeed parsing of some
+  xlsx files to fail.
+
+- Add Python 3.6 to the list of supported Python versions, drop 3.3 and 2.6.
+
+- Use generator expressions to avoid unnecessary lists in memory.
+
+- Document unicode encoding used in Excel files from Excel 97 onwards.
+
+- Report hyperlink errors in R1C1 syntax.
+
+Thanks to the following for their contributions to this release:
+
+- icereval@gmail.com
+- Daniel Rech
+- Ville Skyttä
+- Yegor Yefremov
+- Maxime Lorant
+- Alexandr N Zamaraev
+- Zhaorong Ma
+- Jon Dufresne
+- Chris McIntyre
+- coltleese@gmail.com
+- Ivan Masá
+
 1.0.0 (2 June 2016)
 -------------------
 
