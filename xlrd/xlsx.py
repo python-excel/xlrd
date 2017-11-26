@@ -31,17 +31,19 @@ def ensure_elementtree_imported(verbosity, logfile):
         #### 2.7.2.1: fails later with
         #### NotImplementedError: iterparse is not supported on IronPython. (CP #31923)
     else:
-        try: import xml.etree.cElementTree as ET
+        try: import defusedxml.cElementTree as ET
         except ImportError:
-            try: import cElementTree as ET
+            try: import xml.etree.cElementTree as ET
             except ImportError:
-                try: import lxml.etree as ET
+                try: import cElementTree as ET
                 except ImportError:
-                    try: import xml.etree.ElementTree as ET
+                    try: import lxml.etree as ET
                     except ImportError:
-                        try: import elementtree.ElementTree as ET
+                        try: import xml.etree.ElementTree as ET
                         except ImportError:
-                            raise Exception("Failed to import an ElementTree implementation")
+                            try: import elementtree.ElementTree as ET
+                            except ImportError:
+                                raise Exception("Failed to import an ElementTree implementation")
     if hasattr(ET, 'iterparse'):
         _dummy_stream = BYTES_IO(b'')
         try:
@@ -49,7 +51,7 @@ def ensure_elementtree_imported(verbosity, logfile):
             ET_has_iterparse = True
         except NotImplementedError:
             pass
-    Element_has_iter = hasattr(ET.ElementTree, 'iter')
+    Element_has_iter = hasattr(ET, 'ElementTree') and hasattr(ET.ElementTree, 'iter')
     if verbosity:
         etree_version = repr([
             (item, getattr(ET, item))
