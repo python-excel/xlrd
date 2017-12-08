@@ -539,7 +539,7 @@ class X12Sheet(X12General):
         if ET_has_iterparse:
             self.process_stream = self.own_process_stream
 
-    def own_process_stream(self, stream, heading=None):
+    def own_process_stream(self, stream, heading=None, convert_float=True):
         if self.verbosity >= 2 and heading is not None:
             fprintf(self.logfile, "\n=== %s ===\n", heading)
         getmethod = self.tag2meth.get
@@ -547,7 +547,7 @@ class X12Sheet(X12General):
         self_do_row = self.do_row
         for event, elem in ET.iterparse(stream):
             if elem.tag == row_tag:
-                self_do_row(elem)
+                self_do_row(elem, convert_float=convert_float)
                 elem.clear() # destroy all child elements (cells)
             elif elem.tag == U_SSML12 + "dimension":
                 self.do_dimension(elem)
@@ -619,7 +619,7 @@ class X12Sheet(X12General):
             self.merged_cells.append((first_rowx, last_rowx + 1,
                                       first_colx, last_colx + 1))
 
-    def do_row(self, row_elem):
+    def do_row(self, row_elem, convert_float=True):
 
         def bad_child_tag(child_tag):
              raise Exception('cell type %s has unexpected child <%s> at rowx=%r colx=%r' % (cell_type, child_tag, rowx, colx))
@@ -688,6 +688,8 @@ class X12Sheet(X12General):
                 if not tvalue:
                     if self.bk.formatting_info:
                         self.sheet.put_cell(rowx, colx, XL_CELL_BLANK, '', xf_index)
+                elif not convert_float:
+                    self.sheet.put_cell(rowx, colx, None, tvalue, xf_index)
                 else:
                     self.sheet.put_cell(rowx, colx, None, float(tvalue), xf_index)
             elif cell_type == "s":
@@ -786,6 +788,7 @@ def open_workbook_2007_xml(
     formatting_info=0,
     on_demand=0,
     ragged_rows=0,
+    convert_float=True
     ):
     ensure_elementtree_imported(verbosity, logfile)
     bk = Book()
@@ -836,7 +839,7 @@ def open_workbook_2007_xml(
         sheet = bk._sheet_list[sheetx]
         x12sheet = X12Sheet(sheet, logfile, verbosity)
         heading = "Sheet %r (sheetx=%d) from %r" % (sheet.name, sheetx, fname)
-        x12sheet.process_stream(zflo, heading)
+        x12sheet.process_stream(zflo, heading, convert_float)
         del zflo
 
         rels_fname = 'xl/worksheets/_rels/%s.rels' % fname.rsplit('/', 1)[-1]

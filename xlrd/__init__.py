@@ -44,6 +44,7 @@ def open_workbook(filename=None,
     formatting_info=False,
     on_demand=False,
     ragged_rows=False,
+    convert_values=True
     ):
     """
     Open a spreadsheet file for data extraction.
@@ -141,6 +142,7 @@ def open_workbook(filename=None,
                 formatting_info=formatting_info,
                 on_demand=on_demand,
                 ragged_rows=ragged_rows,
+                convert_float=convert_values
                 )
             return bk
         if 'xl/workbook.bin' in component_names:
@@ -159,7 +161,7 @@ def open_workbook(filename=None,
         encoding_override=encoding_override,
         formatting_info=formatting_info,
         on_demand=on_demand,
-        ragged_rows=ragged_rows,
+        ragged_rows=ragged_rows
         )
     return bk
 
