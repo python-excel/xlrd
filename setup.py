@@ -50,5 +50,6 @@ setup(
             'Topic :: Software Development :: Libraries :: Python Modules',
             ],
     zip_safe=False,
-    include_package_data=True
+    include_package_data=True,
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
 )
