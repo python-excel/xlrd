@@ -130,7 +130,7 @@ def open_workbook(filename=None,
         if verbosity:
             logfile.write('ZIP component_names:\n')
             pprint.pprint(component_names, logfile)
-        if 'xl/workbook.xml' in component_names:
+        if 'xl/workbook.xml' in component_names or 'xl/workbook2.xml' in component_names:
             from . import xlsx
             bk = xlsx.open_workbook_2007_xml(
                 zf,

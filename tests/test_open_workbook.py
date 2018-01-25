@@ -37,7 +37,13 @@ class TestOpen(TestCase):
         # we should make assertions here that data has been
         # correctly processed.
 
-
     def test_err_cell_empty(self):
         # For cell with type "e" (error) but without inner 'val' tags
         open_workbook(from_this_dir('err_cell_empty.xlsx'))
+
+    def test_xlsx_2007_variant(self):
+        # For now, we just check this doesn't raise an error.
+        open_workbook(from_this_dir('reveng2.xlsx'))
+        # we should make assertions here that data has been
+        # correctly processed.
+

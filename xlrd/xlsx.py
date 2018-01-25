@@ -802,11 +802,19 @@ def open_workbook_2007_xml(
         bk.on_demand = False
     bk.ragged_rows = ragged_rows
 
+    # We could have one of two sets of file names to open
+    if 'xl/workbook.xml' in component_names:
+        extra = ''
+    elif 'xl/workbook2.xml' in component_names:
+        extra = '2'
+    else:
+        raise XLRDError( 'ZIP file contents unexpected.' )
+
     x12book = X12Book(bk, logfile, verbosity)
-    zflo = zf.open(component_names['xl/_rels/workbook.xml.rels'])
+    zflo = zf.open(component_names['xl/_rels/workbook{}.xml.rels'.format(extra)])
     x12book.process_rels(zflo)
     del zflo
-    zflo = zf.open(component_names['xl/workbook.xml'])
+    zflo = zf.open(component_names['xl/workbook{}.xml'.format(extra)])
     x12book.process_stream(zflo, 'Workbook')
     del zflo
     props_name = 'docprops/core.xml'
