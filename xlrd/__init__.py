@@ -87,7 +87,7 @@ def open_workbook(filename=None,
       When ``True``, formatting information will be read from the spreadsheet
       file. This provides all cells, including empty and blank cells.
       Formatting information is available for each cell.
-      
+
       Note that this will raise a NotImplementedError when used with an
       xlsx file.
 
