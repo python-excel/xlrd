@@ -2,10 +2,7 @@
 
 from unittest import TestCase
 
-import os
-import sys
 import types
-import unittest
 
 import xlrd
 from xlrd.timemachine import xrange
