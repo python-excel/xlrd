@@ -2,7 +2,6 @@
 nose
 nose_fixes
 nose-cov
-coveralls
 tox
 # for docs
 sphinx
