@@ -1,8 +1,6 @@
 # Portions Copyright (C) 2010, Manfred Moitzi under a BSD licence
 
 from unittest import TestCase
-import os
-import sys
 
 from xlrd import open_workbook
 from xlrd.book import Book

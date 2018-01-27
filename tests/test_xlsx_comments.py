@@ -1,7 +1,5 @@
 from unittest import TestCase
 
-import os
-
 from xlrd import open_workbook
 
 from .base import from_this_dir

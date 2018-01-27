@@ -13,9 +13,6 @@ from . import sheet
 from . import compdoc
 from .formula import *
 from . import formatting
-if sys.version.startswith("IronPython"):
-    # print >> sys.stderr, "...importing encodings"
-    import encodings
 
 empty_cell = sheet.empty_cell # for exposure to the world ...
 
