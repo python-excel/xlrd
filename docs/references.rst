@@ -36,4 +36,3 @@ source of information on how the :class:`Name` attributes hang together.
 
   Name information is *not* extracted from files older than
   Excel 5.0 (``Book.biff_version < 50``).
-

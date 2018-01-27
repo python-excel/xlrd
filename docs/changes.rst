@@ -543,4 +543,3 @@ Thanks to the following for their contributions to this release:
 -------------------
 
 - first public release
-
