@@ -1,10 +1,10 @@
-# -*- coding: cp1252 -*-
+# -*- coding: utf-8 -*-
 
 ##
 # Module/script example of the xlrd API for extracting information
 # about named references, named constants, etc.
 #
-# <p>Copyright © 2006 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright Â© 2006 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 from __future__ import print_function
