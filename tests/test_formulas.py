@@ -1,4 +1,4 @@
- # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # Portions Copyright (C) 2010, Manfred Moitzi under a BSD licence
 
 from unittest import TestCase
