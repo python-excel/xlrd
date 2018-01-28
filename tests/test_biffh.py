@@ -1,5 +1,7 @@
-import unittest
 import sys
+import unittest
+
+from xlrd import biffh
 
 if sys.version_info[0] >= 3:
     from io import StringIO
@@ -8,7 +10,6 @@ else:
     # unicode, which won't work for our test.
     from StringIO import StringIO
 
-from xlrd import biffh
 
 class TestHexDump(unittest.TestCase):
     def test_hex_char_dump(self):

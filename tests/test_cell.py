@@ -7,6 +7,7 @@ from xlrd.timemachine import UNICODE_LITERAL
 
 from .base import from_this_dir
 
+
 class TestCell(unittest.TestCase):
 
     def setUp(self):

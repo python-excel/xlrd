@@ -1,27 +1,21 @@
 # Copyright (c) 2005-2012 Stephen John Machin, Lingfo Pty Ltd
 # This module is part of the xlrd package, which is released under a
 # BSD-style licence.
-from .info import __VERSION__
+import pprint
+import sys
+import zipfile
 
-
-import sys, zipfile, pprint
 from . import timemachine
 from .biffh import (
-    XLRDError,
-    biff_text_from_num,
+    XL_CELL_BLANK, XL_CELL_BOOLEAN, XL_CELL_DATE, XL_CELL_EMPTY, XL_CELL_ERROR,
+    XL_CELL_NUMBER, XL_CELL_TEXT, XLRDError, biff_text_from_num,
     error_text_from_code,
-    XL_CELL_BLANK,
-    XL_CELL_TEXT,
-    XL_CELL_BOOLEAN,
-    XL_CELL_ERROR,
-    XL_CELL_EMPTY,
-    XL_CELL_DATE,
-    XL_CELL_NUMBER
-    )
-from .formula import * # is constrained by __all__
+)
 from .book import Book, colname
+from .formula import *  # is constrained by __all__
+from .info import __VERSION__
 from .sheet import empty_cell
-from .xldate import XLDateError, xldate_as_tuple, xldate_as_datetime
+from .xldate import XLDateError, xldate_as_datetime, xldate_as_tuple
 from .xlsx import X12Book
 
 if sys.version.startswith("IronPython"):

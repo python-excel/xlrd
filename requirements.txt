@@ -1,4 +1,5 @@
 # for testing
+isort
 nose
 nose_fixes
 nose-cov

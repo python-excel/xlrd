@@ -4,7 +4,9 @@
 #
 
 import unittest
+
 import xlrd
+
 from .base import from_this_dir
 
 

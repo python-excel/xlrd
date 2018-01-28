@@ -6,11 +6,15 @@
 from __future__ import print_function
 
 from array import array
-from struct import unpack, calcsize
+from struct import calcsize, unpack
+
 from .biffh import *
+from .formatting import Format, nearest_colour_index
+from .formula import (
+    FMLA_TYPE_CELL, FMLA_TYPE_SHARED, decompile_formula, dump_formula,
+    rangename2d,
+)
 from .timemachine import *
-from .formula import dump_formula, decompile_formula, rangename2d, FMLA_TYPE_CELL, FMLA_TYPE_SHARED
-from .formatting import nearest_colour_index, Format
 
 DEBUG = 0
 OBJ_MSO_DEBUG = 0

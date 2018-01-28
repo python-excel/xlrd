@@ -9,10 +9,12 @@
 ##
 from __future__ import print_function
 
+import glob
+import sys
+
 import xlrd
 from xlrd.timemachine import REPR
-import sys
-import glob
+
 
 def scope_as_string(book, scope):
     if 0 <= scope < book.nsheets:

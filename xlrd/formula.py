@@ -9,11 +9,16 @@ Module for parsing/evaluating Microsoft Excel formulas.
 """
 
 from __future__ import print_function
+
 import copy
+import operator as opr
 from struct import unpack
+
+from .biffh import (
+    BaseObject, XLRDError, error_text_from_code, hex_char_dump,
+    unpack_string_update_pos, unpack_unicode_update_pos,
+)
 from .timemachine import *
-from .biffh import unpack_unicode_update_pos, unpack_string_update_pos, \
-    XLRDError, hex_char_dump, error_text_from_code, BaseObject
 
 __all__ = [
     'oBOOL', 'oERR', 'oNUM', 'oREF', 'oREL', 'oSTRG', 'oUNK',
@@ -691,7 +696,6 @@ tPower = 0x07
 tConcat = 0x08
 tLT, tLE, tEQ, tGE, tGT, tNE = range(0x09, 0x0F)
 
-import operator as opr
 
 def nop(x):
     return x

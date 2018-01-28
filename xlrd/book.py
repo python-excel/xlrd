@@ -4,15 +4,16 @@
 
 from __future__ import print_function
 
-from .timemachine import *
-from .biffh import *
-import struct; unpack = struct.unpack
+import gc
 import sys
 import time
-from . import sheet
-from . import compdoc
+
+from . import compdoc, formatting, sheet
+from .biffh import *
 from .formula import *
-from . import formatting
+from .timemachine import *
+
+import struct; unpack = struct.unpack
 
 empty_cell = sheet.empty_cell # for exposure to the world ...
 
@@ -21,7 +22,6 @@ DEBUG = 0
 USE_FANCY_CD = 1
 
 TOGGLE_GC = 0
-import gc
 # gc.set_debug(gc.DEBUG_STATS)
 
 try:

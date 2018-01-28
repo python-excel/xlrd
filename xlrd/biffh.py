@@ -4,11 +4,13 @@
 # BSD-style licence.
 from __future__ import print_function
 
+import sys
+from struct import unpack
+
+from .timemachine import *
+
 DEBUG = 0
 
-from struct import unpack
-from .timemachine import *
-import sys
 
 
 class XLRDError(Exception):
