@@ -10,10 +10,12 @@ to extract a "Workbook" or "Book" stream (as one big string)
 from an OLE2 Compound Document file.
 """
 from __future__ import print_function
+
+import array
 import sys
 from struct import unpack
+
 from .timemachine import *
-import array
 
 #: Magic cookie that should appear in the first 8 bytes of the file.
 SIGNATURE = b"\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1"

@@ -5,16 +5,21 @@
 
 from __future__ import print_function, unicode_literals
 
+import re
+import sys
+from os.path import join, normpath
+
+from .biffh import (
+    XL_CELL_BLANK, XL_CELL_BOOLEAN, XL_CELL_ERROR, XL_CELL_TEXT, XLRDError,
+    error_text_from_code,
+)
+from .book import Book, Name
+from .formatting import XF, Format, is_date_format_string
+from .sheet import Sheet
+from .timemachine import *
+
 DEBUG = 0
 
-from os.path import normpath, join
-import sys
-import re
-from .timemachine import *
-from .book import Book, Name
-from .biffh import error_text_from_code, XLRDError, XL_CELL_BLANK, XL_CELL_TEXT, XL_CELL_BOOLEAN, XL_CELL_ERROR
-from .formatting import is_date_format_string, Format, XF
-from .sheet import Sheet
 
 DLF = sys.stdout # Default Log File
 

@@ -4,6 +4,7 @@ from xlrd import open_workbook
 
 from .base import from_this_dir
 
+
 class TestXlsxComments(TestCase):
 
     def test_excel_comments(self):

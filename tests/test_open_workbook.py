@@ -1,10 +1,10 @@
-from unittest import TestCase
-
 import os
+from unittest import TestCase
 
 from xlrd import open_workbook
 
 from .base import from_this_dir
+
 
 class TestOpen(TestCase):
     # test different uses of open_workbook

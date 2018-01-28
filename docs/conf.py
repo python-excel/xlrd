@@ -1,5 +1,7 @@
 import datetime
-import os, pkginfo
+import os
+
+import pkginfo
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 pkg_info = pkginfo.Develop(os.path.join(os.path.dirname(__file__), os.pardir))
