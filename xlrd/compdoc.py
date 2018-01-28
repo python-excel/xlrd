@@ -354,7 +354,7 @@ class CompDoc(object):
         string if found, otherwise return ``None``.
 
         :param qname:
-          Name of the desired stream e.g. ``u'Workbook'``.
+          Name of the desired stream e.g. ``'Workbook'``.
           Should be in Unicode or convertible thereto.
         """
         d = self._dir_search(qname.split("/"))
@@ -383,7 +383,7 @@ class CompDoc(object):
         ``(new_string, 0, length_of_stream)`` is returned.
 
         :param qname:
-          Name of the desired stream e.g. ``u'Workbook'``.
+          Name of the desired stream e.g. ``'Workbook'``.
           Should be in Unicode or convertible thereto.
         """
         d = self._dir_search(qname.split("/"))

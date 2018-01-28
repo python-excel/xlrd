@@ -2250,7 +2250,7 @@ class Cell(BaseObject):
         <tr>
         <td>XL_CELL_EMPTY</td>
         <td align="center">0</td>
-        <td>empty string u''</td>
+        <td>empty string ''</td>
         </tr>
         <tr>
         <td>XL_CELL_TEXT</td>
@@ -2281,7 +2281,7 @@ class Cell(BaseObject):
         <tr>
         <td>XL_CELL_BLANK</td>
         <td align="center">6</td>
-        <td>empty string u''. Note: this type will appear only when
+        <td>empty string ''. Note: this type will appear only when
         open_workbook(..., formatting_info=True) is used.</td>
         </tr>
         </table>
