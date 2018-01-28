@@ -222,7 +222,7 @@ class Font(BaseObject, EqNeAttrs):
     #: 1 = Characters are italic.
     italic = 0
 
-    #: The name of the font. Example: ``u"Arial"``.
+    #: The name of the font. Example: ``"Arial"``.
     name = UNICODE_LITERAL("")
 
     #: 1 = Characters are struck out.
@@ -450,9 +450,9 @@ non_date_formats = {
 fmt_bracketed_sub = re.compile(r'\[[^]]*\]').sub
 
 # Boolean format strings (actual cases)
-# u'"Yes";"Yes";"No"'
-# u'"True";"True";"False"'
-# u'"On";"On";"Off"'
+# '"Yes";"Yes";"No"'
+# '"True";"True";"False"'
+# '"On";"On";"Off"'
 
 def is_date_format_string(book, fmt):
     # Heuristics:
@@ -461,9 +461,9 @@ def is_date_format_string(book, fmt):
     # E.g. hh\hmm\mss\s should produce a display like 23h59m59s
     # Date formats have one or more of ymdhs (caseless) in them.
     # Numeric formats have # and 0.
-    # N.B. u'General"."' hence get rid of "text" first.
+    # N.B. 'General"."' hence get rid of "text" first.
     # TODO: Find where formats are interpreted in Gnumeric
-    # TODO: u'[h]\\ \\h\\o\\u\\r\\s' ([h] means don't care about hours > 23)
+    # TODO: '[h]\\ \\h\\o\\u\\r\\s' ([h] means don't care about hours > 23)
     state = 0
     s = ''
 
