@@ -577,8 +577,7 @@ def handle_palette(book, data):
     blah = DEBUG or book.verbosity >= 2
     n_colours, = unpack('<H', data[:2])
     expected_n_colours = (16, 56)[book.biff_version >= 50]
-    if ((DEBUG or book.verbosity >= 1)
-    and n_colours != expected_n_colours):
+    if (DEBUG or book.verbosity >= 1) and n_colours != expected_n_colours:
         fprintf(book.logfile,
             "NOTE *** Expected %d colours in PALETTE record, found %d\n",
             expected_n_colours, n_colours)
@@ -635,8 +634,7 @@ def handle_style(book, data):
     bv = book.biff_version
     flag_and_xfx, built_in_id, level = unpack('<HBB', data[:4])
     xf_index = flag_and_xfx & 0x0fff
-    if (data == b"\0\0\0\0"
-    and "Normal" not in book.style_name_map):
+    if data == b"\0\0\0\0" and "Normal" not in book.style_name_map:
         # Erroneous record (doesn't have built-in bit set).
         # Example file supplied by Jeff Bell.
         built_in = 1
