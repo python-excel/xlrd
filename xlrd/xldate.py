@@ -243,7 +243,6 @@ def xldate_from_datetime_tuple(datetime_tuple, datemode):
     :param datemode: 0: 1900-based, 1: 1904-based.
     """
     return (
-        xldate_from_date_tuple(datetime_tuple[:3], datemode)
-        +
+        xldate_from_date_tuple(datetime_tuple[:3], datemode) +
         xldate_from_time_tuple(datetime_tuple[3:])
-        )
+    )

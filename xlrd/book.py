@@ -222,9 +222,9 @@ class Name(BaseObject):
             value = res.value
             if kind == oREF and len(value) == 1:
                 ref3d = value[0]
-                if (0 <= ref3d.shtxlo == ref3d.shtxhi - 1
-                and      ref3d.rowxlo == ref3d.rowxhi - 1
-                and      ref3d.colxlo == ref3d.colxhi - 1):
+                if (0 <= ref3d.shtxlo == ref3d.shtxhi - 1 and
+                        ref3d.rowxlo == ref3d.rowxhi - 1 and
+                        ref3d.colxlo == ref3d.colxhi - 1):
                     sh = self.book.sheet_by_index(ref3d.shtxlo)
                     return sh.cell(ref3d.rowxlo, ref3d.colxlo)
         self.dump(self.book.logfile,
