@@ -693,7 +693,7 @@ class Book(BaseObject):
             raise XLRDError("Can't load sheets after releasing resources.")
         if update_pos:
             self._position = self._sh_abs_posn[sh_number]
-        _unused_biff_version = self.getbof(XL_WORKSHEET)
+        self.getbof(XL_WORKSHEET)
         # assert biff_version == self.biff_version ### FAILS
         # Have an example where book is v7 but sheet reports v8!!!
         # It appears to work OK if the sheet version is ignored.
@@ -810,7 +810,7 @@ class Book(BaseObject):
             # If we don't have a codec that can decode ASCII into Unicode,
             # we're well & truly stuffed -- let the punter know ASAP.
             try:
-                _unused = unicode(b'trial', self.encoding)
+                unicode(b'trial', self.encoding)
             except BaseException as e:
                 fprintf(self.logfile,
                     "ERROR *** codepage %r -> encoding %r -> %s: %s\n",

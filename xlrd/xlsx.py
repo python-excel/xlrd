@@ -547,7 +547,6 @@ class X12Sheet(X12General):
     def own_process_stream(self, stream, heading=None):
         if self.verbosity >= 2 and heading is not None:
             fprintf(self.logfile, "\n=== %s ===\n", heading)
-        getmethod = self.tag2meth.get
         row_tag = U_SSML12 + "row"
         self_do_row = self.do_row
         for event, elem in ET.iterparse(stream):
@@ -677,7 +676,6 @@ class X12Sheet(X12General):
             xf_index = int(cell_elem.get('s', '0'))
             cell_type = cell_elem.get('t', 'n')
             tvalue = None
-            formula = None
             if cell_type == 'n':
                 # n = number. Most frequent type.
                 # <v> child contains plain text which can go straight into float()
@@ -687,7 +685,8 @@ class X12Sheet(X12General):
                     if child_tag == V_TAG:
                         tvalue = child.text
                     elif child_tag == F_TAG:
-                        formula = cooked_text(self, child)
+                        # formula
+                        pass
                     else:
                         raise Exception('unexpected tag %r' % child_tag)
                 if not tvalue:
@@ -704,7 +703,7 @@ class X12Sheet(X12General):
                         tvalue = child.text
                     elif child_tag == F_TAG:
                         # formula not expected here, but gnumeric does it.
-                        formula = child.text
+                        pass
                     else:
                         bad_child_tag(child_tag)
                 if not tvalue:
@@ -723,7 +722,8 @@ class X12Sheet(X12General):
                     if child_tag == V_TAG:
                         tvalue = cooked_text(self, child)
                     elif child_tag == F_TAG:
-                        formula = cooked_text(self, child)
+                        # formula
+                        pass
                     else:
                         bad_child_tag(child_tag)
                 # assert tvalue is not None and formula is not None
@@ -737,7 +737,8 @@ class X12Sheet(X12General):
                     if child_tag == V_TAG:
                         tvalue = child.text
                     elif child_tag == F_TAG:
-                        formula = cooked_text(self, child)
+                        # formula
+                        pass
                     else:
                         bad_child_tag(child_tag)
                 self.sheet.put_cell(rowx, colx, XL_CELL_BOOLEAN, cnv_xsd_boolean(tvalue), xf_index)
@@ -750,7 +751,8 @@ class X12Sheet(X12General):
                     if child_tag == V_TAG:
                         tvalue = child.text
                     elif child_tag == F_TAG:
-                        formula = cooked_text(self, child)
+                        # formula
+                        pass
                     else:
                         bad_child_tag(child_tag)
                 value = error_code_from_text[tvalue]
@@ -766,7 +768,8 @@ class X12Sheet(X12General):
                     elif child_tag == V_TAG:
                         tvalue = child.text
                     elif child_tag == F_TAG:
-                        formula = child.text
+                        # formula
+                        pass
                     else:
                         bad_child_tag(child_tag)
                 if not tvalue:
