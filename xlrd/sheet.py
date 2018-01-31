@@ -912,17 +912,11 @@ class Sheet(BaseObject):
                 # if DEBUG: print "FORMULA: rc: 0x%04x data: %r" % (rc, data)
                 if bv >= 50:
                     rowx, colx, xf_index, result_str, flags = local_unpack('<HHH8sH', data[0:16])
-                    lenlen = 2
-                    tkarr_offset = 20
                 elif bv >= 30:
                     rowx, colx, xf_index, result_str, flags = local_unpack('<HHH8sH', data[0:16])
-                    lenlen = 2
-                    tkarr_offset = 16
                 else: # BIFF2
                     rowx, colx, cell_attr,  result_str, flags = local_unpack('<HH3s8sB', data[0:16])
                     xf_index =  self.fixed_BIFF2_xfindex(cell_attr, rowx, colx)
-                    lenlen = 1
-                    tkarr_offset = 16
                 if blah_formulas: # testing formula dumper
                     #### XXXX FIXME
                     fprintf(self.logfile, "FORMULA: rowx=%d colx=%d\n", rowx, colx)
@@ -1989,7 +1983,6 @@ class Sheet(BaseObject):
         if self.biff_version < 80:
             return
         o = MSTxo()
-        data_len = len(data)
         fmt = '<HH6sHHH'
         fmtsize = calcsize(fmt)
         option_flags, o.rot, controlInfo, cchText, cbRuns, o.ifntEmpty = unpack(fmt, data[:fmtsize])

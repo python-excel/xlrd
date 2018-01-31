@@ -194,9 +194,9 @@ if __name__ == "__main__":
                 for rowx in xrange(nrows):
                     nc = sh.row_len(rowx)
                     if nc:
-                        _junk = sh.row_types(rowx)[nc-1]
-                        _junk = sh.row_values(rowx)[nc-1]
-                        _junk = sh.cell(rowx, nc-1)
+                        sh.row_types(rowx)[nc-1]
+                        sh.row_values(rowx)[nc-1]
+                        sh.cell(rowx, nc-1)
             for rowx in xrange(anshow-1):
                 if not printit and rowx % 10000 == 1 and rowx > 1:
                     print("done %d rows" % (rowx-1,))
@@ -210,7 +210,7 @@ if __name__ == "__main__":
         bk_header(bk)
         for shx in range(bk.nsheets):
             sh = bk.sheet_by_index(shx)
-            nrows, ncols = sh.nrows, sh.ncols
+            nrows = sh.nrows
             print("sheet %d: name = %r; nrows = %d; ncols = %d" %
                 (shx, sh.name, sh.nrows, sh.ncols))
             # Access all xfindexes to force gathering stats

@@ -1380,7 +1380,6 @@ def decompile_formula(bk, fmla, fmlalen,
     stack = []
     any_rel = 0
     any_err = 0
-    any_external = 0
     unk_opnd = Operand(oUNK, None)
     error_opnd = Operand(oERR, None)
     spush = stack.append
