@@ -35,7 +35,11 @@ if __name__ == "__main__":
     PSYCO = 0
 
     import xlrd
-    import sys, time, glob, traceback, gc
+    import sys
+    import time
+    import glob
+    import traceback
+    import gc
 
     from xlrd.timemachine import xrange, REPR
 
@@ -388,7 +392,8 @@ if __name__ == "__main__":
         main(av)
     firstarg = av[0].lower()
     if firstarg == "hotshot":
-        import hotshot, hotshot.stats
+        import hotshot
+        import hotshot.stats
         av = av[1:]
         prof_log_name = "XXXX.prof"
         prof = hotshot.Profile(prof_log_name)
