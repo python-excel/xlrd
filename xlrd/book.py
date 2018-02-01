@@ -1258,6 +1258,7 @@ class Book(BaseObject):
         # DEBUG = 1
         # if DEBUG: print >> self.logfile, "getbof(): position", self._position
         if DEBUG: print("reqd: 0x%04x" % rqd_stream, file=self.logfile)
+
         def bof_error(msg):
             raise XLRDError('Unsupported format, or corrupt file: ' + msg)
         savpos = self._position
