@@ -761,8 +761,8 @@ class Sheet(BaseObject):
                 print("put_cell", rowx, colx, file=self.logfile)
                 raise
         except:
-           print("put_cell", rowx, colx, file=self.logfile)
-           raise
+            print("put_cell", rowx, colx, file=self.logfile)
+            raise
 
 
     # === Methods after this line neither know nor care about how cells are stored.
@@ -1387,8 +1387,8 @@ class Sheet(BaseObject):
                         xf_index = -1
                     elif data_len == 18:
                         # Seems the XF index in the cell_attr is dodgy
-                         xfx = local_unpack('<H', data[16:18])[0]
-                         xf_index = self.fixed_BIFF2_xfindex(cell_attr=None, rowx=rowx, colx=-1, true_xfx=xfx)
+                        xfx = local_unpack('<H', data[16:18])[0]
+                        xf_index = self.fixed_BIFF2_xfindex(cell_attr=None, rowx=rowx, colx=-1, true_xfx=xfx)
                     else:
                         cell_attr = data[13:16]
                         xf_index = self.fixed_BIFF2_xfindex(cell_attr, rowx, colx=-1)

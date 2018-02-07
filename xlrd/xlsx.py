@@ -626,7 +626,7 @@ class X12Sheet(X12General):
     def do_row(self, row_elem):
 
         def bad_child_tag(child_tag):
-             raise Exception('cell type %s has unexpected child <%s> at rowx=%r colx=%r' % (cell_type, child_tag, rowx, colx))
+            raise Exception('cell type %s has unexpected child <%s> at rowx=%r colx=%r' % (cell_type, child_tag, rowx, colx))
 
         row_number = row_elem.get('r')
         if row_number is None: # Yes, it's optional.
