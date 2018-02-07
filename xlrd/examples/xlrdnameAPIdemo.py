@@ -163,8 +163,10 @@ Examples (script name and glob_pattern arg omitted for brevity)
     arg_pattern = sys.argv[1] # glob pattern e.g. "foo*.xls"
     arg_name = sys.argv[2]    # see below
     arg_scope = sys.argv[3]   # see below
-    arg_show_contents = int(sys.argv[4]) # 0: no show, 1: only non-empty cells,
-                                         # 2: all cells
+    # 0: no show,
+    # 1: only non-empty cells,
+    # 2: all cells
+    arg_show_contents = int(sys.argv[4])
     for fname in glob.glob(arg_pattern):
         book = xlrd.open_workbook(fname)
         if arg_name == "*":
