@@ -211,8 +211,8 @@ class CompDoc(object):
             dump_list(self.SAT, 10, logfile)
             # print >> logfile, "SAT ",
             # for i, s in enumerate(self.SAT):
-                # print >> logfile, "entry: %4d offset: %6d, next entry: %4d" % (i, 512 + sec_size * i, s)
-                # print >> logfile, "%d:%d " % (i, s),
+            #     print >> logfile, "entry: %4d offset: %6d, next entry: %4d" % (i, 512 + sec_size * i, s)
+            #     print >> logfile, "%d:%d " % (i, s),
             print(file=logfile)
         if DEBUG and dump_again:
             print("MSAT: len =", len(MSAT), file=logfile)
