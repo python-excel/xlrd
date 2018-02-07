@@ -695,7 +695,7 @@ def fill_in_standard_formats(book):
             book.format_map[x] = fmtobj
 
 def handle_xf(self, data):
-# self is a Book instance
+    # self is a Book instance
     # DEBUG = 0
     blah = DEBUG or self.verbosity >= 3
     bv = self.biff_version
@@ -905,10 +905,10 @@ def handle_xf(self, data):
         xf.alignment.vert_align = 2 # bottom
         xf.alignment.rotation = 0
     elif bv == 21:
-    ## Warning: incomplete treatment; formatting_info not fully supported.
-    ## Probably need to offset incoming BIFF2 XF[n] to BIFF8-like XF[n+16],
-    ## and create XF[0:16] like the standard ones in BIFF8
-    ## *AND* add 16 to all XF references in cell records :-(
+        ## Warning: incomplete treatment; formatting_info not fully supported.
+        ## Probably need to offset incoming BIFF2 XF[n] to BIFF8-like XF[n+16],
+        ## and create XF[0:16] like the standard ones in BIFF8 *AND* add 16 to
+        ## all XF references in cell records :-(
         (xf.font_index, format_etc, halign_etc) = unpack('<BxBB', data)
         xf.format_key = format_etc & 0x3F
         upkbits(xf.protection, format_etc, (
