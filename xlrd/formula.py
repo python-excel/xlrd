@@ -1205,8 +1205,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                 shx1, shx2 = get_externsheet_local_range(bk, refx, blah)
             else:
                 res = get_cell_addr(data, pos+15, bv, reldelta)
-                raw_extshtx, raw_shx1, raw_shx2 = \
-                             unpack("<hxxxxxxxxhh", data[pos+1:pos+15])
+                raw_extshtx, raw_shx1, raw_shx2 = unpack("<hxxxxxxxxhh", data[pos+1:pos+15])
                 if blah:
                     print("tRef3d", raw_extshtx, raw_shx1, raw_shx2, file=bk.logfile)
                 shx1, shx2 = get_externsheet_local_range_b57(
@@ -1238,8 +1237,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                 shx1, shx2 = get_externsheet_local_range(bk, refx, blah)
             else:
                 res1, res2 = get_cell_range_addr(data, pos+15, bv, reldelta)
-                raw_extshtx, raw_shx1, raw_shx2 = \
-                             unpack("<hxxxxxxxxhh", data[pos+1:pos+15])
+                raw_extshtx, raw_shx1, raw_shx2 = unpack("<hxxxxxxxxhh", data[pos+1:pos+15])
                 if blah:
                     print("tArea3d", raw_extshtx, raw_shx1, raw_shx2, file=bk.logfile)
                 shx1, shx2 = get_externsheet_local_range_b57(
@@ -1751,8 +1749,7 @@ def decompile_formula(bk, fmla, fmlalen,
                 shx1, shx2 = get_externsheet_local_range(bk, refx, blah)
             else:
                 res = get_cell_addr(data, pos+15, bv, reldelta, browx, bcolx)
-                raw_extshtx, raw_shx1, raw_shx2 = \
-                             unpack("<hxxxxxxxxhh", data[pos+1:pos+15])
+                raw_extshtx, raw_shx1, raw_shx2 = unpack("<hxxxxxxxxhh", data[pos+1:pos+15])
                 if blah:
                     print("tRef3d", raw_extshtx, raw_shx1, raw_shx2, file=bk.logfile)
                 shx1, shx2 = get_externsheet_local_range_b57(
@@ -1783,8 +1780,7 @@ def decompile_formula(bk, fmla, fmlalen,
                 shx1, shx2 = get_externsheet_local_range(bk, refx, blah)
             else:
                 res1, res2 = get_cell_range_addr(data, pos+15, bv, reldelta)
-                raw_extshtx, raw_shx1, raw_shx2 = \
-                             unpack("<hxxxxxxxxhh", data[pos+1:pos+15])
+                raw_extshtx, raw_shx1, raw_shx2 = unpack("<hxxxxxxxxhh", data[pos+1:pos+15])
                 if blah:
                     print("tArea3d", raw_extshtx, raw_shx1, raw_shx2, file=bk.logfile)
                 shx1, shx2 = get_externsheet_local_range_b57(
