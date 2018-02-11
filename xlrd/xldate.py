@@ -196,8 +196,8 @@ def xldate_from_date_tuple(date_tuple, datemode):
         raise XLDateBadTuple("Invalid year: %r" % ((year, month, day),))
     if not (1 <= month <= 12):
         raise XLDateBadTuple("Invalid month: %r" % ((year, month, day),))
-    if  day < 1 \
-    or (day > _days_in_month[month] and not(day == 29 and month == 2 and _leap(year))):
+    if  (day < 1 or
+         (day > _days_in_month[month] and not(day == 29 and month == 2 and _leap(year)))):
         raise XLDateBadTuple("Invalid day: %r" % ((year, month, day),))
 
     Yp = year + 4716

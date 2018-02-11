@@ -942,8 +942,8 @@ class Book(BaseObject):
         # print
         # hex_char_dump(data, 0, len(data), fout=self.logfile)
         (
-        option_flags, kb_shortcut, name_len, fmla_len, extsht_index, sheet_index,
-        menu_text_len, description_text_len, help_topic_text_len, status_bar_text_len,
+            option_flags, kb_shortcut, name_len, fmla_len, extsht_index, sheet_index,
+            menu_text_len, description_text_len, help_topic_text_len, status_bar_text_len,
         ) = unpack("<HBBHHH4B", data[0:14])
         nobj = Name()
         nobj.book = self ### CIRCULAR ###

@@ -1128,8 +1128,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
             if not tgtobj.evaluated:
                 ### recursive ###
                 evaluate_name_formula(bk, tgtobj, tgtnamex, blah, level+1)
-            if tgtobj.macro or tgtobj.binary \
-            or tgtobj.any_err:
+            if tgtobj.macro or tgtobj.binary or tgtobj.any_err:
                 if blah:
                     tgtobj.dump(
                         bk.logfile,
@@ -1310,8 +1309,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                 if not tgtobj.evaluated:
                     ### recursive ###
                     evaluate_name_formula(bk, tgtobj, tgtnamex, blah, level+1)
-                if tgtobj.macro or tgtobj.binary \
-                or tgtobj.any_err:
+                if tgtobj.macro or tgtobj.binary or tgtobj.any_err:
                     if blah:
                         tgtobj.dump(
                             bk.logfile,

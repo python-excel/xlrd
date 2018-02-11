@@ -585,8 +585,7 @@ class Sheet(BaseObject):
             umaxcols = self.utter_max_cols
             for crange in self.merged_cells:
                 rlo, rhi, clo, chi = crange
-                if not (0 <= rlo < rhi <= umaxrows) \
-                or not (0 <= clo < chi <= umaxcols):
+                if not (0 <= rlo < rhi <= umaxrows) or not (0 <= clo < chi <= umaxcols):
                     fprintf(self.logfile,
                         "*** WARNING: sheet #%d (%r), MERGEDCELLS bad range %r\n",
                         self.number, self.name, crange)
@@ -600,8 +599,8 @@ class Sheet(BaseObject):
                 # we have the right number of rows. The ragged rows
                 # will sort out the rest if needed.
                 self.put_cell(nr-1, 0, XL_CELL_EMPTY, UNICODE_LITERAL(''), -1)
-        if self.verbosity >= 1 \
-        and (self.nrows != self._dimnrows or self.ncols != self._dimncols):
+        if (self.verbosity >= 1 and
+                (self.nrows != self._dimnrows or self.ncols != self._dimncols)):
             fprintf(self.logfile,
                 "NOTE *** sheet %d (%r): DIMENSIONS R,C = %d,%d should be %d,%d\n",
                 self.number,
@@ -1184,8 +1183,7 @@ class Sheet(BaseObject):
                 pos = 12
                 if font_block:
                     (font_height, font_options, weight, escapement, underline,
-                    font_colour_index, two_bits, font_esc, font_underl) = \
-                    unpack("<64x i i H H B 3x i 4x i i i 18x", data[pos:pos+118])
+                     font_colour_index, two_bits, font_esc, font_underl) = unpack("<64x i i H H B 3x i 4x i i i 18x", data[pos:pos+118])
                     font_style = (two_bits > 1) & 1
                     posture = (font_options > 1) & 1
                     font_canc = (two_bits > 7) & 1
@@ -1295,11 +1293,11 @@ class Sheet(BaseObject):
                 self.scl_mag_factor = result
             elif rc == XL_PANE:
                 (
-                self.vert_split_pos,
-                self.horz_split_pos,
-                self.horz_split_first_visible,
-                self.vert_split_first_visible,
-                self.split_active_pane,
+                    self.vert_split_pos,
+                    self.horz_split_pos,
+                    self.horz_split_first_visible,
+                    self.vert_split_first_visible,
+                    self.split_active_pane,
                 ) = unpack("<HHHHB", data[:9])
                 self.has_pane_record = 1
             elif rc == XL_HORIZONTALPAGEBREAKS:
@@ -2073,9 +2071,9 @@ class Sheet(BaseObject):
         print("lt=%d  idList=%d crwHeader=%d  crwTotals=%d  idFieldNext=%d cbFSData=%d\n"
             "rupBuild=%d  unusedShort=%d listFlags=%04X  lPosStmCache=%d  cbStmCache=%d\n"
             "cchStmCache=%d  lem=%d  rgbHashParam=%r  cchName=%d" % (
-            lt, idList, crwHeader, crwTotals, idFieldNext, cbFSData,
-            rupBuild, unusedShort,listFlags, lPosStmCache, cbStmCache,
-            cchStmCache, lem, rgbHashParam, cchName), file=self.logfile)
+                lt, idList, crwHeader, crwTotals, idFieldNext, cbFSData,
+                rupBuild, unusedShort,listFlags, lPosStmCache, cbStmCache,
+                cchStmCache, lem, rgbHashParam, cchName), file=self.logfile)
 
 
 class MSODrawing(BaseObject):
