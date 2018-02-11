@@ -109,7 +109,6 @@ class CompDoc(object):
             SAT_tot_secs, self.dir_first_sec_sid, _unused, self.min_size_std_stream,
             SSAT_first_sec_sid, SSAT_tot_secs,
             MSATX_first_sec_sid, MSATX_tot_secs,
-        # ) = unpack('<ii4xiiiii', mem[44:76])
         ) = unpack('<iiiiiiii', mem[44:76])
         mem_data_len = len(mem) - 512
         mem_data_secs, left_over = divmod(mem_data_len, sec_size)
