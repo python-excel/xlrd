@@ -56,7 +56,7 @@ class DirNode(object):
             "DID=%d name=%r etype=%d DIDs(left=%d right=%d root=%d parent=%d kids=%r) first_SID=%d tot_size=%d\n",
             self.DID, self.name, self.etype, self.left_DID,
             self.right_DID, self.root_DID, self.parent, self.children, self.first_SID, self.tot_size
-            )
+        )
         if DEBUG == 2:
             # cre_lo, cre_hi, mod_lo, mod_hi = tsinfo
             print("timestamp info", self.tsinfo, file=self.logfile)
@@ -300,7 +300,7 @@ class CompDoc(object):
                     raise CompDocError(
                         "OLE2 stream %r: sector allocation table invalid entry (%d)" %
                         (name, s)
-                        )
+                    )
             assert s == EOCSID
         else:
             todo = size
@@ -321,7 +321,7 @@ class CompDoc(object):
                     raise CompDocError(
                         "OLE2 stream %r: sector allocation table invalid entry (%d)" %
                         (name, s)
-                        )
+                    )
             assert s == EOCSID
             if todo != 0:
                 fprintf(self.logfile,
@@ -407,8 +407,8 @@ class CompDoc(object):
                     self.SSCS, 0, self.SSAT, self.short_sec_size, d.first_SID,
                     d.tot_size, qname + " (from SSCS)", None),
                 0,
-                d.tot_size
-                )
+                d.tot_size,
+            )
 
     def _locate_stream(self, mem, base, sat, sec_size, start_sid, expected_stream_size, qname, seen_id):
         # print >> self.logfile, "_locate_stream", base, sec_size, start_sid, expected_stream_size
@@ -428,10 +428,11 @@ class CompDoc(object):
             self.seen[s] = seen_id
             tot_found += 1
             if tot_found > found_limit:
+                # Note: expected size rounded up to higher sector
                 raise CompDocError(
                     "%s: size exceeds expected %d bytes; corrupt?"
                     % (qname, found_limit * sec_size)
-                    ) # Note: expected size rounded up to higher sector
+                )
             if s == p+1:
                 # contiguous sectors
                 end_pos += sec_size

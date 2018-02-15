@@ -135,7 +135,7 @@ def open_workbook(filename=None,
                 formatting_info=formatting_info,
                 on_demand=on_demand,
                 ragged_rows=ragged_rows,
-                )
+            )
             return bk
         if 'xl/workbook.bin' in component_names:
             raise XLRDError('Excel 2007 xlsb file; not supported')
@@ -154,7 +154,7 @@ def open_workbook(filename=None,
         formatting_info=formatting_info,
         on_demand=on_demand,
         ragged_rows=ragged_rows,
-        )
+    )
     return bk
 
 

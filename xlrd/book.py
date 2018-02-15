@@ -52,7 +52,7 @@ _code_from_builtin_name = {
     "Auto_Deactivate":  "\x0B",
     "Sheet_Title":      "\x0C",
     "_FilterDatabase":  "\x0D",
-    }
+}
 builtin_name_from_code = {}
 code_from_builtin_name = {}
 for _bin, _bic in _code_from_builtin_name.items():
@@ -82,7 +82,7 @@ def open_workbook_xls(filename=None,
             formatting_info=formatting_info,
             on_demand=on_demand,
             ragged_rows=ragged_rows,
-            )
+        )
         t1 = time.clock()
         bk.load_time_stage_1 = t1 - t0
         biff_version = bk.getbof(XL_WORKBOOK_GLOBALS)
@@ -92,7 +92,7 @@ def open_workbook_xls(filename=None,
             raise XLRDError(
                 "BIFF version %s is not supported"
                 % biff_text_from_num[biff_version]
-                )
+            )
         bk.biff_version = biff_version
         if biff_version <= 40:
             # no workbook globals, only 1 worksheet
@@ -762,7 +762,7 @@ class Book(BaseObject):
                 1: 'Macro sheet',
                 2: 'Chart',
                 6: 'Visual Basic module',
-                }.get(sheet_type, 'UNKNOWN')
+            }.get(sheet_type, 'UNKNOWN')
 
             if DEBUG or self.verbosity >= 1:
                 fprintf(self.logfile,
@@ -873,7 +873,7 @@ class Book(BaseObject):
                         self.logfile,
                         "INFO: EXTERNSHEET needs %d bytes, have %d\n",
                         bytes_reqd, len(data),
-                        )
+                    )
                 code2, length2, data2 = self.get_record_parts()
                 if code2 != XL_CONTINUE:
                     raise XLRDError("Missing CONTINUE after EXTERNSHEET record")
@@ -889,7 +889,7 @@ class Book(BaseObject):
                         self.logfile,
                         "EXTERNSHEET(b8): k = %2d, record = %2d, first_sheet = %5d, last sheet = %5d\n",
                         k, ref_recordx, ref_first_sheetx, ref_last_sheetx,
-                        )
+                    )
         else:
             nc, ty = unpack("<BB", data[:2])
             if blah2:
@@ -900,7 +900,7 @@ class Book(BaseObject):
                     2: "Current sheet!!",
                     3: "Specific sheet in own doc't",
                     4: "Nonspecific sheet in own doc't!!",
-                    }.get(ty, "Not encoded")
+                }.get(ty, "Not encoded")
                 print("   %3d chars, type is %d (%s)" % (nc, ty, msg), file=self.logfile)
             if ty == 3:
                 sheet_name = unicode(data[2:nc+2], self.encoding)
@@ -951,7 +951,7 @@ class Book(BaseObject):
         nobj.name_index = name_index
         self.name_obj_list.append(nobj)
         nobj.option_flags = option_flags
-        for attr, mask, nshift in (
+        attrs = [
             ('hidden', 1, 0),
             ('func', 2, 1),
             ('vbasic', 4, 2),
@@ -960,7 +960,8 @@ class Book(BaseObject):
             ('builtin', 0x20, 5),
             ('funcgroup', 0xFC0, 6),
             ('binary', 0x1000, 12),
-            ):
+        ]
+        for attr, mask, nshift in attrs:
             setattr(nobj, attr, (option_flags & mask) >> nshift)
 
         macro_flag = " M"[nobj.macro]
@@ -990,7 +991,7 @@ class Book(BaseObject):
                 self.logfile,
                 header="--- handle_name: name[%d] ---" % name_index,
                 footer="-------------------",
-                )
+            )
 
     def names_epilogue(self):
         blah = self.verbosity >= 2
@@ -1111,10 +1112,11 @@ class Book(BaseObject):
                 # #### FIX ME ####
                 # Should implement handling of CONTINUE record(s) ...
                 if self.verbosity:
-                    print((
+                    print(
                         "*** WARNING: unpack failure in sheet %d of %d in SUPBOOK record for file %r"
-                        % (x, num_sheets, url)
-                        ), file=self.logfile)
+                        % (x, num_sheets, url),
+                        file=self.logfile,
+                    )
                 break
             sheet_names.append(shname)
             if blah: fprintf(self.logfile, "  sheetx=%d namelen=%d name=%r (next pos=%d)\n", x, len(shname), shname, pos)
@@ -1307,7 +1309,7 @@ class Book(BaseObject):
                     0x0200: 21,
                     0x0300: 30,
                     0x0400: 40,
-                    }.get(version2, 0)
+                }.get(version2, 0)
         elif version1 in (0x04, 0x02, 0x00):
             version = {0x04: 40, 0x02: 30, 0x00: 21}[version1]
 
@@ -1328,7 +1330,7 @@ class Book(BaseObject):
         bof_error(
             'BOF not workbook/worksheet: op=0x%04x vers=0x%04x strm=0x%04x build=%d year=%d -> BIFF%d'
             % (opcode, version2, streamtype, build, year, version)
-            )
+        )
 
 # === helper functions
 

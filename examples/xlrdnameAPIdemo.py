@@ -54,9 +54,7 @@ def show_name_details(book, name, show_contents=0, f=sys.stdout):
     for nobj in nobj_list:
         show_name_object(book, nobj, show_contents, f)
 
-def show_name_details_in_scope(
-    book, name, scope_strg, show_contents=0, f=sys.stdout,
-    ):
+def show_name_details_in_scope(book, name, scope_strg, show_contents=0, f=sys.stdout):
     try:
         scope = int(scope_strg)
     except ValueError:

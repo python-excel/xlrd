@@ -43,7 +43,7 @@ _WINDOW2_options = (
     # The real thing is the visibility attribute from the BOUNDSHEET record.
     ("sheet_visible", 0),
     ("show_in_page_break_preview", 0),
-    )
+)
 
 
 
@@ -412,7 +412,7 @@ class Sheet(BaseObject):
             self._cell_types[rowx][colx],
             self._cell_values[rowx][colx],
             xfx,
-            )
+        )
 
     def cell_value(self, rowx, colx):
         "Value of the cell in the given row and column."
@@ -474,7 +474,7 @@ class Sheet(BaseObject):
         return [
             self.cell(rowx, colx)
             for colx in xrange(len(self._cell_values[rowx]))
-            ]
+        ]
 
     def get_rows(self):
         "Returns a generator for iterating through each row."
@@ -512,7 +512,7 @@ class Sheet(BaseObject):
         return [
             self.cell(rowx, colx)
             for colx in xrange(start_colx, end_colx)
-            ]
+        ]
 
     def col_slice(self, colx, start_rowx=0, end_rowx=None):
         """
@@ -530,7 +530,7 @@ class Sheet(BaseObject):
         return [
             self.cell(rowx, colx)
             for rowx in xrange(start_rowx, end_rowx)
-            ]
+        ]
 
     def col_values(self, colx, start_rowx=0, end_rowx=None):
         """
@@ -548,7 +548,7 @@ class Sheet(BaseObject):
         return [
             self._cell_values[rowx][colx]
             for rowx in xrange(start_rowx, end_rowx)
-            ]
+        ]
 
     def col_types(self, colx, start_rowx=0, end_rowx=None):
         """
@@ -566,7 +566,7 @@ class Sheet(BaseObject):
         return [
             self._cell_types[rowx][colx]
             for rowx in xrange(start_rowx, end_rowx)
-            ]
+        ]
 
     col = col_slice
 
@@ -778,7 +778,7 @@ class Sheet(BaseObject):
         XL_SHRFMLA_ETC_ETC = (
             XL_SHRFMLA, XL_ARRAY, XL_TABLEOP, XL_TABLEOP2,
             XL_ARRAY2, XL_TABLEOP_B2,
-            )
+        )
         self_put_cell = self.put_cell
         local_unpack = unpack
         bk_get_record_parts = bk.get_record_parts
@@ -1007,7 +1007,7 @@ class Sheet(BaseObject):
                     # Maybe it's "locked" by analogy with XFProtection data.
                     ( 8, 0x0700, 'outline_level'),
                     (12, 0x1000, 'collapsed'),
-                    ))
+                ))
                 for colx in xrange(first_colx, last_colx+1):
                     if colx > 255: break # Excel does 0 to 256 inclusive
                     self.colinfo_map[colx] = c
@@ -1020,7 +1020,7 @@ class Sheet(BaseObject):
                         self.logfile,
                         "COLINFO sheet #%d cols %d-%d: wid=%d xf_index=%d flags=0x%04x\n",
                         self.number, first_colx, last_colx, c.width, c.xf_index, flags,
-                        )
+                    )
                     c.dump(self.logfile, header='===')
             elif rc == XL_DEFCOLWIDTH:
                 self.defcolwidth, = local_unpack("<H", data[:2])
@@ -1121,11 +1121,11 @@ class Sheet(BaseObject):
             elif rc == XL_LABELRANGES:
                 pos = 0
                 pos = unpack_cell_range_address_list_update_pos(
-                        self.row_label_ranges, data, pos, bv, addr_size=8,
-                        )
+                    self.row_label_ranges, data, pos, bv, addr_size=8,
+                )
                 pos = unpack_cell_range_address_list_update_pos(
-                        self.col_label_ranges, data, pos, bv, addr_size=8,
-                        )
+                    self.col_label_ranges, data, pos, bv, addr_size=8,
+                )
                 assert pos == data_len
             elif rc == XL_ARRAY:
                 row1x, rownx, col1x, colnx, array_flags, tokslen = \
@@ -1285,10 +1285,11 @@ class Sheet(BaseObject):
                     result = (num * 100) // den
                 if not(10 <= result <= 400):
                     if DEBUG or self.verbosity >= 0:
-                        print((
+                        print(
                             "WARNING *** SCL rcd sheet %d: should have 0.1 <= num/den <= 4; got %d/%d"
-                            % (self.number, num, den)
-                            ), file=self.logfile)
+                            % (self.number, num, den),
+                            file=self.logfile,
+                        )
                     result = 100
                 self.scl_mag_factor = result
             elif rc == XL_PANE:
@@ -1433,8 +1434,8 @@ class Sheet(BaseObject):
                         fprintf(
                             self.logfile,
                             "COLWIDTH sheet #%d cols %d-%d: wid=%d\n",
-                            self.number, first_colx, last_colx, width
-                            )
+                            self.number, first_colx, last_colx, width,
+                        )
                 elif rc == XL_COLUMNDEFAULT: # BIFF2 only
                     if not fmt_info: continue
                     first_colx, last_colx = local_unpack("<HH", data[:4])
@@ -1443,8 +1444,8 @@ class Sheet(BaseObject):
                         fprintf(
                             self.logfile,
                             "COLUMNDEFAULT sheet #%d cols in range(%d, %d)\n",
-                            self.number, first_colx, last_colx
-                            )
+                            self.number, first_colx, last_colx,
+                        )
                     if not(0 <= first_colx < last_colx <= 256):
                         print("*** NOTE: COLUMNDEFAULT record has first col index %d, last %d; "
                             "should have 0 <= first < last <= 256"
@@ -1530,10 +1531,11 @@ class Sheet(BaseObject):
             zoom = self.cached_normal_view_mag_factor
             if not (10 <= zoom <=400):
                 if blah:
-                    print((
+                    print(
                         "WARNING *** WINDOW2 rcd sheet %d: Bad cached_normal_view_mag_factor: %d"
-                        % (self.number, self.cached_normal_view_mag_factor)
-                        ), file=self.logfile)
+                        % (self.number, self.cached_normal_view_mag_factor),
+                        file=self.logfile,
+                    )
                 zoom = self.cooked_page_break_preview_mag_factor
             self.cooked_normal_view_mag_factor = zoom
         else:
@@ -1548,10 +1550,11 @@ class Sheet(BaseObject):
                 zoom = 60
             elif not (10 <= zoom <= 400):
                 if blah:
-                    print((
+                    print(
                         "WARNING *** WINDOW2 rcd sheet %r: Bad cached_page_break_preview_mag_factor: %r"
-                        % (self.number, self.cached_page_break_preview_mag_factor)
-                        ), file=self.logfile)
+                        % (self.number, self.cached_page_break_preview_mag_factor),
+                        file=self.logfile,
+                    )
                 zoom = self.cooked_normal_view_mag_factor
             self.cooked_page_break_preview_mag_factor = zoom
 
@@ -1613,7 +1616,7 @@ class Sheet(BaseObject):
             FGE: XL_CELL_NUMBER,
             FDT: XL_CELL_DATE,
             FTX: XL_CELL_NUMBER, # Yes, a number can be formatted as text.
-            }
+        }
         fmt = book.format_map[xf.format_key]
         cellty = cellty_from_fmtty[fmt.type]
         self._xf_index_to_xl_type_map[xf.xf_index] = cellty
@@ -1640,7 +1643,7 @@ class Sheet(BaseObject):
         upkbits(xf.protection, prot_bits, (
             (6, 0x40, 'cell_locked'),
             (7, 0x80, 'formula_hidden'),
-            ))
+        ))
         xf.alignment.hor_align = halign_etc & 0x07
         for mask, side in ((0x08, 'left'), (0x10, 'right'), (0x20, 'top'), (0x40, 'bottom')):
             if halign_etc & mask:
@@ -1759,7 +1762,7 @@ class Sheet(BaseObject):
                         self.logfile,
                         "url=%r\nextra=%r\nnbytes=%d true_nbytes=%d extra_nbytes=%d\n",
                         h.url_or_path, extra_data, nbytes, true_nbytes, extra_nbytes,
-                        )
+                    )
                 assert extra_nbytes in (24, 0)
             elif clsid == b"\x03\x03\x00\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46":
                 # file moniker
@@ -1810,8 +1813,8 @@ class Sheet(BaseObject):
                 h.frowx + 1,
                 h.fcolx + 1,
                 extra_nbytes,
-                REPR(data[-extra_nbytes:])
-                )
+                REPR(data[-extra_nbytes:]),
+            )
             # Seen: b"\x00\x00" also b"A\x00", b"V\x00"
         elif extra_nbytes < 0:
             raise XLRDError("Bug or corrupt file, send copy of input file for debugging")
@@ -1897,7 +1900,7 @@ class Sheet(BaseObject):
                     ( 9, 0x0200, 'scrollbar_flag'), # not documented in Excel 97 dev kit
                     (13, 0x2000, 'autofill'),
                     (14, 0x4000, 'autoline'),
-                    ))
+                ))
             elif ft == 0x00:
                 if data[pos:data_len] == b'\0' * (data_len - pos):
                     # ignore "optional reserved" data at end of record
@@ -1991,7 +1994,7 @@ class Sheet(BaseObject):
             ( 9, 0x0200, 'lock_text'),
             (14, 0x4000, 'just_last'),
             (15, 0x8000, 'secret_edit'),
-            ))
+        ))
         totchars = 0
         o.text = UNICODE_LITERAL('')
         while totchars < cchText:
@@ -2203,7 +2206,7 @@ cellty_from_fmtty = {
     FGE: XL_CELL_NUMBER,
     FDT: XL_CELL_DATE,
     FTX: XL_CELL_NUMBER, # Yes, a number can be formatted as text.
-    }
+}
 
 ctype_text = {
     XL_CELL_EMPTY: 'empty',
@@ -2213,7 +2216,7 @@ ctype_text = {
     XL_CELL_BOOLEAN: 'bool',
     XL_CELL_ERROR: 'error',
     XL_CELL_BLANK: 'blank',
-    }
+}
 
 
 class Cell(BaseObject):
@@ -2382,7 +2385,7 @@ class Rowinfo(BaseObject):
             "xf_index",
             "additional_space_above",
             "additional_space_below",
-            )
+        )
 
     def __init__(self):
         #: Height of the row, in twips. One twip == 1/20 of a point.
@@ -2436,7 +2439,7 @@ class Rowinfo(BaseObject):
             self.xf_index,
             self.additional_space_above,
             self.additional_space_below,
-            )
+        )
 
     def __setstate__(self, state):
         (
@@ -2450,4 +2453,4 @@ class Rowinfo(BaseObject):
             self.xf_index,
             self.additional_space_above,
             self.additional_space_below,
-            ) = state
+        ) = state

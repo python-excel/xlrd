@@ -255,8 +255,8 @@ if __name__ == "__main__":
             "-f", "--formatting",
             type="int", default=0,
             help="0 (default): no fmt info\n"
-                 "1: fmt info (all cells)\n"
-            )
+                 "1: fmt info (all cells)\n",
+        )
         oparser.add_option(
             "-g", "--gc",
             type="int", default=0,

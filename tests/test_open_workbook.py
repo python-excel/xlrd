@@ -12,8 +12,8 @@ class TestOpen(TestCase):
     def test_names_demo(self):
         # For now, we just check this doesn't raise an error.
         open_workbook(
-            from_this_dir(os.path.join('..','examples','namesdemo.xls'))
-            )
+            from_this_dir(os.path.join('..','examples','namesdemo.xls')),
+        )
 
     def test_ragged_rows_tidied_with_formatting(self):
         # For now, we just check this doesn't raise an error.

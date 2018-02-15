@@ -62,7 +62,7 @@ def ensure_elementtree_imported(verbosity, logfile):
             (item, getattr(ET, item))
             for item in ET.__dict__.keys()
             if item.lower().replace('_', '') == 'version'
-            ])
+        ])
         print(ET.__file__, ET.__name__, etree_version, ET_has_iterparse, file=logfile)
 
 def split_tag(tag):
@@ -227,7 +227,7 @@ _defined_name_attribute_map = (
     ("",                    "option_flags", 0,               ),
     ("",                    "result",       None,            ),
     ("",                    "stack",        None,            ),
-    )
+)
 
 def make_name_access_maps(bk):
     name_and_scope_map = {} # (name.lower(), scope): Name_object
@@ -302,7 +302,7 @@ class X12Book(X12General):
         U_DC+"creator": ("creator", cnv_ST_Xstring),
         U_DCTERMS+"modified": ("modified", cnv_ST_Xstring),
         U_DCTERMS+"created": ("created", cnv_ST_Xstring),
-        }
+    }
 
     def process_coreprops(self, stream):
         if self.verbosity >= 2:
@@ -393,8 +393,8 @@ class X12Book(X12General):
             None: 0,
             'visible': 0,
             'hidden': 1,
-            'veryHidden': 2
-            }
+            'veryHidden': 2,
+        }
         bk._sheet_visibility.append(visibility_map[state])
         sheet = Sheet(bk, position=None, name=name, number=sheetx)
         sheet.utter_max_rows = X12_MAX_ROWS
@@ -416,7 +416,7 @@ class X12Book(X12General):
         'definedNames':  do_defined_names,
         'workbookPr':   do_workbookpr,
         'sheet':        do_sheet,
-        }
+    }
     augment_keys(tag2meth, U_SSML12)
 
 class X12SST(X12General):
@@ -513,10 +513,7 @@ class X12Styles(X12General):
         is_date = self.fmt_is_date.get(numFmtId, 0)
         self.bk._xf_index_to_xl_type_map[xfx] = is_date + 2
         if self.verbosity >= 3:
-            self.dumpout(
-                'xfx=%d numFmtId=%d',
-                xfx, numFmtId,
-                )
+            self.dumpout('xfx=%d numFmtId=%d', xfx, numFmtId)
             self.dumpout(repr(self.bk._xf_index_to_xl_type_map))
 
     tag2meth = {
@@ -524,7 +521,7 @@ class X12Styles(X12General):
         'cellXfs':      do_cellxfs,
         'numFmt':       do_numfmt,
         'xf':           do_xf,
-        }
+    }
     augment_keys(tag2meth, U_SSML12)
 
 class X12Sheet(X12General):
@@ -782,19 +779,17 @@ class X12Sheet(X12General):
 
     tag2meth = {
         'row':          do_row,
-        }
+    }
     augment_keys(tag2meth, U_SSML12)
 
-def open_workbook_2007_xml(
-    zf,
-    component_names,
-    logfile=sys.stdout,
-    verbosity=0,
-    use_mmap=0,
-    formatting_info=0,
-    on_demand=0,
-    ragged_rows=0,
-    ):
+def open_workbook_2007_xml(zf,
+                           component_names,
+                           logfile=sys.stdout,
+                           verbosity=0,
+                           use_mmap=0,
+                           formatting_info=0,
+                           on_demand=0,
+                           ragged_rows=0):
     ensure_elementtree_imported(verbosity, logfile)
     bk = Book()
     bk.logfile = logfile
