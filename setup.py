@@ -12,14 +12,6 @@ setup(
     scripts = [
         'scripts/runxlrd.py',
         ],
-    package_data={
-            'xlrd': [
-                'doc/*.htm*',
-                # 'doc/*.txt',
-                'examples/*.*',
-                ],
-
-            },
     description = (
         'Library for developers to extract data from '
         'Microsoft Excel (tm) spreadsheet files'
@@ -49,7 +41,5 @@ setup(
             'Topic :: Office/Business',
             'Topic :: Software Development :: Libraries :: Python Modules',
             ],
-    zip_safe=False,
-    include_package_data=True,
     python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
 )
