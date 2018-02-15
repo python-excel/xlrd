@@ -53,9 +53,8 @@ class BaseObject(object):
                 value.dump(f,
                     header="%s%s (%s object):" % (pad, attr, value.__class__.__name__),
                     indent=indent+4)
-            elif attr not in self._repr_these and (
-                isinstance(value, list_type) or isinstance(value, dict_type)
-                ):
+            elif (attr not in self._repr_these and
+                  (isinstance(value, list_type) or isinstance(value, dict_type))):
                 print("%s%s: %s, len = %d" % (pad, attr, type(value), len(value)), file=f)
             else:
                 fprintf(f, "%s%s: %r\n", pad, attr, value)
@@ -86,7 +85,7 @@ biff_text_from_num = {
     70: "7",
     80: "8",
     85: "8X",
-    }
+}
 
 #: This dictionary can be used to produce a text version of the internal codes
 #: that Excel uses for error cells.
@@ -229,7 +228,7 @@ _cell_opcode_list = [
     XL_NUMBER,
     XL_RK,
     XL_RSTRING,
-    ]
+]
 _cell_opcode_dict = {}
 for _cell_opcode in _cell_opcode_list:
     _cell_opcode_dict[_cell_opcode] = 1
@@ -630,7 +629,7 @@ encoding_from_codepage = {
     10081: 'mac_turkish', # guess
     32768: 'mac_roman',
     32769: 'cp1252',
-    }
+}
 # some more guessing, for Indic scripts
 # codepage 57000 range:
 # 2 Devanagari [0]

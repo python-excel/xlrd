@@ -34,7 +34,7 @@ __all__ = [
     'FMLA_TYPE_DATA_VAL',
     'FMLA_TYPE_NAME',
     'Operand', 'Ref3D',
-    ]
+]
 
 FMLA_TYPE_CELL = 1
 FMLA_TYPE_SHARED = 2
@@ -52,7 +52,7 @@ FMLA_TYPEDESCR_MAP = {
     8 : 'COND-FMT',
     16: 'DATA-VAL',
     32: 'NAME',
-    }
+}
 
 _TOKEN_NOT_ALLOWED = {
     0x01:   ALL_FMLA_TYPES - FMLA_TYPE_CELL, # tExp
@@ -68,7 +68,7 @@ _TOKEN_NOT_ALLOWED = {
     0x2C:   FMLA_TYPE_CELL + FMLA_TYPE_ARRAY, # tRefN
     0x2D:   FMLA_TYPE_CELL + FMLA_TYPE_ARRAY, # tAreaN
     # plus weird stuff like tMem*
-    }.get
+}.get
 
 oBOOL = 3
 oERR =  4
@@ -88,7 +88,7 @@ okind_dict = {
     3 : "oBOOL",
     4 : "oERR",
     5 : "oMSNG",
-    }
+}
 
 listsep = ',' #### probably should depend on locale
 
@@ -112,7 +112,7 @@ szdict = {
     50 : sztab3,
     70 : sztab3,
     80 : sztab4,
-    }
+}
 
 # For debugging purposes ... the name for each opcode
 # (without the prefix "t" used on OOo docs)
@@ -380,7 +380,7 @@ func_defs = {
     377: ('ROUNDBAHTUP',      1,  1, 0x02,  1, 'V', 'V'),
     378: ('THAIYEAR',         1,  1, 0x02,  1, 'V', 'V'),
     379: ('RTD',              2,  5, 0x04,  1, 'V', 'V'),
-    }
+}
 
 tAttrNames = {
     0x00: "Skip??", # seen in SAMPLES.XLS which shipped with Excel 5.0
@@ -392,7 +392,7 @@ tAttrNames = {
     0x20: "Assign",
     0x40: "Space",
     0x41: "SpaceVolatile",
-    }
+}
 
 error_opcodes = set([0x07, 0x08, 0x0A, 0x0B, 0x1C, 0x1D, 0x2F])
 
@@ -403,7 +403,7 @@ def do_box_funcs(box_funcs, boxa, boxb):
     return tuple(
         func(numa, numb)
         for func, numa, numb in zip(box_funcs, boxa.coords, boxb.coords)
-        )
+    )
 
 def adjust_cell_addr_biff8(rowval, colval, reldelta, browx=None, bcolx=None):
     row_rel = (colval >> 15) & 1
@@ -735,13 +735,13 @@ binop_rules = {
     tGE:    (_cmp_argdict, oBOOL, _opr_ge,   10, '>='),
     tGT:    (_cmp_argdict, oBOOL, _opr_gt,   10, '>'),
     tNE:    (_cmp_argdict, oBOOL, _opr_ne,   10, '<>'),
-    }
+}
 
 unop_rules = {
     0x13: (lambda x: -x,        70, '-', ''), # unary minus
     0x12: (lambda x: x,         70, '+', ''), # unary plus
     0x14: (lambda x: x / 100.0, 60, '',  '%'),# percent
-    }
+}
 
 LEAF_RANK = 90
 FUNC_RANK = 90
@@ -785,7 +785,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
             '('[:bop.rank < rank],
             bop.text,
             ')'[:bop.rank < rank],
-            ])
+        ])
         resop = Operand(result_kind, None, rank, otext)
         try:
             bconv = argdict[bop.kind]
@@ -815,7 +815,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
             aop.text,
             ')'[:aop.rank < rank],
             sym2,
-            ])
+        ])
         if val is not None:
             val = func(val)
         stk.append(Operand(result_kind, val, rank, otext))
@@ -869,7 +869,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                     '('[:bop.rank < rank],
                     bop.text,
                     ')'[:bop.rank < rank],
-                    ])
+                ])
                 res = Operand(oREF)
                 res.text = otext
                 if bop.kind == oERR or aop.kind == oERR:
@@ -919,7 +919,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                     '('[:bop.rank < rank],
                     bop.text,
                     ')'[:bop.rank < rank],
-                    ])
+                ])
                 res = Operand(oREF, None, rank, otext)
                 if bop.kind == oERR or aop.kind == oERR:
                     res.kind = oERR
@@ -950,7 +950,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                     '('[:bop.rank < rank],
                     bop.text,
                     ')'[:bop.rank < rank],
-                    ])
+                ])
                 res = Operand(oREF, None, rank, otext)
                 if bop.kind == oERR or aop.kind == oERR:
                     res = oERR
@@ -1134,7 +1134,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                         bk.logfile,
                         header="!!! tgtobj has problems!!!",
                         footer="-----------       --------",
-                        )
+                    )
                 res = Operand(oUNK, None)
                 any_err = any_err or tgtobj.macro or tgtobj.binary or tgtobj.any_err
                 any_rel = any_rel or tgtobj.any_rel
@@ -1313,7 +1313,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                             bk.logfile,
                             header="!!! bad tgtobj !!!",
                             footer="------------------",
-                            )
+                        )
                     res = Operand(oUNK, None)
                     any_err = any_err or tgtobj.macro or tgtobj.binary or tgtobj.any_err
                     any_rel = any_rel or tgtobj.any_rel
@@ -1393,7 +1393,7 @@ def decompile_formula(bk, fmla, fmlalen,
             '('[:bop.rank < rank],
             bop.text,
             ')'[:bop.rank < rank],
-            ])
+        ])
         resop = Operand(result_kind, None, rank, otext)
         stk.append(resop)
 
@@ -1407,7 +1407,7 @@ def decompile_formula(bk, fmla, fmlalen,
             aop.text,
             ')'[:aop.rank < rank],
             sym2,
-            ])
+        ])
         stk.append(Operand(result_kind, None, rank, otext))
 
     def unexpected_opcode(op_arg, oname_arg):
@@ -1471,7 +1471,7 @@ def decompile_formula(bk, fmla, fmlalen,
                     '('[:bop.rank < rank],
                     bop.text,
                     ')'[:bop.rank < rank],
-                    ])
+                ])
                 res = Operand(oREF)
                 res.text = otext
                 if bop.kind == oERR or aop.kind == oERR:
@@ -1507,7 +1507,7 @@ def decompile_formula(bk, fmla, fmlalen,
                     '('[:bop.rank < rank],
                     bop.text,
                     ')'[:bop.rank < rank],
-                    ])
+                ])
                 res = Operand(oREF, None, rank, otext)
                 if bop.kind == oERR or aop.kind == oERR:
                     res.kind = oERR
@@ -1534,7 +1534,7 @@ def decompile_formula(bk, fmla, fmlalen,
                     '('[:bop.rank < rank],
                     bop.text,
                     ')'[:bop.rank < rank],
-                    ])
+                ])
                 res = Operand(oREF, None, rank, otext)
                 if bop.kind == oERR or aop.kind == oERR:
                     res = oERR
@@ -2123,8 +2123,8 @@ def rangename2drel(rlo_rhi_clo_chi, rlorel_rhirel_clorel_chirel, browx=None, bco
         r1c1 = True
     return "%s:%s" % (
         cellnamerel(rlo,   clo,   rlorel, clorel, browx, bcolx, r1c1),
-        cellnamerel(rhi-1, chi-1, rhirel, chirel, browx, bcolx, r1c1)
-        )
+        cellnamerel(rhi-1, chi-1, rhirel, chirel, browx, bcolx, r1c1),
+    )
 
 
 def rangename3d(book, ref3d):
@@ -2165,7 +2165,7 @@ def quotedsheetname(shnames, shx):
             -2: "internal; deleted sheet",
             -3: "internal; macro sheet",
             -4: "<<external>>",
-            }.get(shx, "?error %d?" % shx)
+        }.get(shx, "?error %d?" % shx)
     if "'" in shname:
         return "'" + shname.replace("'", "''") + "'"
     if " " in shname:

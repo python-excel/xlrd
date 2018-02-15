@@ -28,7 +28,7 @@ _cellty_from_fmtty = {
     FGE: XL_CELL_NUMBER,
     FDT: XL_CELL_DATE,
     FTX: XL_CELL_NUMBER, # Yes, a number can be formatted as text.
-    }
+}
 
 excel_default_palette_b5 = (
     (  0,   0,   0), (255, 255, 255), (255,   0,   0), (  0, 255,   0),
@@ -45,7 +45,7 @@ excel_default_palette_b5 = (
     (255, 153,   0), (255, 102,   0), (102, 102, 153), (150, 150, 150),
     (  0,  51, 102), ( 51, 153, 102), (  0,  51,   0), ( 51,  51,   0),
     (153,  51,   0), (153,  51, 102), ( 51,  51, 153), ( 51,  51,  51),
-    )
+)
 
 excel_default_palette_b2 = excel_default_palette_b5[:16]
 
@@ -66,7 +66,7 @@ excel_default_palette_b8 = ( # (red, green, blue)
     (255,153,  0), (255,102,  0), (102,102,153), (150,150,150), # 44
     (  0, 51,102), ( 51,153,102), (  0, 51,  0), ( 51, 51,  0), # 48
     (153, 51,  0), (153, 51,102), ( 51, 51,153), ( 51, 51, 51), # 52
-    )
+)
 
 default_palette = {
     80: excel_default_palette_b8,
@@ -77,7 +77,7 @@ default_palette = {
     30: excel_default_palette_b2,
     21: excel_default_palette_b2,
     20: excel_default_palette_b2,
-    }
+}
 
 # 00H = Normal
 # 01H = RowLevel_lv (see next field)
@@ -100,7 +100,7 @@ built_in_style_names = [
     "Currency [0]",
     "Hyperlink",
     "Followed Hyperlink",
-    ]
+]
 
 def initialise_colour_map(book):
     book.colour_map = {}
@@ -119,12 +119,12 @@ def initialise_colour_map(book):
     # System window text colour for border lines
     book.colour_map[ndpal+8] = None
     # System window background colour for pattern background
-    book.colour_map[ndpal+8+1] = None #
-    for ci in (
-        0x51, # System ToolTip text colour (used in note objects)
-        0x7FFF, # 32767, system window text colour for fonts
-        ):
-        book.colour_map[ci] = None
+    book.colour_map[ndpal+8+1] = None
+    # System ToolTip text colour (used in note objects)
+    book.colour_map[0x51] = None
+    # 32767, system window text colour for fonts
+    book.colour_map[0x7FFF] = None
+
 
 def nearest_colour_index(colour_map, rgb, debug=0):
     """
@@ -325,7 +325,7 @@ def handle_font(book, data):
             book.logfile,
             header="--- handle_font: font[%d] ---" % f.font_index,
             footer="-------------------",
-            )
+        )
 
 # === "Number formats" ===
 
@@ -398,7 +398,7 @@ std_format_strings = {
     0x2f: "mm:ss.0",
     0x30: "##0.0E+0",
     0x31: "@",
-    }
+}
 
 fmt_code_ranges = [ # both-inclusive ranges of "standard" format codes
     # Source: the openoffice.org doc't
@@ -416,7 +416,7 @@ fmt_code_ranges = [ # both-inclusive ranges of "standard" format codes
     (59, 62, FNU), # Thai number (currency?) formats
     (67, 70, FNU), # Thai number (currency?) formats
     (71, 81, FDT), # Thai date formats
-    ]
+]
 
 std_format_code_types = {}
 for lo, hi, ty in fmt_code_ranges:
@@ -438,7 +438,7 @@ num_char_dict = {
     UNICODE_LITERAL('0'): 5,
     UNICODE_LITERAL('#'): 5,
     UNICODE_LITERAL('?'): 5,
-    }
+}
 
 non_date_formats = {
     UNICODE_LITERAL('0.00E+00'):1,
@@ -447,7 +447,7 @@ non_date_formats = {
     UNICODE_LITERAL('GENERAL') :1, # OOo Calc 1.1.4 does this.
     UNICODE_LITERAL('general') :1,  # pyExcelerator 0.6.3 does this.
     UNICODE_LITERAL('@')       :1,
-    }
+}
 
 fmt_bracketed_sub = re.compile(r'\[[^]]*\]').sub
 
@@ -724,7 +724,7 @@ def handle_xf(self, data):
         upkbits(xf.protection, pkd_type_par, (
             (0, 0x01, 'cell_locked'),
             (1, 0x02, 'formula_hidden'),
-            ))
+        ))
         upkbits(xf, pkd_type_par, (
             (2, 0x0004, 'is_style'),
             # Following is not in OOo docs, but is mentioned
@@ -732,17 +732,17 @@ def handle_xf(self, data):
             # org.apache.poi.hssf.record.ExtendedFormatRecord.java
             (3, 0x0008, 'lotus_123_prefix'), # Meaning is not known.
             (4, 0xFFF0, 'parent_style_index'),
-            ))
+        ))
         upkbits(xf.alignment, pkd_align1, (
             (0, 0x07, 'hor_align'),
             (3, 0x08, 'text_wrapped'),
             (4, 0x70, 'vert_align'),
-            ))
+        ))
         upkbits(xf.alignment, pkd_align2, (
             (0, 0x0f, 'indent_level'),
             (4, 0x10, 'shrink_to_fit'),
             (6, 0xC0, 'text_direction'),
-            ))
+        ))
         reg = pkd_used >> 2
         for attr_stem in \
             "format font alignment border background protection".split():
@@ -758,20 +758,20 @@ def handle_xf(self, data):
             (23, 0x3f800000,  'right_colour_index'),
             (30, 0x40000000,  'diag_down'),
             (31, 0x80000000, 'diag_up'),
-            ))
+        ))
         upkbits(xf.border, pkd_brdbkg2, (
             (0,  0x0000007F, 'top_colour_index'),
             (7,  0x00003F80, 'bottom_colour_index'),
             (14, 0x001FC000, 'diag_colour_index'),
             (21, 0x01E00000, 'diag_line_style'),
-            ))
+        ))
         upkbitsL(xf.background, pkd_brdbkg2, (
             (26, 0xFC000000, 'fill_pattern'),
-            ))
+        ))
         upkbits(xf.background, pkd_brdbkg3, (
             (0, 0x007F, 'pattern_colour_index'),
             (7, 0x3F80, 'background_colour_index'),
-            ))
+        ))
     elif bv >= 50:
         unpack_fmt = '<HHHBBIi'
         (xf.font_index, xf.format_key, pkd_type_par,
@@ -781,17 +781,17 @@ def handle_xf(self, data):
         upkbits(xf.protection, pkd_type_par, (
             (0, 0x01, 'cell_locked'),
             (1, 0x02, 'formula_hidden'),
-            ))
+        ))
         upkbits(xf, pkd_type_par, (
             (2, 0x0004, 'is_style'),
             (3, 0x0008, 'lotus_123_prefix'), # Meaning is not known.
             (4, 0xFFF0, 'parent_style_index'),
-            ))
+        ))
         upkbits(xf.alignment, pkd_align1, (
             (0, 0x07, 'hor_align'),
             (3, 0x08, 'text_wrapped'),
             (4, 0x70, 'vert_align'),
-            ))
+        ))
         orientation = pkd_orient_used & 0x03
         xf.alignment.rotation = [0, 255, 90, 180][orientation]
         reg = pkd_orient_used >> 2
@@ -804,11 +804,11 @@ def handle_xf(self, data):
             ( 0, 0x0000007F, 'pattern_colour_index'),
             ( 7, 0x00003F80, 'background_colour_index'),
             (16, 0x003F0000, 'fill_pattern'),
-            ))
+        ))
         upkbitsL(xf.border, pkd_brdbkg1, (
             (22, 0x01C00000,  'bottom_line_style'),
             (25, 0xFE000000, 'bottom_colour_index'),
-            ))
+        ))
         upkbits(xf.border, pkd_brdbkg2, (
             ( 0, 0x00000007, 'top_line_style'),
             ( 3, 0x00000038, 'left_line_style'),
@@ -816,7 +816,7 @@ def handle_xf(self, data):
             ( 9, 0x0000FE00, 'top_colour_index'),
             (16, 0x007F0000, 'left_colour_index'),
             (23, 0x3F800000, 'right_colour_index'),
-            ))
+        ))
     elif bv >= 40:
         unpack_fmt = '<BBHBBHI'
         (xf.font_index, xf.format_key, pkd_type_par,
@@ -826,17 +826,17 @@ def handle_xf(self, data):
         upkbits(xf.protection, pkd_type_par, (
             (0, 0x01, 'cell_locked'),
             (1, 0x02, 'formula_hidden'),
-            ))
+        ))
         upkbits(xf, pkd_type_par, (
             (2, 0x0004, 'is_style'),
             (3, 0x0008, 'lotus_123_prefix'), # Meaning is not known.
             (4, 0xFFF0, 'parent_style_index'),
-            ))
+        ))
         upkbits(xf.alignment, pkd_align_orient, (
             (0, 0x07, 'hor_align'),
             (3, 0x08, 'text_wrapped'),
             (4, 0x30, 'vert_align'),
-            ))
+        ))
         orientation = (pkd_align_orient & 0xC0) >> 6
         xf.alignment.rotation = [0, 255, 90, 180][orientation]
         reg = pkd_used >> 2
@@ -849,7 +849,7 @@ def handle_xf(self, data):
             ( 0, 0x003F, 'fill_pattern'),
             ( 6, 0x07C0, 'pattern_colour_index'),
             (11, 0xF800, 'background_colour_index'),
-            ))
+        ))
         upkbitsL(xf.border, pkd_brd_34, (
             ( 0, 0x00000007,  'top_line_style'),
             ( 3, 0x000000F8,  'top_colour_index'),
@@ -859,7 +859,7 @@ def handle_xf(self, data):
             (19, 0x00F80000,  'bottom_colour_index'),
             (24, 0x07000000,  'right_line_style'),
             (27, 0xF8000000, 'right_colour_index'),
-            ))
+        ))
     elif bv == 30:
         unpack_fmt = '<BBBBHHI'
         (xf.font_index, xf.format_key, pkd_type_prot,
@@ -869,18 +869,18 @@ def handle_xf(self, data):
         upkbits(xf.protection, pkd_type_prot, (
             (0, 0x01, 'cell_locked'),
             (1, 0x02, 'formula_hidden'),
-            ))
+        ))
         upkbits(xf, pkd_type_prot, (
             (2, 0x0004, 'is_style'),
             (3, 0x0008, 'lotus_123_prefix'), # Meaning is not known.
-            ))
+        ))
         upkbits(xf.alignment, pkd_align_par, (
             (0, 0x07, 'hor_align'),
             (3, 0x08, 'text_wrapped'),
-            ))
+        ))
         upkbits(xf, pkd_align_par, (
             (4, 0xFFF0, 'parent_style_index'),
-            ))
+        ))
         reg = pkd_used >> 2
         for attr_stem in \
             "format font alignment border background protection".split():
@@ -891,7 +891,7 @@ def handle_xf(self, data):
             ( 0, 0x003F, 'fill_pattern'),
             ( 6, 0x07C0, 'pattern_colour_index'),
             (11, 0xF800, 'background_colour_index'),
-            ))
+        ))
         upkbitsL(xf.border, pkd_brd_34, (
             ( 0, 0x00000007,  'top_line_style'),
             ( 3, 0x000000F8,  'top_colour_index'),
@@ -901,7 +901,7 @@ def handle_xf(self, data):
             (19, 0x00F80000,  'bottom_colour_index'),
             (24, 0x07000000,  'right_line_style'),
             (27, 0xF8000000, 'right_colour_index'),
-            ))
+        ))
         xf.alignment.vert_align = 2 # bottom
         xf.alignment.rotation = 0
     elif bv == 21:
@@ -914,10 +914,10 @@ def handle_xf(self, data):
         upkbits(xf.protection, format_etc, (
             (6, 0x40, 'cell_locked'),
             (7, 0x80, 'formula_hidden'),
-            ))
+        ))
         upkbits(xf.alignment, halign_etc, (
             (0, 0x07, 'hor_align'),
-            ))
+        ))
         for mask, side in ((0x08, 'left'), (0x10, 'right'), (0x20, 'top'), (0x40, 'bottom')):
             if halign_etc & mask:
                 colour_index, line_style = 8, 1 # black, thin
@@ -1057,7 +1057,7 @@ def initialise_book(book):
         handle_style,
         handle_xf,
         xf_epilogue,
-        )
+    )
     for method in methods:
         setattr(book.__class__, method.__name__, method)
 
