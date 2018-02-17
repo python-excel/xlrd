@@ -333,8 +333,7 @@ def unpack_unicode_update_pos(data, pos, lenlen=2, known_len=None):
         pos += sz
     return (strg, pos)
 
-def unpack_cell_range_address_list_update_pos(
-    output_list, data, pos, biff_version, addr_size=6):
+def unpack_cell_range_address_list_update_pos(output_list, data, pos, biff_version, addr_size=6):
     # output_list is updated in situ
     assert addr_size in (6, 8)
     # Used to assert size == 6 if not BIFF8, but pyWLWriter writes
