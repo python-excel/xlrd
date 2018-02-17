@@ -1358,8 +1358,8 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
 
 #### under construction #############################################################################
 def decompile_formula(bk, fmla, fmlalen,
-    fmlatype=None, browx=None, bcolx=None,
-    blah=0, level=0, r1c1=0):
+                      fmlatype=None, browx=None, bcolx=None,
+                      blah=0, level=0, r1c1=0):
     if level > STACK_ALARM_LEVEL:
         blah = 1
     reldelta = fmlatype in (FMLA_TYPE_SHARED, FMLA_TYPE_NAME, FMLA_TYPE_COND_FMT, FMLA_TYPE_DATA_VAL)

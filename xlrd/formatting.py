@@ -745,8 +745,15 @@ def handle_xf(self, data):
             (6, 0xC0, 'text_direction'),
         ))
         reg = pkd_used >> 2
-        for attr_stem in \
-            "format font alignment border background protection".split():
+        attr_stems = [
+            'format',
+            'font',
+            'alignment',
+            'border',
+            'background',
+            'protection',
+        ]
+        for attr_stem in attr_stems:
             attr = "_" + attr_stem + "_flag"
             setattr(xf, attr, reg & 1)
             reg >>= 1
@@ -797,8 +804,15 @@ def handle_xf(self, data):
         orientation = pkd_orient_used & 0x03
         xf.alignment.rotation = [0, 255, 90, 180][orientation]
         reg = pkd_orient_used >> 2
-        for attr_stem in \
-            "format font alignment border background protection".split():
+        attr_stems = [
+            'format',
+            'font',
+            'alignment',
+            'border',
+            'background',
+            'protection',
+        ]
+        for attr_stem in attr_stems:
             attr = "_" + attr_stem + "_flag"
             setattr(xf, attr, reg & 1)
             reg >>= 1
@@ -843,8 +857,15 @@ def handle_xf(self, data):
         orientation = (pkd_align_orient & 0xC0) >> 6
         xf.alignment.rotation = [0, 255, 90, 180][orientation]
         reg = pkd_used >> 2
-        for attr_stem in \
-            "format font alignment border background protection".split():
+        attr_stems = [
+            'format',
+            'font',
+            'alignment',
+            'border',
+            'background',
+            'protection',
+        ]
+        for attr_stem in attr_stems:
             attr = "_" + attr_stem + "_flag"
             setattr(xf, attr, reg & 1)
             reg >>= 1
@@ -886,8 +907,15 @@ def handle_xf(self, data):
             (4, 0xFFF0, 'parent_style_index'),
         ))
         reg = pkd_used >> 2
-        for attr_stem in \
-            "format font alignment border background protection".split():
+        attr_stems = [
+            'format',
+            'font',
+            'alignment',
+            'border',
+            'background',
+            'protection',
+        ]
+        for attr_stem in attr_stems:
             attr = "_" + attr_stem + "_flag"
             setattr(xf, attr, reg & 1)
             reg >>= 1
@@ -939,8 +967,15 @@ def handle_xf(self, data):
         xf.parent_style_index = 0 # ???????????
         xf.alignment.vert_align = 2 # bottom
         xf.alignment.rotation = 0
-        for attr_stem in \
-            "format font alignment border background protection".split():
+        attr_stems = [
+            'format',
+            'font',
+            'alignment',
+            'border',
+            'background',
+            'protection',
+        ]
+        for attr_stem in attr_stems:
             attr = "_" + attr_stem + "_flag"
             setattr(xf, attr, 1)
     else:

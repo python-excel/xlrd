@@ -1668,8 +1668,15 @@ class Sheet(BaseObject):
         xf.parent_style_index = (0x0FFF, 0)[style]
         xf.alignment.vert_align = 2 # bottom
         xf.alignment.rotation = 0
-        for attr_stem in \
-            "format font alignment border background protection".split():
+        attr_stems = [
+            'format',
+            'font',
+            'alignment',
+            'border',
+            'background',
+            'protection',
+        ]
+        for attr_stem in attr_stems:
             attr = "_" + attr_stem + "_flag"
             setattr(xf, attr, 1)
         return xf
