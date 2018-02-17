@@ -327,14 +327,15 @@ if __name__ == "__main__":
                     PSYCO = 0
                 try:
                     t0 = time.time()
-                    bk = xlrd.open_workbook(fname,
+                    bk = xlrd.open_workbook(
+                        fname,
                         verbosity=options.verbosity, logfile=logfile,
                         use_mmap=mmap_arg,
                         encoding_override=options.encoding,
                         formatting_info=fmt_opt,
                         on_demand=options.on_demand,
                         ragged_rows=options.ragged_rows,
-                        )
+                    )
                     t1 = time.time()
                     if not options.suppress_timing:
                         print("Open took %.2f seconds" % (t1-t0,))

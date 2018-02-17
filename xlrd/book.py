@@ -63,11 +63,10 @@ for _bin, _bic in _code_from_builtin_name.items():
 del _bin, _bic, _code_from_builtin_name
 
 def open_workbook_xls(filename=None,
-    logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
-    file_contents=None,
-    encoding_override=None,
-    formatting_info=False, on_demand=False, ragged_rows=False,
-    ):
+                      logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
+                      file_contents=None,
+                      encoding_override=None,
+                      formatting_info=False, on_demand=False, ragged_rows=False):
     t0 = time.clock()
     if TOGGLE_GC:
         orig_gc_enabled = gc.isenabled()
@@ -116,11 +115,12 @@ def open_workbook_xls(filename=None,
                 bk.get_sheets()
         bk.nsheets = len(bk._sheet_list)
         if biff_version == 45 and bk.nsheets > 1:
-            fprintf(bk.logfile,
+            fprintf(
+                bk.logfile,
                 "*** WARNING: Excel 4.0 workbook (.XLW) file contains %d worksheets.\n"
                 "*** Book-level data will be that of the last worksheet.\n",
                 bk.nsheets
-                )
+            )
         if TOGGLE_GC:
             if orig_gc_enabled:
                 gc.enable()
@@ -227,10 +227,11 @@ class Name(BaseObject):
                         ref3d.colxlo == ref3d.colxhi - 1):
                     sh = self.book.sheet_by_index(ref3d.shtxlo)
                     return sh.cell(ref3d.rowxlo, ref3d.colxlo)
-        self.dump(self.book.logfile,
+        self.dump(
+            self.book.logfile,
             header="=== Dump of Name object ===",
             footer="======= End of dump =======",
-            )
+        )
         raise XLRDError("Not a constant absolute reference to a single cell")
 
     def area2d(self, clipped=True):
@@ -269,10 +270,11 @@ class Name(BaseObject):
                     assert 0 <= rowxlo <= rowxhi <= sh.nrows
                     assert 0 <= colxlo <= colxhi <= sh.ncols
                     return sh, rowxlo, rowxhi, colxlo, colxhi
-        self.dump(self.book.logfile,
+        self.dump(
+            self.book.logfile,
             header="=== Dump of Name object ===",
             footer="======= End of dump =======",
-            )
+        )
         raise XLRDError("Not a constant absolute reference to a single area in a single sheet")
 
 
@@ -586,12 +588,11 @@ class Book(BaseObject):
         self.filestr = b''
 
     def biff2_8_load(self, filename=None, file_contents=None,
-        logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
-        encoding_override=None,
-        formatting_info=False,
-        on_demand=False,
-        ragged_rows=False,
-        ):
+                     logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
+                     encoding_override=None,
+                     formatting_info=False,
+                     on_demand=False,
+                     ragged_rows=False):
         # DEBUG = 0
         self.logfile = logfile
         self.verbosity = verbosity
@@ -699,11 +700,12 @@ class Book(BaseObject):
         # It appears to work OK if the sheet version is ignored.
         # Confirmed by Daniel Rentz: happens when Excel does "save as"
         # creating an old version file; ignore version details on sheet BOF.
-        sh = sheet.Sheet(self,
-                self._position,
-                self._sheet_names[sh_number],
-                sh_number,
-                )
+        sh = sheet.Sheet(
+            self,
+            self._position,
+            self._sheet_names[sh_number],
+            sh_number,
+        )
         sh.read(self)
         self._sheet_list[sh_number] = sh
         return sh

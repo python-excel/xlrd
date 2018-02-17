@@ -575,10 +575,11 @@ class Sheet(BaseObject):
 
     def tidy_dimensions(self):
         if self.verbosity >= 3:
-            fprintf(self.logfile,
+            fprintf(
+                self.logfile,
                 "tidy_dimensions: nrows=%d ncols=%d \n",
                 self.nrows, self.ncols,
-                )
+            )
         if 1 and self.merged_cells:
             nr = nc = 0
             umaxrows = self.utter_max_rows
@@ -601,7 +602,8 @@ class Sheet(BaseObject):
                 self.put_cell(nr-1, 0, XL_CELL_EMPTY, UNICODE_LITERAL(''), -1)
         if (self.verbosity >= 1 and
                 (self.nrows != self._dimnrows or self.ncols != self._dimncols)):
-            fprintf(self.logfile,
+            fprintf(
+                self.logfile,
                 "NOTE *** sheet %d (%r): DIMENSIONS R,C = %d,%d should be %d,%d\n",
                 self.number,
                 self.name,
@@ -609,7 +611,7 @@ class Sheet(BaseObject):
                 self._dimncols,
                 self.nrows,
                 self.ncols,
-                )
+            )
         if not self.ragged_rows:
             # fix ragged rows
             ncols = self.ncols
@@ -1077,10 +1079,11 @@ class Sheet(BaseObject):
                 if bv in (21, 30, 40) and self.book.xf_list and not self.book._xf_epilogue_done:
                     self.book.xf_epilogue()
                 if blah:
-                    fprintf(self.logfile,
+                    fprintf(
+                        self.logfile,
                         "sheet %d(%r) DIMENSIONS: ncols=%d nrows=%d\n",
                         self.number, self.name, self._dimncols, self._dimnrows
-                        )
+                    )
             elif rc == XL_HLINK:
                 self.handle_hlink(data)
             elif rc == XL_QUICKTIP:
@@ -1146,25 +1149,27 @@ class Sheet(BaseObject):
                 num_CFs, needs_recalc, browx1, browx2, bcolx1, bcolx2 = \
                     unpack("<6H", data[0:12])
                 if self.verbosity >= 1:
-                    fprintf(self.logfile,
+                    fprintf(
+                        self.logfile,
                         "\n*** WARNING: Ignoring CONDFMT (conditional formatting) record\n"
                         "*** in Sheet %d (%r).\n"
                         "*** %d CF record(s); needs_recalc_or_redraw = %d\n"
                         "*** Bounding box is %s\n",
                         self.number, self.name, num_CFs, needs_recalc,
                         rangename2d(browx1, browx2+1, bcolx1, bcolx2+1),
-                        )
+                    )
                 olist = [] # updated by the function
                 pos = unpack_cell_range_address_list_update_pos(
                     olist, data, 12, bv, addr_size=8)
                 # print >> self.logfile, repr(result), len(result)
                 if self.verbosity >= 1:
-                    fprintf(self.logfile,
+                    fprintf(
+                        self.logfile,
                         "*** %d individual range(s):\n"
                         "*** %s\n",
                         len(olist),
                         ", ".join(rangename2d(*coords) for coords in olist),
-                        )
+                    )
             elif rc == XL_CF:
                 if not fmt_info: continue
                 cf_type, cmp_op, sz1, sz2, flags = unpack("<BBHHi", data[0:10])
@@ -1172,13 +1177,14 @@ class Sheet(BaseObject):
                 bord_block = (flags >> 28) & 1
                 patt_block = (flags >> 29) & 1
                 if self.verbosity >= 1:
-                    fprintf(self.logfile,
+                    fprintf(
+                        self.logfile,
                         "\n*** WARNING: Ignoring CF (conditional formatting) sub-record.\n"
                         "*** cf_type=%d, cmp_op=%d, sz1=%d, sz2=%d, flags=0x%08x\n"
                         "*** optional data blocks: font=%d, border=%d, pattern=%d\n",
                         cf_type, cmp_op, sz1, sz2, flags,
                         font_block, bord_block, patt_block,
-                        )
+                    )
                 # hex_char_dump(data, 0, data_len, fout=self.logfile)
                 pos = 12
                 if font_block:
@@ -1189,14 +1195,15 @@ class Sheet(BaseObject):
                     font_canc = (two_bits > 7) & 1
                     cancellation = (font_options > 7) & 1
                     if self.verbosity >= 1:
-                        fprintf(self.logfile,
+                        fprintf(
+                            self.logfile,
                             "*** Font info: height=%d, weight=%d, escapement=%d,\n"
                             "*** underline=%d, colour_index=%d, esc=%d, underl=%d,\n"
                             "*** style=%d, posture=%d, canc=%d, cancellation=%d\n",
                             font_height, weight, escapement, underline,
                             font_colour_index, font_esc, font_underl,
                             font_style, posture, font_canc, cancellation,
-                            )
+                        )
                     pos += 118
                 if bord_block:
                     pos += 8
@@ -1205,17 +1212,13 @@ class Sheet(BaseObject):
                 fmla1 = data[pos:pos+sz1]
                 pos += sz1
                 if blah and sz1:
-                    fprintf(self.logfile,
-                        "*** formula 1:\n",
-                        )
+                    fprintf(self.logfile, "*** formula 1:\n")
                     dump_formula(bk, fmla1, sz1, bv, reldelta=0, blah=1)
                 fmla2 = data[pos:pos+sz2]
                 pos += sz2
                 assert pos == data_len
                 if blah and sz2:
-                    fprintf(self.logfile,
-                        "*** formula 2:\n",
-                        )
+                    fprintf(self.logfile, "*** formula 2:\n")
                     dump_formula(bk, fmla2, sz2, bv, reldelta=0, blah=1)
             elif rc == XL_DEFAULTROWHEIGHT:
                 if data_len == 4:
@@ -1247,16 +1250,18 @@ class Sheet(BaseObject):
                     "MERGEDCELLS: pos=%d data_len=%d" % (pos, data_len)
             elif rc == XL_WINDOW2:
                 if bv >= 80 and data_len >= 14:
-                    (options,
-                    self.first_visible_rowx, self.first_visible_colx,
-                    self.gridline_colour_index,
-                    self.cached_page_break_preview_mag_factor,
-                    self.cached_normal_view_mag_factor
+                    (
+                        options,
+                        self.first_visible_rowx, self.first_visible_colx,
+                        self.gridline_colour_index,
+                        self.cached_page_break_preview_mag_factor,
+                        self.cached_normal_view_mag_factor
                     ) = unpack("<HHHHxxHH", data[:14])
                 else:
                     assert bv >= 30 # BIFF3-7
-                    (options,
-                    self.first_visible_rowx, self.first_visible_colx,
+                    (
+                        options,
+                        self.first_visible_rowx, self.first_visible_colx,
                     ) = unpack("<HHH", data[:6])
                     self.gridline_colour_rgb = unpack("<BBB", data[6:9])
                     self.gridline_colour_index = nearest_colour_index(
@@ -1466,8 +1471,9 @@ class Sheet(BaseObject):
                         "panes_are_frozen", "show_zero_values")
                     for attr, char in zip(attr_names, data[0:5]):
                         setattr(self, attr, int(char != b'\0'))
-                    (self.first_visible_rowx, self.first_visible_colx,
-                    self.automatic_grid_line_colour,
+                    (
+                        self.first_visible_rowx, self.first_visible_colx,
+                        self.automatic_grid_line_colour,
                     ) = unpack("<HHB", data[5:10])
                     self.gridline_colour_rgb = unpack("<BBB", data[10:13])
                     self.gridline_colour_index = nearest_colour_index(

@@ -30,15 +30,14 @@ except ImportError:
 USE_MMAP = MMAP_AVAILABLE
 
 def open_workbook(filename=None,
-    logfile=sys.stdout,
-    verbosity=0,
-    use_mmap=USE_MMAP,
-    file_contents=None,
-    encoding_override=None,
-    formatting_info=False,
-    on_demand=False,
-    ragged_rows=False,
-    ):
+                  logfile=sys.stdout,
+                  verbosity=0,
+                  use_mmap=USE_MMAP,
+                  file_contents=None,
+                  encoding_override=None,
+                  formatting_info=False,
+                  on_demand=False,
+                  ragged_rows=False):
     """
     Open a spreadsheet file for data extraction.
 

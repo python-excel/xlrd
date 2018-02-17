@@ -134,9 +134,8 @@ F_TAG = U_SSML12 + 'f' # cell child: formula
 IS_TAG = U_SSML12 + 'is' # cell child: inline string
 
 def unescape(s,
-    subber=re.compile(r'_x[0-9A-Fa-f]{4,4}_', re.UNICODE).sub,
-    repl=lambda mobj: unichr(int(mobj.group(0)[2:6], 16)),
-    ):
+             subber=re.compile(r'_x[0-9A-Fa-f]{4,4}_', re.UNICODE).sub,
+             repl=lambda mobj: unichr(int(mobj.group(0)[2:6], 16))):
     if "_" in s:
         return subber(repl, s)
     return s
