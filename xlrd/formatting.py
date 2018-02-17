@@ -717,9 +717,10 @@ def handle_xf(self, data):
         fill_in_standard_formats(self)
     if bv >= 80:
         unpack_fmt = '<HHHBBBBIiH'
-        (xf.font_index, xf.format_key, pkd_type_par,
-        pkd_align1, xf.alignment.rotation, pkd_align2,
-        pkd_used, pkd_brdbkg1, pkd_brdbkg2, pkd_brdbkg3,
+        (
+            xf.font_index, xf.format_key, pkd_type_par,
+            pkd_align1, xf.alignment.rotation, pkd_align2,
+            pkd_used, pkd_brdbkg1, pkd_brdbkg2, pkd_brdbkg3,
         ) = unpack(unpack_fmt, data[0:20])
         upkbits(xf.protection, pkd_type_par, (
             (0, 0x01, 'cell_locked'),
@@ -774,9 +775,10 @@ def handle_xf(self, data):
         ))
     elif bv >= 50:
         unpack_fmt = '<HHHBBIi'
-        (xf.font_index, xf.format_key, pkd_type_par,
-        pkd_align1, pkd_orient_used,
-        pkd_brdbkg1, pkd_brdbkg2,
+        (
+            xf.font_index, xf.format_key, pkd_type_par,
+            pkd_align1, pkd_orient_used,
+            pkd_brdbkg1, pkd_brdbkg2,
         ) = unpack(unpack_fmt, data[0:16])
         upkbits(xf.protection, pkd_type_par, (
             (0, 0x01, 'cell_locked'),
@@ -819,9 +821,10 @@ def handle_xf(self, data):
         ))
     elif bv >= 40:
         unpack_fmt = '<BBHBBHI'
-        (xf.font_index, xf.format_key, pkd_type_par,
-        pkd_align_orient, pkd_used,
-        pkd_bkg_34, pkd_brd_34,
+        (
+            xf.font_index, xf.format_key, pkd_type_par,
+            pkd_align_orient, pkd_used,
+            pkd_bkg_34, pkd_brd_34,
         ) = unpack(unpack_fmt, data[0:12])
         upkbits(xf.protection, pkd_type_par, (
             (0, 0x01, 'cell_locked'),
@@ -862,9 +865,10 @@ def handle_xf(self, data):
         ))
     elif bv == 30:
         unpack_fmt = '<BBBBHHI'
-        (xf.font_index, xf.format_key, pkd_type_prot,
-        pkd_used, pkd_align_par,
-        pkd_bkg_34, pkd_brd_34,
+        (
+            xf.font_index, xf.format_key, pkd_type_prot,
+            pkd_used, pkd_align_par,
+            pkd_bkg_34, pkd_brd_34,
         ) = unpack(unpack_fmt, data[0:12])
         upkbits(xf.protection, pkd_type_prot, (
             (0, 0x01, 'cell_locked'),
