@@ -4,6 +4,7 @@
 import pprint
 import sys
 import zipfile
+import os
 
 from . import timemachine
 from .biffh import (
@@ -106,6 +107,7 @@ def open_workbook(filename=None,
     if file_contents:
         peek = file_contents[:peeksz]
     else:
+        filename = os.path.expanduser(filename)
         with open(filename, "rb") as f:
             peek = f.read(peeksz)
     if peek == b"PK\x03\x04": # a ZIP file
