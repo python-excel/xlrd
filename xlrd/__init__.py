@@ -1,6 +1,7 @@
 # Copyright (c) 2005-2012 Stephen John Machin, Lingfo Pty Ltd
 # This module is part of the xlrd package, which is released under a
 # BSD-style licence.
+import os
 import pprint
 import sys
 import zipfile
@@ -106,6 +107,7 @@ def open_workbook(filename=None,
     if file_contents:
         peek = file_contents[:peeksz]
     else:
+        filename = os.path.expanduser(filename)
         with open(filename, "rb") as f:
             peek = f.read(peeksz)
     if peek == b"PK\x03\x04": # a ZIP file

@@ -1,4 +1,6 @@
 import os
+import shutil
+import tempfile
 from unittest import TestCase
 
 from xlrd import open_workbook
@@ -14,6 +16,12 @@ class TestOpen(TestCase):
         open_workbook(
             from_this_dir(os.path.join('..','examples','namesdemo.xls')),
         )
+
+    def test_tilde_path_expansion(self):
+        with tempfile.NamedTemporaryFile(suffix='.xlsx', dir=os.path.expanduser('~')) as fp:
+            shutil.copyfile(from_this_dir('text_bar.xlsx'), fp.name)
+            # For now, we just check this doesn't raise an error.
+            open_workbook(os.path.join('~', os.path.basename(fp.name)))
 
     def test_ragged_rows_tidied_with_formatting(self):
         # For now, we just check this doesn't raise an error.
