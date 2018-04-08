@@ -1,10 +1,10 @@
 # Copyright (c) 2005-2012 Stephen John Machin, Lingfo Pty Ltd
 # This module is part of the xlrd package, which is released under a
 # BSD-style licence.
+import os
 import pprint
 import sys
 import zipfile
-import os
 
 from . import timemachine
 from .biffh import (
