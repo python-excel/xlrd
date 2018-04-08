@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from xlrd import open_workbook
 
-from .base import from_this_dir
+from .base import from_home_dir, from_this_dir
 
 
 class TestOpen(TestCase):
@@ -14,6 +14,10 @@ class TestOpen(TestCase):
         open_workbook(
             from_this_dir(os.path.join('..','examples','namesdemo.xls')),
         )
+
+    def test_tilde_path_expansion(self):
+        # For now, we just check this doesn't raise an error.
+        from_home_dir('text_bar.xlsx', lambda file_path: open_workbook(file_path))
 
     def test_ragged_rows_tidied_with_formatting(self):
         # For now, we just check this doesn't raise an error.
