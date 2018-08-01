@@ -28,7 +28,7 @@ if python_version >= (3, 0):
     EXCEL_TEXT_TYPES = (str, bytes, bytearray) # xlwt: isinstance(obj, EXCEL_TEXT_TYPES)
     REPR = ascii
     xrange = range
-    unicode = lambda b, enc: b.decode(enc)
+    unicode = lambda b, enc, errors='strict': b.decode(enc, errors=errors)
     ensure_unicode = lambda s: s
     unichr = chr
 else:
