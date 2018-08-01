@@ -281,7 +281,7 @@ def unpack_unicode(data, pos, lenlen=2):
         # Uncompressed UTF-16-LE
         rawstrg = data[pos:pos+2*nchars]
         # if DEBUG: print "nchars=%d pos=%d rawstrg=%r" % (nchars, pos, rawstrg)
-        strg = unicode(rawstrg, 'utf_16_le')
+        strg = unicode(rawstrg, 'utf_16_le', 'replace')
         # pos += 2*nchars
     else:
         # Note: this is COMPRESSED (not ASCII!) encoding!!!
@@ -321,7 +321,7 @@ def unpack_unicode_update_pos(data, pos, lenlen=2, known_len=None):
         pos += 4
     if options & 0x01:
         # Uncompressed UTF-16-LE
-        strg = unicode(data[pos:pos+2*nchars], 'utf_16_le')
+        strg = unicode(data[pos:pos+2*nchars], 'utf_16_le', 'replace')
         pos += 2*nchars
     else:
         # Note: this is COMPRESSED (not ASCII!) encoding!!!
