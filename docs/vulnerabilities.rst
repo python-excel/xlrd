@@ -37,7 +37,7 @@ to those later in the list:
 To guard against these problems, you should consider the `defusedxml`__
 project which can be used as follows:
 
-__ https://pypi.python.org/pypi/defusedxml/
+__ https://pypi.org/project/defusedxml/
 
 .. code-block:: python
 
