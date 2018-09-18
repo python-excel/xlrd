@@ -6,12 +6,17 @@ from __future__ import print_function
 
 import gc
 import sys
-import time
 
 from . import compdoc, formatting, sheet
 from .biffh import *
 from .formula import *
 from .timemachine import *
+
+try:
+    from time import perf_counter
+except ImportError:
+    # Python 2.7
+    from time import clock as perf_counter
 
 import struct; unpack = struct.unpack
 
@@ -67,7 +72,7 @@ def open_workbook_xls(filename=None,
                       file_contents=None,
                       encoding_override=None,
                       formatting_info=False, on_demand=False, ragged_rows=False):
-    t0 = time.clock()
+    t0 = perf_counter()
     if TOGGLE_GC:
         orig_gc_enabled = gc.isenabled()
         if orig_gc_enabled:
@@ -82,7 +87,7 @@ def open_workbook_xls(filename=None,
             on_demand=on_demand,
             ragged_rows=ragged_rows,
         )
-        t1 = time.clock()
+        t1 = perf_counter()
         bk.load_time_stage_1 = t1 - t0
         biff_version = bk.getbof(XL_WORKBOOK_GLOBALS)
         if not biff_version:
@@ -124,7 +129,7 @@ def open_workbook_xls(filename=None,
         if TOGGLE_GC:
             if orig_gc_enabled:
                 gc.enable()
-        t2 = time.clock()
+        t2 = perf_counter()
         bk.load_time_stage_2 = t2 - t1
     except:
         bk.release_resources()
