@@ -6,7 +6,7 @@
 from __future__ import print_function, unicode_literals
 
 import re
-import sys
+import warnings
 from os.path import join, normpath
 
 from .biffh import (
@@ -799,6 +799,8 @@ def open_workbook_2007_xml(zf,
     bk.use_mmap = False #### Not supported initially
     bk.on_demand = on_demand
     if on_demand:
+        warnings.warn("on_demand not yet implemented; falling back to False",
+                      RuntimeWarning)
         if verbosity:
             print("WARNING *** on_demand=True not yet implemented; falling back to False", file=bk.logfile)
         bk.on_demand = False

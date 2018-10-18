@@ -5,7 +5,7 @@
 from __future__ import print_function
 
 import gc
-import sys
+import warnings
 
 from . import compdoc, formatting, sheet
 from .biffh import *
@@ -77,16 +77,17 @@ def open_workbook_xls(filename=None,
         orig_gc_enabled = gc.isenabled()
         if orig_gc_enabled:
             gc.disable()
-    bk = Book()
+
+    bk = Book.biff2_8_load(
+        filename=filename, file_contents=file_contents,
+        logfile=logfile, verbosity=verbosity, use_mmap=use_mmap,
+        encoding_override=encoding_override,
+        formatting_info=formatting_info,
+        on_demand=on_demand,
+        ragged_rows=ragged_rows,
+    )
+
     try:
-        bk.biff2_8_load(
-            filename=filename, file_contents=file_contents,
-            logfile=logfile, verbosity=verbosity, use_mmap=use_mmap,
-            encoding_override=encoding_override,
-            formatting_info=formatting_info,
-            on_demand=on_demand,
-            ragged_rows=ragged_rows,
-        )
         t1 = perf_counter()
         bk.load_time_stage_1 = t1 - t0
         biff_version = bk.getbof(XL_WORKBOOK_GLOBALS)
@@ -101,6 +102,9 @@ def open_workbook_xls(filename=None,
         if biff_version <= 40:
             # no workbook globals, only 1 worksheet
             if on_demand:
+                warnings.warn("On_demand is not supported for this Excel"
+                              "version ({}). Turning off".format(biff_version),
+                              RuntimeWarning)
                 fprintf(bk.logfile,
                     "*** WARNING: on_demand is not supported for this Excel version.\n"
                     "*** Setting on_demand to False.\n")
@@ -110,12 +114,15 @@ def open_workbook_xls(filename=None,
             # worksheet(s) embedded in global stream
             bk.parse_globals()
             if on_demand:
+                warnings.warn("On_demand is not supported for this Excel"
+                              "version ({}). Turning off".format(biff_version),
+                              RuntimeWarning)
                 fprintf(bk.logfile, "*** WARNING: on_demand is not supported for this Excel version.\n"
                                     "*** Setting on_demand to False.\n")
                 bk.on_demand = on_demand = False
         else:
             bk.parse_globals()
-            bk._sheet_list = [None for sh in bk._sheet_names]
+            bk._sheet_list = [None for _ in bk._sheet_names]
             if not on_demand:
                 bk.get_sheets()
         bk.nsheets = len(bk._sheet_list)
@@ -131,9 +138,11 @@ def open_workbook_xls(filename=None,
                 gc.enable()
         t2 = perf_counter()
         bk.load_time_stage_2 = t2 - t1
+
     except:
         bk.release_resources()
         raise
+
     # normal exit
     if not on_demand:
         bk.release_resources()
@@ -592,20 +601,22 @@ class Book(BaseObject):
         self.mem = b''
         self.filestr = b''
 
-    def biff2_8_load(self, filename=None, file_contents=None,
+    @classmethod
+    def biff2_8_load(cls, filename=None, file_contents=None,
                      logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
                      encoding_override=None,
                      formatting_info=False,
                      on_demand=False,
                      ragged_rows=False):
         # DEBUG = 0
-        self.logfile = logfile
-        self.verbosity = verbosity
-        self.use_mmap = use_mmap and MMAP_AVAILABLE
-        self.encoding_override = encoding_override
-        self.formatting_info = formatting_info
-        self.on_demand = on_demand
-        self.ragged_rows = ragged_rows
+        bk = cls()
+        bk.logfile = logfile
+        bk.verbosity = verbosity
+        bk.use_mmap = use_mmap and MMAP_AVAILABLE
+        bk.encoding_override = encoding_override
+        bk.formatting_info = formatting_info
+        bk.on_demand = on_demand
+        bk.ragged_rows = ragged_rows
 
         if not file_contents:
             with open(filename, "rb") as f:
@@ -614,44 +625,45 @@ class Book(BaseObject):
                 f.seek(0, 0) # BOF
                 if size == 0:
                     raise XLRDError("File size is 0 bytes")
-                if self.use_mmap:
-                    self.filestr = mmap.mmap(f.fileno(), size, access=mmap.ACCESS_READ)
-                    self.stream_len = size
+                if bk.use_mmap:
+                    bk.filestr = mmap.mmap(f.fileno(), size, access=mmap.ACCESS_READ)
+                    bk.stream_len = size
                 else:
-                    self.filestr = f.read()
-                    self.stream_len = len(self.filestr)
+                    bk.filestr = f.read()
+                    bk.stream_len = len(bk.filestr)
         else:
-            self.filestr = file_contents
-            self.stream_len = len(file_contents)
+            bk.filestr = file_contents
+            bk.stream_len = len(file_contents)
 
-        self.base = 0
-        if self.filestr[:8] != compdoc.SIGNATURE:
+        bk.base = 0
+        if bk.filestr[:8] != compdoc.SIGNATURE:
             # got this one at the antique store
-            self.mem = self.filestr
+            bk.mem = bk.filestr
         else:
-            cd = compdoc.CompDoc(self.filestr, logfile=self.logfile)
+            cd = compdoc.CompDoc(bk.filestr, logfile=bk.logfile)
             if USE_FANCY_CD:
                 for qname in ['Workbook', 'Book']:
-                    self.mem, self.base, self.stream_len = \
+                    bk.mem, bk.base, bk.stream_len = \
                                 cd.locate_named_stream(UNICODE_LITERAL(qname))
-                    if self.mem: break
+                    if bk.mem: break
                 else:
                     raise XLRDError("Can't find workbook in OLE2 compound document")
             else:
                 for qname in ['Workbook', 'Book']:
-                    self.mem = cd.get_named_stream(UNICODE_LITERAL(qname))
-                    if self.mem: break
+                    bk.mem = cd.get_named_stream(UNICODE_LITERAL(qname))
+                    if bk.mem: break
                 else:
                     raise XLRDError("Can't find workbook in OLE2 compound document")
-                self.stream_len = len(self.mem)
+                bk.stream_len = len(bk.mem)
             del cd
-            if self.mem is not self.filestr:
-                if hasattr(self.filestr, "close"):
-                    self.filestr.close()
-                self.filestr = b''
-        self._position = self.base
+            if bk.mem is not bk.filestr:
+                if hasattr(bk.filestr, "close"):
+                    bk.filestr.close()
+                bk.filestr = b''
+        bk._position = bk.base
         if DEBUG:
-            print("mem: %s, base: %d, len: %d" % (type(self.mem), self.base, self.stream_len), file=self.logfile)
+            print("mem: %s, base: %d, len: %d" % (type(bk.mem), bk.base, bk.stream_len), file=bk.logfile)
+        return bk
 
     def initialise_format_info(self):
         # needs to be done once per sheet for BIFF 4W :-(
@@ -1159,7 +1171,7 @@ class Book(BaseObject):
         # DEBUG = 1
         if DEBUG:
             print("SST Processing", file=self.logfile)
-            t0 = time.time()
+            t0 = perf_counter()
         nbt = len(data)
         strlist = [data]
         uniquestrings = unpack('<i', data[4:8])[0]
@@ -1177,7 +1189,7 @@ class Book(BaseObject):
         if self.formatting_info:
             self._rich_text_runlist_map = rt_runlist
         if DEBUG:
-            t1 = time.time()
+            t1 = perf_counter()
             print("SST processing took %.2f seconds" % (t1 - t0, ), file=self.logfile)
 
     def handle_writeaccess(self, data):

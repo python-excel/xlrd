@@ -168,8 +168,7 @@ def dump(filename, outfile=sys.stdout, unnumbered=False):
     :param unnumbered: If true, omit offsets (for meaningful diffs).
     """
     from .biffh import biff_dump
-    bk = Book()
-    bk.biff2_8_load(filename=filename, logfile=outfile, )
+    bk = Book.biff2_8_load(filename=filename, logfile=outfile, )
     biff_dump(bk.mem, bk.base, bk.stream_len, 0, outfile, unnumbered)
 
 
@@ -182,6 +181,5 @@ def count_records(filename, outfile=sys.stdout):
     :param outfile: An open file, to which the summary is written.
     """
     from .biffh import biff_count_records
-    bk = Book()
-    bk.biff2_8_load(filename=filename, logfile=outfile, )
+    bk = Book.biff2_8_load(filename=filename, logfile=outfile, )
     biff_count_records(bk.mem, bk.base, bk.stream_len, outfile)
