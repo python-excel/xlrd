@@ -465,6 +465,14 @@ class Book(BaseObject):
         """
         return self._sheet_list[sheetx] or self.get_sheet(sheetx)
 
+    def __iter__(self):
+        """
+        Makes iteration through sheets of a book a little more straightforward.
+        Don't free resources after use since it can be called like `list(book)`
+        """
+        for i in range(self.nsheets):
+            yield self.sheet_by_index(i)
+
     def sheet_by_name(self, sheet_name):
         """
         :param sheet_name: Name of the sheet required.
@@ -475,6 +483,17 @@ class Book(BaseObject):
         except ValueError:
             raise XLRDError('No sheet named <%r>' % sheet_name)
         return self.sheet_by_index(sheetx)
+
+    def __getitem__(self, item):
+        """
+        Allow indexing with sheet name or index.
+        :param item: Name or index of sheet enquired upon
+        :return: :class:`~xlrd.sheet.Sheet`.
+        """
+        if isinstance(item, int):
+            return self.sheet_by_index(item)
+        else:
+            return self.sheet_by_name(item)
 
     def sheet_names(self):
         """

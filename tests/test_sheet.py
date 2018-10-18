@@ -91,11 +91,37 @@ class TestSheet(TestCase):
         row = sheet.row(0)
         self.assertEqual(len(row), NCOLS)
 
+    def test_getitem_int(self):
+        sheet = self.book.sheet_by_index(SHEETINDEX)
+        row = sheet[0]
+        self.assertEqual(len(row), NCOLS)
+
+    def test_getitem_tuple(self):
+        sheet = self.book.sheet_by_index(SHEETINDEX)
+        self.assertNotEqual(xlrd.empty_cell, sheet[0, 0])
+        self.assertNotEqual(xlrd.empty_cell, sheet[NROWS-1, NCOLS-1])
+
+    def test_getitem_failure(self):
+        sheet = self.book.sheet_by_index(SHEETINDEX)
+        with self.assertRaises(ValueError):
+            sheet[0, 0, 0]
+
+        with self.assertRaises(TypeError):
+            sheet["hi"]
+
     def test_get_rows(self):
         sheet = self.book.sheet_by_index(SHEETINDEX)
         rows = sheet.get_rows()
         self.assertTrue(isinstance(rows, types.GeneratorType), True)
         self.assertEqual(len(list(rows)), sheet.nrows)
+
+    def test_iter(self):
+        sheet = self.book.sheet_by_index(SHEETINDEX)
+        rows = []
+        # check syntax
+        for row in sheet:
+            rows.append(row)
+        self.assertEqual(len(rows), sheet.nrows)
 
     def test_col_slice(self):
         sheet = self.book.sheet_by_index(SHEETINDEX)
