@@ -1159,7 +1159,7 @@ class Book(BaseObject):
         # DEBUG = 1
         if DEBUG:
             print("SST Processing", file=self.logfile)
-            t0 = time.time()
+            t0 = perf_counter()
         nbt = len(data)
         strlist = [data]
         uniquestrings = unpack('<i', data[4:8])[0]
@@ -1177,7 +1177,7 @@ class Book(BaseObject):
         if self.formatting_info:
             self._rich_text_runlist_map = rt_runlist
         if DEBUG:
-            t1 = time.time()
+            t1 = perf_counter()
             print("SST processing took %.2f seconds" % (t1 - t0, ), file=self.logfile)
 
     def handle_writeaccess(self, data):
