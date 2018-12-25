@@ -31,9 +31,6 @@ xfc             Print "XF counts" and cell-type counts -- see code for details
 
 options = None
 if __name__ == "__main__":
-
-    PSYCO = 0
-
     import xlrd
     import sys
     import time
@@ -232,7 +229,7 @@ if __name__ == "__main__":
 
     def main(cmd_args):
         import optparse
-        global options, PSYCO
+        global options
         usage = "\n%prog [options] command [input-file-patterns]\n" + cmd_doc
         oparser = optparse.OptionParser(usage)
         oparser.add_option(
@@ -321,10 +318,6 @@ if __name__ == "__main__":
                     n_unreachable = gc.collect()
                     if n_unreachable:
                         print("GC before open:", n_unreachable, "unreachable objects")
-                if PSYCO:
-                    import psyco
-                    psyco.full()
-                    PSYCO = 0
                 try:
                     t0 = time.time()
                     bk = xlrd.open_workbook(
@@ -413,8 +406,5 @@ if __name__ == "__main__":
         import pstats
         p = pstats.Stats('YYYY.prof')
         p.strip_dirs().sort_stats('cumulative').print_stats(30)
-    elif firstarg == "psyco":
-        PSYCO = 1
-        main(av[1:])
     else:
         main(av)
