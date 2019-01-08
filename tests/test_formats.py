@@ -1,11 +1,12 @@
- # -*- coding: utf-8 -*-
- # Portions Copyright (C) 2010, Manfred Moitzi under a BSD licence
+# -*- coding: utf-8 -*-
+# Portions Copyright (C) 2010, Manfred Moitzi under a BSD licence
 
-from unittest import TestCase
 import sys
-import os
+from unittest import TestCase
 
 import xlrd
+
+from .base import from_this_dir
 
 if sys.version_info[0] >= 3:
     def u(s): return s
@@ -13,7 +14,6 @@ else:
     def u(s):
         return s.decode('utf-8')
 
-from .base import from_this_dir
 
 class TestCellContent(TestCase):
 

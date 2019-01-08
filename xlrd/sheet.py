@@ -1,4 +1,4 @@
-# -*- coding: cp1252 -*-
+# -*- coding: utf-8 -*-
 # Copyright (c) 2005-2013 Stephen John Machin, Lingfo Pty Ltd
 # This module is part of the xlrd package, which is released under a
 # BSD-style licence.
@@ -6,11 +6,15 @@
 from __future__ import print_function
 
 from array import array
-from struct import unpack, calcsize
+from struct import calcsize, unpack
+
 from .biffh import *
+from .formatting import Format, nearest_colour_index
+from .formula import (
+    FMLA_TYPE_CELL, FMLA_TYPE_SHARED, decompile_formula, dump_formula,
+    rangename2d,
+)
 from .timemachine import *
-from .formula import dump_formula, decompile_formula, rangename2d, FMLA_TYPE_CELL, FMLA_TYPE_SHARED
-from .formatting import nearest_colour_index, Format
 
 DEBUG = 0
 OBJ_MSO_DEBUG = 0
@@ -39,7 +43,7 @@ _WINDOW2_options = (
     # The real thing is the visibility attribute from the BOUNDSHEET record.
     ("sheet_visible", 0),
     ("show_in_page_break_preview", 0),
-    )
+)
 
 
 
@@ -408,7 +412,7 @@ class Sheet(BaseObject):
             self._cell_types[rowx][colx],
             self._cell_values[rowx][colx],
             xfx,
-            )
+        )
 
     def cell_value(self, rowx, colx):
         "Value of the cell in the given row and column."
@@ -470,7 +474,7 @@ class Sheet(BaseObject):
         return [
             self.cell(rowx, colx)
             for colx in xrange(len(self._cell_values[rowx]))
-            ]
+        ]
 
     def get_rows(self):
         "Returns a generator for iterating through each row."
@@ -508,7 +512,7 @@ class Sheet(BaseObject):
         return [
             self.cell(rowx, colx)
             for colx in xrange(start_colx, end_colx)
-            ]
+        ]
 
     def col_slice(self, colx, start_rowx=0, end_rowx=None):
         """
@@ -526,7 +530,7 @@ class Sheet(BaseObject):
         return [
             self.cell(rowx, colx)
             for rowx in xrange(start_rowx, end_rowx)
-            ]
+        ]
 
     def col_values(self, colx, start_rowx=0, end_rowx=None):
         """
@@ -544,7 +548,7 @@ class Sheet(BaseObject):
         return [
             self._cell_values[rowx][colx]
             for rowx in xrange(start_rowx, end_rowx)
-            ]
+        ]
 
     def col_types(self, colx, start_rowx=0, end_rowx=None):
         """
@@ -562,7 +566,7 @@ class Sheet(BaseObject):
         return [
             self._cell_types[rowx][colx]
             for rowx in xrange(start_rowx, end_rowx)
-            ]
+        ]
 
     col = col_slice
 
@@ -571,18 +575,18 @@ class Sheet(BaseObject):
 
     def tidy_dimensions(self):
         if self.verbosity >= 3:
-            fprintf(self.logfile,
+            fprintf(
+                self.logfile,
                 "tidy_dimensions: nrows=%d ncols=%d \n",
                 self.nrows, self.ncols,
-                )
+            )
         if 1 and self.merged_cells:
             nr = nc = 0
             umaxrows = self.utter_max_rows
             umaxcols = self.utter_max_cols
             for crange in self.merged_cells:
                 rlo, rhi, clo, chi = crange
-                if not (0 <= rlo < rhi <= umaxrows) \
-                or not (0 <= clo < chi <= umaxcols):
+                if not (0 <= rlo < rhi <= umaxrows) or not (0 <= clo < chi <= umaxcols):
                     fprintf(self.logfile,
                         "*** WARNING: sheet #%d (%r), MERGEDCELLS bad range %r\n",
                         self.number, self.name, crange)
@@ -596,9 +600,10 @@ class Sheet(BaseObject):
                 # we have the right number of rows. The ragged rows
                 # will sort out the rest if needed.
                 self.put_cell(nr-1, 0, XL_CELL_EMPTY, UNICODE_LITERAL(''), -1)
-        if self.verbosity >= 1 \
-        and (self.nrows != self._dimnrows or self.ncols != self._dimncols):
-            fprintf(self.logfile,
+        if (self.verbosity >= 1 and
+                (self.nrows != self._dimnrows or self.ncols != self._dimncols)):
+            fprintf(
+                self.logfile,
                 "NOTE *** sheet %d (%r): DIMENSIONS R,C = %d,%d should be %d,%d\n",
                 self.number,
                 self.name,
@@ -606,7 +611,7 @@ class Sheet(BaseObject):
                 self._dimncols,
                 self.nrows,
                 self.ncols,
-                )
+            )
         if not self.ragged_rows:
             # fix ragged rows
             ncols = self.ncols
@@ -757,8 +762,8 @@ class Sheet(BaseObject):
                 print("put_cell", rowx, colx, file=self.logfile)
                 raise
         except:
-           print("put_cell", rowx, colx, file=self.logfile)
-           raise
+            print("put_cell", rowx, colx, file=self.logfile)
+            raise
 
 
     # === Methods after this line neither know nor care about how cells are stored.
@@ -775,7 +780,7 @@ class Sheet(BaseObject):
         XL_SHRFMLA_ETC_ETC = (
             XL_SHRFMLA, XL_ARRAY, XL_TABLEOP, XL_TABLEOP2,
             XL_ARRAY2, XL_TABLEOP_B2,
-            )
+        )
         self_put_cell = self.put_cell
         local_unpack = unpack
         bk_get_record_parts = bk.get_record_parts
@@ -908,17 +913,11 @@ class Sheet(BaseObject):
                 # if DEBUG: print "FORMULA: rc: 0x%04x data: %r" % (rc, data)
                 if bv >= 50:
                     rowx, colx, xf_index, result_str, flags = local_unpack('<HHH8sH', data[0:16])
-                    lenlen = 2
-                    tkarr_offset = 20
                 elif bv >= 30:
                     rowx, colx, xf_index, result_str, flags = local_unpack('<HHH8sH', data[0:16])
-                    lenlen = 2
-                    tkarr_offset = 16
                 else: # BIFF2
                     rowx, colx, cell_attr,  result_str, flags = local_unpack('<HH3s8sB', data[0:16])
                     xf_index =  self.fixed_BIFF2_xfindex(cell_attr, rowx, colx)
-                    lenlen = 1
-                    tkarr_offset = 16
                 if blah_formulas: # testing formula dumper
                     #### XXXX FIXME
                     fprintf(self.logfile, "FORMULA: rowx=%d colx=%d\n", rowx, colx)
@@ -1010,7 +1009,7 @@ class Sheet(BaseObject):
                     # Maybe it's "locked" by analogy with XFProtection data.
                     ( 8, 0x0700, 'outline_level'),
                     (12, 0x1000, 'collapsed'),
-                    ))
+                ))
                 for colx in xrange(first_colx, last_colx+1):
                     if colx > 255: break # Excel does 0 to 256 inclusive
                     self.colinfo_map[colx] = c
@@ -1023,7 +1022,7 @@ class Sheet(BaseObject):
                         self.logfile,
                         "COLINFO sheet #%d cols %d-%d: wid=%d xf_index=%d flags=0x%04x\n",
                         self.number, first_colx, last_colx, c.width, c.xf_index, flags,
-                        )
+                    )
                     c.dump(self.logfile, header='===')
             elif rc == XL_DEFCOLWIDTH:
                 self.defcolwidth, = local_unpack("<H", data[:2])
@@ -1080,10 +1079,11 @@ class Sheet(BaseObject):
                 if bv in (21, 30, 40) and self.book.xf_list and not self.book._xf_epilogue_done:
                     self.book.xf_epilogue()
                 if blah:
-                    fprintf(self.logfile,
+                    fprintf(
+                        self.logfile,
                         "sheet %d(%r) DIMENSIONS: ncols=%d nrows=%d\n",
                         self.number, self.name, self._dimncols, self._dimnrows
-                        )
+                    )
             elif rc == XL_HLINK:
                 self.handle_hlink(data)
             elif rc == XL_QUICKTIP:
@@ -1124,11 +1124,11 @@ class Sheet(BaseObject):
             elif rc == XL_LABELRANGES:
                 pos = 0
                 pos = unpack_cell_range_address_list_update_pos(
-                        self.row_label_ranges, data, pos, bv, addr_size=8,
-                        )
+                    self.row_label_ranges, data, pos, bv, addr_size=8,
+                )
                 pos = unpack_cell_range_address_list_update_pos(
-                        self.col_label_ranges, data, pos, bv, addr_size=8,
-                        )
+                    self.col_label_ranges, data, pos, bv, addr_size=8,
+                )
                 assert pos == data_len
             elif rc == XL_ARRAY:
                 row1x, rownx, col1x, colnx, array_flags, tokslen = \
@@ -1149,25 +1149,27 @@ class Sheet(BaseObject):
                 num_CFs, needs_recalc, browx1, browx2, bcolx1, bcolx2 = \
                     unpack("<6H", data[0:12])
                 if self.verbosity >= 1:
-                    fprintf(self.logfile,
+                    fprintf(
+                        self.logfile,
                         "\n*** WARNING: Ignoring CONDFMT (conditional formatting) record\n"
                         "*** in Sheet %d (%r).\n"
                         "*** %d CF record(s); needs_recalc_or_redraw = %d\n"
                         "*** Bounding box is %s\n",
                         self.number, self.name, num_CFs, needs_recalc,
                         rangename2d(browx1, browx2+1, bcolx1, bcolx2+1),
-                        )
+                    )
                 olist = [] # updated by the function
                 pos = unpack_cell_range_address_list_update_pos(
                     olist, data, 12, bv, addr_size=8)
                 # print >> self.logfile, repr(result), len(result)
                 if self.verbosity >= 1:
-                    fprintf(self.logfile,
+                    fprintf(
+                        self.logfile,
                         "*** %d individual range(s):\n"
                         "*** %s\n",
                         len(olist),
                         ", ".join(rangename2d(*coords) for coords in olist),
-                        )
+                    )
             elif rc == XL_CF:
                 if not fmt_info: continue
                 cf_type, cmp_op, sz1, sz2, flags = unpack("<BBHHi", data[0:10])
@@ -1175,32 +1177,33 @@ class Sheet(BaseObject):
                 bord_block = (flags >> 28) & 1
                 patt_block = (flags >> 29) & 1
                 if self.verbosity >= 1:
-                    fprintf(self.logfile,
+                    fprintf(
+                        self.logfile,
                         "\n*** WARNING: Ignoring CF (conditional formatting) sub-record.\n"
                         "*** cf_type=%d, cmp_op=%d, sz1=%d, sz2=%d, flags=0x%08x\n"
                         "*** optional data blocks: font=%d, border=%d, pattern=%d\n",
                         cf_type, cmp_op, sz1, sz2, flags,
                         font_block, bord_block, patt_block,
-                        )
+                    )
                 # hex_char_dump(data, 0, data_len, fout=self.logfile)
                 pos = 12
                 if font_block:
                     (font_height, font_options, weight, escapement, underline,
-                    font_colour_index, two_bits, font_esc, font_underl) = \
-                    unpack("<64x i i H H B 3x i 4x i i i 18x", data[pos:pos+118])
+                     font_colour_index, two_bits, font_esc, font_underl) = unpack("<64x i i H H B 3x i 4x i i i 18x", data[pos:pos+118])
                     font_style = (two_bits > 1) & 1
                     posture = (font_options > 1) & 1
                     font_canc = (two_bits > 7) & 1
                     cancellation = (font_options > 7) & 1
                     if self.verbosity >= 1:
-                        fprintf(self.logfile,
+                        fprintf(
+                            self.logfile,
                             "*** Font info: height=%d, weight=%d, escapement=%d,\n"
                             "*** underline=%d, colour_index=%d, esc=%d, underl=%d,\n"
                             "*** style=%d, posture=%d, canc=%d, cancellation=%d\n",
                             font_height, weight, escapement, underline,
                             font_colour_index, font_esc, font_underl,
                             font_style, posture, font_canc, cancellation,
-                            )
+                        )
                     pos += 118
                 if bord_block:
                     pos += 8
@@ -1209,17 +1212,13 @@ class Sheet(BaseObject):
                 fmla1 = data[pos:pos+sz1]
                 pos += sz1
                 if blah and sz1:
-                    fprintf(self.logfile,
-                        "*** formula 1:\n",
-                        )
+                    fprintf(self.logfile, "*** formula 1:\n")
                     dump_formula(bk, fmla1, sz1, bv, reldelta=0, blah=1)
                 fmla2 = data[pos:pos+sz2]
                 pos += sz2
                 assert pos == data_len
                 if blah and sz2:
-                    fprintf(self.logfile,
-                        "*** formula 2:\n",
-                        )
+                    fprintf(self.logfile, "*** formula 2:\n")
                     dump_formula(bk, fmla2, sz2, bv, reldelta=0, blah=1)
             elif rc == XL_DEFAULTROWHEIGHT:
                 if data_len == 4:
@@ -1251,16 +1250,18 @@ class Sheet(BaseObject):
                     "MERGEDCELLS: pos=%d data_len=%d" % (pos, data_len)
             elif rc == XL_WINDOW2:
                 if bv >= 80 and data_len >= 14:
-                    (options,
-                    self.first_visible_rowx, self.first_visible_colx,
-                    self.gridline_colour_index,
-                    self.cached_page_break_preview_mag_factor,
-                    self.cached_normal_view_mag_factor
+                    (
+                        options,
+                        self.first_visible_rowx, self.first_visible_colx,
+                        self.gridline_colour_index,
+                        self.cached_page_break_preview_mag_factor,
+                        self.cached_normal_view_mag_factor
                     ) = unpack("<HHHHxxHH", data[:14])
                 else:
                     assert bv >= 30 # BIFF3-7
-                    (options,
-                    self.first_visible_rowx, self.first_visible_colx,
+                    (
+                        options,
+                        self.first_visible_rowx, self.first_visible_colx,
                     ) = unpack("<HHH", data[:6])
                     self.gridline_colour_rgb = unpack("<BBB", data[6:9])
                     self.gridline_colour_index = nearest_colour_index(
@@ -1289,19 +1290,20 @@ class Sheet(BaseObject):
                     result = (num * 100) // den
                 if not(10 <= result <= 400):
                     if DEBUG or self.verbosity >= 0:
-                        print((
+                        print(
                             "WARNING *** SCL rcd sheet %d: should have 0.1 <= num/den <= 4; got %d/%d"
-                            % (self.number, num, den)
-                            ), file=self.logfile)
+                            % (self.number, num, den),
+                            file=self.logfile,
+                        )
                     result = 100
                 self.scl_mag_factor = result
             elif rc == XL_PANE:
                 (
-                self.vert_split_pos,
-                self.horz_split_pos,
-                self.horz_split_first_visible,
-                self.vert_split_first_visible,
-                self.split_active_pane,
+                    self.vert_split_pos,
+                    self.horz_split_pos,
+                    self.horz_split_first_visible,
+                    self.vert_split_first_visible,
+                    self.split_active_pane,
                 ) = unpack("<HHHHB", data[:9])
                 self.has_pane_record = 1
             elif rc == XL_HORIZONTALPAGEBREAKS:
@@ -1389,8 +1391,8 @@ class Sheet(BaseObject):
                         xf_index = -1
                     elif data_len == 18:
                         # Seems the XF index in the cell_attr is dodgy
-                         xfx = local_unpack('<H', data[16:18])[0]
-                         xf_index = self.fixed_BIFF2_xfindex(cell_attr=None, rowx=rowx, colx=-1, true_xfx=xfx)
+                        xfx = local_unpack('<H', data[16:18])[0]
+                        xf_index = self.fixed_BIFF2_xfindex(cell_attr=None, rowx=rowx, colx=-1, true_xfx=xfx)
                     else:
                         cell_attr = data[13:16]
                         xf_index = self.fixed_BIFF2_xfindex(cell_attr, rowx, colx=-1)
@@ -1437,8 +1439,8 @@ class Sheet(BaseObject):
                         fprintf(
                             self.logfile,
                             "COLWIDTH sheet #%d cols %d-%d: wid=%d\n",
-                            self.number, first_colx, last_colx, width
-                            )
+                            self.number, first_colx, last_colx, width,
+                        )
                 elif rc == XL_COLUMNDEFAULT: # BIFF2 only
                     if not fmt_info: continue
                     first_colx, last_colx = local_unpack("<HH", data[:4])
@@ -1447,8 +1449,8 @@ class Sheet(BaseObject):
                         fprintf(
                             self.logfile,
                             "COLUMNDEFAULT sheet #%d cols in range(%d, %d)\n",
-                            self.number, first_colx, last_colx
-                            )
+                            self.number, first_colx, last_colx,
+                        )
                     if not(0 <= first_colx < last_colx <= 256):
                         print("*** NOTE: COLUMNDEFAULT record has first col index %d, last %d; "
                             "should have 0 <= first < last <= 256"
@@ -1469,8 +1471,9 @@ class Sheet(BaseObject):
                         "panes_are_frozen", "show_zero_values")
                     for attr, char in zip(attr_names, data[0:5]):
                         setattr(self, attr, int(char != b'\0'))
-                    (self.first_visible_rowx, self.first_visible_colx,
-                    self.automatic_grid_line_colour,
+                    (
+                        self.first_visible_rowx, self.first_visible_colx,
+                        self.automatic_grid_line_colour,
                     ) = unpack("<HHB", data[5:10])
                     self.gridline_colour_rgb = unpack("<BBB", data[10:13])
                     self.gridline_colour_index = nearest_colour_index(
@@ -1534,10 +1537,11 @@ class Sheet(BaseObject):
             zoom = self.cached_normal_view_mag_factor
             if not (10 <= zoom <=400):
                 if blah:
-                    print((
+                    print(
                         "WARNING *** WINDOW2 rcd sheet %d: Bad cached_normal_view_mag_factor: %d"
-                        % (self.number, self.cached_normal_view_mag_factor)
-                        ), file=self.logfile)
+                        % (self.number, self.cached_normal_view_mag_factor),
+                        file=self.logfile,
+                    )
                 zoom = self.cooked_page_break_preview_mag_factor
             self.cooked_normal_view_mag_factor = zoom
         else:
@@ -1552,10 +1556,11 @@ class Sheet(BaseObject):
                 zoom = 60
             elif not (10 <= zoom <= 400):
                 if blah:
-                    print((
+                    print(
                         "WARNING *** WINDOW2 rcd sheet %r: Bad cached_page_break_preview_mag_factor: %r"
-                        % (self.number, self.cached_page_break_preview_mag_factor)
-                        ), file=self.logfile)
+                        % (self.number, self.cached_page_break_preview_mag_factor),
+                        file=self.logfile,
+                    )
                 zoom = self.cooked_normal_view_mag_factor
             self.cooked_page_break_preview_mag_factor = zoom
 
@@ -1617,7 +1622,7 @@ class Sheet(BaseObject):
             FGE: XL_CELL_NUMBER,
             FDT: XL_CELL_DATE,
             FTX: XL_CELL_NUMBER, # Yes, a number can be formatted as text.
-            }
+        }
         fmt = book.format_map[xf.format_key]
         cellty = cellty_from_fmtty[fmt.type]
         self._xf_index_to_xl_type_map[xf.xf_index] = cellty
@@ -1644,7 +1649,7 @@ class Sheet(BaseObject):
         upkbits(xf.protection, prot_bits, (
             (6, 0x40, 'cell_locked'),
             (7, 0x80, 'formula_hidden'),
-            ))
+        ))
         xf.alignment.hor_align = halign_etc & 0x07
         for mask, side in ((0x08, 'left'), (0x10, 'right'), (0x20, 'top'), (0x40, 'bottom')):
             if halign_etc & mask:
@@ -1663,8 +1668,15 @@ class Sheet(BaseObject):
         xf.parent_style_index = (0x0FFF, 0)[style]
         xf.alignment.vert_align = 2 # bottom
         xf.alignment.rotation = 0
-        for attr_stem in \
-            "format font alignment border background protection".split():
+        attr_stems = [
+            'format',
+            'font',
+            'alignment',
+            'border',
+            'background',
+            'protection',
+        ]
+        for attr_stem in attr_stems:
             attr = "_" + attr_stem + "_flag"
             setattr(xf, attr, 1)
         return xf
@@ -1763,7 +1775,7 @@ class Sheet(BaseObject):
                         self.logfile,
                         "url=%r\nextra=%r\nnbytes=%d true_nbytes=%d extra_nbytes=%d\n",
                         h.url_or_path, extra_data, nbytes, true_nbytes, extra_nbytes,
-                        )
+                    )
                 assert extra_nbytes in (24, 0)
             elif clsid == b"\x03\x03\x00\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46":
                 # file moniker
@@ -1814,8 +1826,8 @@ class Sheet(BaseObject):
                 h.frowx + 1,
                 h.fcolx + 1,
                 extra_nbytes,
-                REPR(data[-extra_nbytes:])
-                )
+                REPR(data[-extra_nbytes:]),
+            )
             # Seen: b"\x00\x00" also b"A\x00", b"V\x00"
         elif extra_nbytes < 0:
             raise XLRDError("Bug or corrupt file, send copy of input file for debugging")
@@ -1901,7 +1913,7 @@ class Sheet(BaseObject):
                     ( 9, 0x0200, 'scrollbar_flag'), # not documented in Excel 97 dev kit
                     (13, 0x2000, 'autofill'),
                     (14, 0x4000, 'autoline'),
-                    ))
+                ))
             elif ft == 0x00:
                 if data[pos:data_len] == b'\0' * (data_len - pos):
                     # ignore "optional reserved" data at end of record
@@ -1985,7 +1997,6 @@ class Sheet(BaseObject):
         if self.biff_version < 80:
             return
         o = MSTxo()
-        data_len = len(data)
         fmt = '<HH6sHHH'
         fmtsize = calcsize(fmt)
         option_flags, o.rot, controlInfo, cchText, cbRuns, o.ifntEmpty = unpack(fmt, data[:fmtsize])
@@ -1996,7 +2007,7 @@ class Sheet(BaseObject):
             ( 9, 0x0200, 'lock_text'),
             (14, 0x4000, 'just_last'),
             (15, 0x8000, 'secret_edit'),
-            ))
+        ))
         totchars = 0
         o.text = UNICODE_LITERAL('')
         while totchars < cchText:
@@ -2076,9 +2087,9 @@ class Sheet(BaseObject):
         print("lt=%d  idList=%d crwHeader=%d  crwTotals=%d  idFieldNext=%d cbFSData=%d\n"
             "rupBuild=%d  unusedShort=%d listFlags=%04X  lPosStmCache=%d  cbStmCache=%d\n"
             "cchStmCache=%d  lem=%d  rgbHashParam=%r  cchName=%d" % (
-            lt, idList, crwHeader, crwTotals, idFieldNext, cbFSData,
-            rupBuild, unusedShort,listFlags, lPosStmCache, cbStmCache,
-            cchStmCache, lem, rgbHashParam, cchName), file=self.logfile)
+                lt, idList, crwHeader, crwTotals, idFieldNext, cbFSData,
+                rupBuild, unusedShort,listFlags, lPosStmCache, cbStmCache,
+                cchStmCache, lem, rgbHashParam, cchName), file=self.logfile)
 
 
 class MSODrawing(BaseObject):
@@ -2208,7 +2219,7 @@ cellty_from_fmtty = {
     FGE: XL_CELL_NUMBER,
     FDT: XL_CELL_DATE,
     FTX: XL_CELL_NUMBER, # Yes, a number can be formatted as text.
-    }
+}
 
 ctype_text = {
     XL_CELL_EMPTY: 'empty',
@@ -2218,7 +2229,7 @@ ctype_text = {
     XL_CELL_BOOLEAN: 'bool',
     XL_CELL_ERROR: 'error',
     XL_CELL_BLANK: 'blank',
-    }
+}
 
 
 class Cell(BaseObject):
@@ -2250,7 +2261,7 @@ class Cell(BaseObject):
         <tr>
         <td>XL_CELL_EMPTY</td>
         <td align="center">0</td>
-        <td>empty string u''</td>
+        <td>empty string ''</td>
         </tr>
         <tr>
         <td>XL_CELL_TEXT</td>
@@ -2281,7 +2292,7 @@ class Cell(BaseObject):
         <tr>
         <td>XL_CELL_BLANK</td>
         <td align="center">6</td>
-        <td>empty string u''. Note: this type will appear only when
+        <td>empty string ''. Note: this type will appear only when
         open_workbook(..., formatting_info=True) is used.</td>
         </tr>
         </table>
@@ -2387,7 +2398,7 @@ class Rowinfo(BaseObject):
             "xf_index",
             "additional_space_above",
             "additional_space_below",
-            )
+        )
 
     def __init__(self):
         #: Height of the row, in twips. One twip == 1/20 of a point.
@@ -2441,7 +2452,7 @@ class Rowinfo(BaseObject):
             self.xf_index,
             self.additional_space_above,
             self.additional_space_below,
-            )
+        )
 
     def __setstate__(self, state):
         (
@@ -2455,4 +2466,4 @@ class Rowinfo(BaseObject):
             self.xf_index,
             self.additional_space_above,
             self.additional_space_below,
-            ) = state
+        ) = state

@@ -1,27 +1,22 @@
 # Copyright (c) 2005-2012 Stephen John Machin, Lingfo Pty Ltd
 # This module is part of the xlrd package, which is released under a
 # BSD-style licence.
-from .info import __VERSION__
+import os
+import pprint
+import sys
+import zipfile
 
-
-import sys, zipfile, pprint
 from . import timemachine
 from .biffh import (
-    XLRDError,
-    biff_text_from_num,
+    XL_CELL_BLANK, XL_CELL_BOOLEAN, XL_CELL_DATE, XL_CELL_EMPTY, XL_CELL_ERROR,
+    XL_CELL_NUMBER, XL_CELL_TEXT, XLRDError, biff_text_from_num,
     error_text_from_code,
-    XL_CELL_BLANK,
-    XL_CELL_TEXT,
-    XL_CELL_BOOLEAN,
-    XL_CELL_ERROR,
-    XL_CELL_EMPTY,
-    XL_CELL_DATE,
-    XL_CELL_NUMBER
-    )
-from .formula import * # is constrained by __all__
+)
 from .book import Book, colname
+from .formula import *  # is constrained by __all__
+from .info import __VERSION__, __version__
 from .sheet import empty_cell
-from .xldate import XLDateError, xldate_as_tuple, xldate_as_datetime
+from .xldate import XLDateError, xldate_as_datetime, xldate_as_tuple
 from .xlsx import X12Book
 
 if sys.version.startswith("IronPython"):
@@ -36,16 +31,15 @@ except ImportError:
 USE_MMAP = MMAP_AVAILABLE
 
 def open_workbook(filename=None,
-    logfile=sys.stdout,
-    verbosity=0,
-    use_mmap=USE_MMAP,
-    file_contents=None,
-    encoding_override=None,
-    formatting_info=False,
-    on_demand=False,
-    ragged_rows=False,
-    convert_values=True
-    ):
+                  logfile=sys.stdout,
+                  verbosity=0,
+                  use_mmap=USE_MMAP,
+                  file_contents=None,
+                  encoding_override=None,
+                  formatting_info=False,
+                  on_demand=False,
+                  ragged_rows=False,
+                  convert_values=True):
     """
     Open a spreadsheet file for data extraction.
 
@@ -88,7 +82,7 @@ def open_workbook(filename=None,
       When ``True``, formatting information will be read from the spreadsheet
       file. This provides all cells, including empty and blank cells.
       Formatting information is available for each cell.
-      
+
       Note that this will raise a NotImplementedError when used with an
       xlsx file.
 
@@ -114,6 +108,7 @@ def open_workbook(filename=None,
     if file_contents:
         peek = file_contents[:peeksz]
     else:
+        filename = os.path.expanduser(filename)
         with open(filename, "rb") as f:
             peek = f.read(peeksz)
     if peek == b"PK\x03\x04": # a ZIP file
@@ -143,7 +138,7 @@ def open_workbook(filename=None,
                 on_demand=on_demand,
                 ragged_rows=ragged_rows,
                 convert_float=convert_values
-                )
+            )
             return bk
         if 'xl/workbook.bin' in component_names:
             raise XLRDError('Excel 2007 xlsb file; not supported')
@@ -162,7 +157,7 @@ def open_workbook(filename=None,
         formatting_info=formatting_info,
         on_demand=on_demand,
         ragged_rows=ragged_rows
-        )
+    )
     return bk
 
 

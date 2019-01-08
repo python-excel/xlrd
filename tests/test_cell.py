@@ -1,13 +1,12 @@
 # Portions Copyright (C) 2010, Manfred Moitzi under a BSD licence
 
-import sys
-import os
 import unittest
 
 import xlrd
 from xlrd.timemachine import UNICODE_LITERAL
 
 from .base import from_this_dir
+
 
 class TestCell(unittest.TestCase):
 

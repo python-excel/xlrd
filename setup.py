@@ -11,15 +11,7 @@ setup(
     packages = ['xlrd'],
     scripts = [
         'scripts/runxlrd.py',
-        ],
-    package_data={
-            'xlrd': [
-                'doc/*.htm*',
-                # 'doc/*.txt',
-                'examples/*.*',
-                ],
-
-            },
+    ],
     description = (
         'Library for developers to extract data from '
         'Microsoft Excel (tm) spreadsheet files'
@@ -34,21 +26,21 @@ setup(
     license = 'BSD',
     keywords = ['xls', 'excel', 'spreadsheet', 'workbook'],
     classifiers = [
-            'Development Status :: 5 - Production/Stable',
-            'Intended Audience :: Developers',
-            'License :: OSI Approved :: BSD License',
-            'Programming Language :: Python',
-            'Programming Language :: Python :: 2',
-            'Programming Language :: Python :: 2.7',
-            'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.4',
-            'Programming Language :: Python :: 3.5',
-            'Programming Language :: Python :: 3.6',
-            'Operating System :: OS Independent',
-            'Topic :: Database',
-            'Topic :: Office/Business',
-            'Topic :: Software Development :: Libraries :: Python Modules',
-            ],
-    zip_safe=False,
-    include_package_data=True
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Operating System :: OS Independent',
+        'Topic :: Database',
+        'Topic :: Office/Business',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+    ],
+    python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
 )

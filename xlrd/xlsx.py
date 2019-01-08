@@ -5,16 +5,21 @@
 
 from __future__ import print_function, unicode_literals
 
+import re
+import sys
+from os.path import join, normpath
+
+from .biffh import (
+    XL_CELL_BLANK, XL_CELL_BOOLEAN, XL_CELL_ERROR, XL_CELL_TEXT, XLRDError,
+    error_text_from_code,
+)
+from .book import Book, Name
+from .formatting import XF, Format, is_date_format_string
+from .sheet import Sheet
+from .timemachine import *
+
 DEBUG = 0
 
-from os.path import normpath, join
-import sys
-import re
-from .timemachine import *
-from .book import Book, Name
-from .biffh import error_text_from_code, XLRDError, XL_CELL_BLANK, XL_CELL_TEXT, XL_CELL_BOOLEAN, XL_CELL_ERROR
-from .formatting import is_date_format_string, Format, XF
-from .sheet import Sheet
 
 DLF = sys.stdout # Default Log File
 
@@ -57,7 +62,7 @@ def ensure_elementtree_imported(verbosity, logfile):
             (item, getattr(ET, item))
             for item in ET.__dict__.keys()
             if item.lower().replace('_', '') == 'version'
-            ])
+        ])
         print(ET.__file__, ET.__name__, etree_version, ET_has_iterparse, file=logfile)
 
 def split_tag(tag):
@@ -129,9 +134,8 @@ F_TAG = U_SSML12 + 'f' # cell child: formula
 IS_TAG = U_SSML12 + 'is' # cell child: inline string
 
 def unescape(s,
-    subber=re.compile(r'_x[0-9A-Fa-f]{4,4}_', re.UNICODE).sub,
-    repl=lambda mobj: unichr(int(mobj.group(0)[2:6], 16)),
-    ):
+             subber=re.compile(r'_x[0-9A-Fa-f]{4,4}_', re.UNICODE).sub,
+             repl=lambda mobj: unichr(int(mobj.group(0)[2:6], 16))):
     if "_" in s:
         return subber(repl, s)
     return s
@@ -222,7 +226,7 @@ _defined_name_attribute_map = (
     ("",                    "option_flags", 0,               ),
     ("",                    "result",       None,            ),
     ("",                    "stack",        None,            ),
-    )
+)
 
 def make_name_access_maps(bk):
     name_and_scope_map = {} # (name.lower(), scope): Name_object
@@ -297,7 +301,7 @@ class X12Book(X12General):
         U_DC+"creator": ("creator", cnv_ST_Xstring),
         U_DCTERMS+"modified": ("modified", cnv_ST_Xstring),
         U_DCTERMS+"created": ("created", cnv_ST_Xstring),
-        }
+    }
 
     def process_coreprops(self, stream):
         if self.verbosity >= 2:
@@ -388,8 +392,8 @@ class X12Book(X12General):
             None: 0,
             'visible': 0,
             'hidden': 1,
-            'veryHidden': 2
-            }
+            'veryHidden': 2,
+        }
         bk._sheet_visibility.append(visibility_map[state])
         sheet = Sheet(bk, position=None, name=name, number=sheetx)
         sheet.utter_max_rows = X12_MAX_ROWS
@@ -411,7 +415,7 @@ class X12Book(X12General):
         'definedNames':  do_defined_names,
         'workbookPr':   do_workbookpr,
         'sheet':        do_sheet,
-        }
+    }
     augment_keys(tag2meth, U_SSML12)
 
 class X12SST(X12General):
@@ -508,10 +512,7 @@ class X12Styles(X12General):
         is_date = self.fmt_is_date.get(numFmtId, 0)
         self.bk._xf_index_to_xl_type_map[xfx] = is_date + 2
         if self.verbosity >= 3:
-            self.dumpout(
-                'xfx=%d numFmtId=%d',
-                xfx, numFmtId,
-                )
+            self.dumpout('xfx=%d numFmtId=%d', xfx, numFmtId)
             self.dumpout(repr(self.bk._xf_index_to_xl_type_map))
 
     tag2meth = {
@@ -519,7 +520,7 @@ class X12Styles(X12General):
         'cellXfs':      do_cellxfs,
         'numFmt':       do_numfmt,
         'xf':           do_xf,
-        }
+    }
     augment_keys(tag2meth, U_SSML12)
 
 class X12Sheet(X12General):
@@ -542,12 +543,11 @@ class X12Sheet(X12General):
     def own_process_stream(self, stream, heading=None, convert_float=True):
         if self.verbosity >= 2 and heading is not None:
             fprintf(self.logfile, "\n=== %s ===\n", heading)
-        getmethod = self.tag2meth.get
         row_tag = U_SSML12 + "row"
         self_do_row = self.do_row
         for event, elem in ET.iterparse(stream):
             if elem.tag == row_tag:
-                self_do_row(elem, convert_float=convert_float)
+                self_do_row(elem, convert_float)
                 elem.clear() # destroy all child elements (cells)
             elif elem.tag == U_SSML12 + "dimension":
                 self.do_dimension(elem)
@@ -622,7 +622,7 @@ class X12Sheet(X12General):
     def do_row(self, row_elem, convert_float=True):
 
         def bad_child_tag(child_tag):
-             raise Exception('cell type %s has unexpected child <%s> at rowx=%r colx=%r' % (cell_type, child_tag, rowx, colx))
+            raise Exception('cell type %s has unexpected child <%s> at rowx=%r colx=%r' % (cell_type, child_tag, rowx, colx))
 
         row_number = row_elem.get('r')
         if row_number is None: # Yes, it's optional.
@@ -672,7 +672,6 @@ class X12Sheet(X12General):
             xf_index = int(cell_elem.get('s', '0'))
             cell_type = cell_elem.get('t', 'n')
             tvalue = None
-            formula = None
             if cell_type == 'n':
                 # n = number. Most frequent type.
                 # <v> child contains plain text which can go straight into float()
@@ -682,7 +681,8 @@ class X12Sheet(X12General):
                     if child_tag == V_TAG:
                         tvalue = child.text
                     elif child_tag == F_TAG:
-                        formula = cooked_text(self, child)
+                        # formula
+                        pass
                     else:
                         raise Exception('unexpected tag %r' % child_tag)
                 if not tvalue:
@@ -701,7 +701,7 @@ class X12Sheet(X12General):
                         tvalue = child.text
                     elif child_tag == F_TAG:
                         # formula not expected here, but gnumeric does it.
-                        formula = child.text
+                        pass
                     else:
                         bad_child_tag(child_tag)
                 if not tvalue:
@@ -720,7 +720,8 @@ class X12Sheet(X12General):
                     if child_tag == V_TAG:
                         tvalue = cooked_text(self, child)
                     elif child_tag == F_TAG:
-                        formula = cooked_text(self, child)
+                        # formula
+                        pass
                     else:
                         bad_child_tag(child_tag)
                 # assert tvalue is not None and formula is not None
@@ -734,7 +735,8 @@ class X12Sheet(X12General):
                     if child_tag == V_TAG:
                         tvalue = child.text
                     elif child_tag == F_TAG:
-                        formula = cooked_text(self, child)
+                        # formula
+                        pass
                     else:
                         bad_child_tag(child_tag)
                 self.sheet.put_cell(rowx, colx, XL_CELL_BOOLEAN, cnv_xsd_boolean(tvalue), xf_index)
@@ -747,7 +749,8 @@ class X12Sheet(X12General):
                     if child_tag == V_TAG:
                         tvalue = child.text
                     elif child_tag == F_TAG:
-                        formula = cooked_text(self, child)
+                        # formula
+                        pass
                     else:
                         bad_child_tag(child_tag)
                 value = error_code_from_text[tvalue]
@@ -763,7 +766,8 @@ class X12Sheet(X12General):
                     elif child_tag == V_TAG:
                         tvalue = child.text
                     elif child_tag == F_TAG:
-                        formula = child.text
+                        # formula
+                        pass
                     else:
                         bad_child_tag(child_tag)
                 if not tvalue:
@@ -776,20 +780,18 @@ class X12Sheet(X12General):
 
     tag2meth = {
         'row':          do_row,
-        }
+    }
     augment_keys(tag2meth, U_SSML12)
 
-def open_workbook_2007_xml(
-    zf,
-    component_names,
-    logfile=sys.stdout,
-    verbosity=0,
-    use_mmap=0,
-    formatting_info=0,
-    on_demand=0,
-    ragged_rows=0,
-    convert_float=True
-    ):
+def open_workbook_2007_xml(zf,
+                           component_names,
+                           logfile=sys.stdout,
+                           verbosity=0,
+                           use_mmap=0,
+                           formatting_info=0,
+                           on_demand=0,
+                           ragged_rows=0,
+                           convert_float=True):
     ensure_elementtree_imported(verbosity, logfile)
     bk = Book()
     bk.logfile = logfile

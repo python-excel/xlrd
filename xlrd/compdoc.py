@@ -1,4 +1,4 @@
-# -*- coding: cp1252 -*-
+# -*- coding: utf-8 -*-
 # Copyright (c) 2005-2012 Stephen John Machin, Lingfo Pty Ltd
 # This module is part of the xlrd package, which is released under a
 # BSD-style licence.
@@ -10,10 +10,12 @@ to extract a "Workbook" or "Book" stream (as one big string)
 from an OLE2 Compound Document file.
 """
 from __future__ import print_function
+
+import array
 import sys
 from struct import unpack
+
 from .timemachine import *
-import array
 
 #: Magic cookie that should appear in the first 8 bytes of the file.
 SIGNATURE = b"\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1"
@@ -54,7 +56,7 @@ class DirNode(object):
             "DID=%d name=%r etype=%d DIDs(left=%d right=%d root=%d parent=%d kids=%r) first_SID=%d tot_size=%d\n",
             self.DID, self.name, self.etype, self.left_DID,
             self.right_DID, self.root_DID, self.parent, self.children, self.first_SID, self.tot_size
-            )
+        )
         if DEBUG == 2:
             # cre_lo, cre_hi, mod_lo, mod_hi = tsinfo
             print("timestamp info", self.tsinfo, file=self.logfile)
@@ -107,7 +109,6 @@ class CompDoc(object):
             SAT_tot_secs, self.dir_first_sec_sid, _unused, self.min_size_std_stream,
             SSAT_first_sec_sid, SSAT_tot_secs,
             MSATX_first_sec_sid, MSATX_tot_secs,
-        # ) = unpack('<ii4xiiiii', mem[44:76])
         ) = unpack('<iiiiiiii', mem[44:76])
         mem_data_len = len(mem) - 512
         mem_data_secs, left_over = divmod(mem_data_len, sec_size)
@@ -209,8 +210,8 @@ class CompDoc(object):
             dump_list(self.SAT, 10, logfile)
             # print >> logfile, "SAT ",
             # for i, s in enumerate(self.SAT):
-                # print >> logfile, "entry: %4d offset: %6d, next entry: %4d" % (i, 512 + sec_size * i, s)
-                # print >> logfile, "%d:%d " % (i, s),
+            #     print >> logfile, "entry: %4d offset: %6d, next entry: %4d" % (i, 512 + sec_size * i, s)
+            #     print >> logfile, "%d:%d " % (i, s),
             print(file=logfile)
         if DEBUG and dump_again:
             print("MSAT: len =", len(MSAT), file=logfile)
@@ -299,7 +300,7 @@ class CompDoc(object):
                     raise CompDocError(
                         "OLE2 stream %r: sector allocation table invalid entry (%d)" %
                         (name, s)
-                        )
+                    )
             assert s == EOCSID
         else:
             todo = size
@@ -320,7 +321,7 @@ class CompDoc(object):
                     raise CompDocError(
                         "OLE2 stream %r: sector allocation table invalid entry (%d)" %
                         (name, s)
-                        )
+                    )
             assert s == EOCSID
             if todo != 0:
                 fprintf(self.logfile,
@@ -354,7 +355,7 @@ class CompDoc(object):
         string if found, otherwise return ``None``.
 
         :param qname:
-          Name of the desired stream e.g. ``u'Workbook'``.
+          Name of the desired stream e.g. ``'Workbook'``.
           Should be in Unicode or convertible thereto.
         """
         d = self._dir_search(qname.split("/"))
@@ -383,7 +384,7 @@ class CompDoc(object):
         ``(new_string, 0, length_of_stream)`` is returned.
 
         :param qname:
-          Name of the desired stream e.g. ``u'Workbook'``.
+          Name of the desired stream e.g. ``'Workbook'``.
           Should be in Unicode or convertible thereto.
         """
         d = self._dir_search(qname.split("/"))
@@ -406,8 +407,8 @@ class CompDoc(object):
                     self.SSCS, 0, self.SSAT, self.short_sec_size, d.first_SID,
                     d.tot_size, qname + " (from SSCS)", None),
                 0,
-                d.tot_size
-                )
+                d.tot_size,
+            )
 
     def _locate_stream(self, mem, base, sat, sec_size, start_sid, expected_stream_size, qname, seen_id):
         # print >> self.logfile, "_locate_stream", base, sec_size, start_sid, expected_stream_size
@@ -427,10 +428,11 @@ class CompDoc(object):
             self.seen[s] = seen_id
             tot_found += 1
             if tot_found > found_limit:
+                # Note: expected size rounded up to higher sector
                 raise CompDocError(
                     "%s: size exceeds expected %d bytes; corrupt?"
                     % (qname, found_limit * sec_size)
-                    ) # Note: expected size rounded up to higher sector
+                )
             if s == p+1:
                 # contiguous sectors
                 end_pos += sec_size

@@ -3,6 +3,17 @@ Changes
 
 .. currentmodule:: xlrd
 
+1.2.0 (15 December 2018)
+------------------------
+
+- Added support for Python 3.7.
+- Added optional support for defusedxml to help mitigate exploits.
+- Automatically convert ``~`` in file paths to the current user's home
+  directory.
+- Removed ``examples`` directory from the installed package. They are still
+  available in the source distribution.
+- Fixed ``time.clock()`` deprecation warning.
+
 1.1.0 (22 August 2017)
 ----------------------
 
@@ -543,4 +554,3 @@ Thanks to the following for their contributions to this release:
 -------------------
 
 - first public release
-

@@ -1,14 +1,16 @@
-# -*- coding: cp1252 -*-
-# Portions copyright © 2005-2010 Stephen John Machin, Lingfo Pty Ltd
+# -*- coding: utf-8 -*-
+# Portions copyright Â© 2005-2010 Stephen John Machin, Lingfo Pty Ltd
 # This module is part of the xlrd package, which is released under a
 # BSD-style licence.
 from __future__ import print_function
 
+import sys
+from struct import unpack
+
+from .timemachine import *
+
 DEBUG = 0
 
-from struct import unpack
-from .timemachine import *
-import sys
 
 
 class XLRDError(Exception):
@@ -51,9 +53,8 @@ class BaseObject(object):
                 value.dump(f,
                     header="%s%s (%s object):" % (pad, attr, value.__class__.__name__),
                     indent=indent+4)
-            elif attr not in self._repr_these and (
-                isinstance(value, list_type) or isinstance(value, dict_type)
-                ):
+            elif (attr not in self._repr_these and
+                  (isinstance(value, list_type) or isinstance(value, dict_type))):
                 print("%s%s: %s, len = %d" % (pad, attr, type(value), len(value)), file=f)
             else:
                 fprintf(f, "%s%s: %r\n", pad, attr, value)
@@ -84,7 +85,7 @@ biff_text_from_num = {
     70: "7",
     80: "8",
     85: "8X",
-    }
+}
 
 #: This dictionary can be used to produce a text version of the internal codes
 #: that Excel uses for error cells.
@@ -227,7 +228,7 @@ _cell_opcode_list = [
     XL_NUMBER,
     XL_RK,
     XL_RSTRING,
-    ]
+]
 _cell_opcode_dict = {}
 for _cell_opcode in _cell_opcode_list:
     _cell_opcode_dict[_cell_opcode] = 1
@@ -332,8 +333,7 @@ def unpack_unicode_update_pos(data, pos, lenlen=2, known_len=None):
         pos += sz
     return (strg, pos)
 
-def unpack_cell_range_address_list_update_pos(
-    output_list, data, pos, biff_version, addr_size=6):
+def unpack_cell_range_address_list_update_pos(output_list, data, pos, biff_version, addr_size=6):
     # output_list is updated in situ
     assert addr_size in (6, 8)
     # Used to assert size == 6 if not BIFF8, but pyWLWriter writes
@@ -628,7 +628,7 @@ encoding_from_codepage = {
     10081: 'mac_turkish', # guess
     32768: 'mac_roman',
     32769: 'cp1252',
-    }
+}
 # some more guessing, for Indic scripts
 # codepage 57000 range:
 # 2 Devanagari [0]

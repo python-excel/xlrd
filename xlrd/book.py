@@ -4,18 +4,21 @@
 
 from __future__ import print_function
 
-from .timemachine import *
-from .biffh import *
-import struct; unpack = struct.unpack
+import gc
 import sys
-import time
-from . import sheet
-from . import compdoc
+
+from . import compdoc, formatting, sheet
+from .biffh import *
 from .formula import *
-from . import formatting
-if sys.version.startswith("IronPython"):
-    # print >> sys.stderr, "...importing encodings"
-    import encodings
+from .timemachine import *
+
+try:
+    from time import perf_counter
+except ImportError:
+    # Python 2.7
+    from time import clock as perf_counter
+
+import struct; unpack = struct.unpack
 
 empty_cell = sheet.empty_cell # for exposure to the world ...
 
@@ -24,7 +27,6 @@ DEBUG = 0
 USE_FANCY_CD = 1
 
 TOGGLE_GC = 0
-import gc
 # gc.set_debug(gc.DEBUG_STATS)
 
 try:
@@ -55,7 +57,7 @@ _code_from_builtin_name = {
     "Auto_Deactivate":  "\x0B",
     "Sheet_Title":      "\x0C",
     "_FilterDatabase":  "\x0D",
-    }
+}
 builtin_name_from_code = {}
 code_from_builtin_name = {}
 for _bin, _bic in _code_from_builtin_name.items():
@@ -66,12 +68,11 @@ for _bin, _bic in _code_from_builtin_name.items():
 del _bin, _bic, _code_from_builtin_name
 
 def open_workbook_xls(filename=None,
-    logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
-    file_contents=None,
-    encoding_override=None,
-    formatting_info=False, on_demand=False, ragged_rows=False,
-    ):
-    t0 = time.clock()
+                      logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
+                      file_contents=None,
+                      encoding_override=None,
+                      formatting_info=False, on_demand=False, ragged_rows=False):
+    t0 = perf_counter()
     if TOGGLE_GC:
         orig_gc_enabled = gc.isenabled()
         if orig_gc_enabled:
@@ -85,8 +86,8 @@ def open_workbook_xls(filename=None,
             formatting_info=formatting_info,
             on_demand=on_demand,
             ragged_rows=ragged_rows,
-            )
-        t1 = time.clock()
+        )
+        t1 = perf_counter()
         bk.load_time_stage_1 = t1 - t0
         biff_version = bk.getbof(XL_WORKBOOK_GLOBALS)
         if not biff_version:
@@ -95,7 +96,7 @@ def open_workbook_xls(filename=None,
             raise XLRDError(
                 "BIFF version %s is not supported"
                 % biff_text_from_num[biff_version]
-                )
+            )
         bk.biff_version = biff_version
         if biff_version <= 40:
             # no workbook globals, only 1 worksheet
@@ -119,15 +120,16 @@ def open_workbook_xls(filename=None,
                 bk.get_sheets()
         bk.nsheets = len(bk._sheet_list)
         if biff_version == 45 and bk.nsheets > 1:
-            fprintf(bk.logfile,
+            fprintf(
+                bk.logfile,
                 "*** WARNING: Excel 4.0 workbook (.XLW) file contains %d worksheets.\n"
                 "*** Book-level data will be that of the last worksheet.\n",
                 bk.nsheets
-                )
+            )
         if TOGGLE_GC:
             if orig_gc_enabled:
                 gc.enable()
-        t2 = time.clock()
+        t2 = perf_counter()
         bk.load_time_stage_2 = t2 - t1
     except:
         bk.release_resources()
@@ -225,15 +227,16 @@ class Name(BaseObject):
             value = res.value
             if kind == oREF and len(value) == 1:
                 ref3d = value[0]
-                if (0 <= ref3d.shtxlo == ref3d.shtxhi - 1
-                and      ref3d.rowxlo == ref3d.rowxhi - 1
-                and      ref3d.colxlo == ref3d.colxhi - 1):
+                if (0 <= ref3d.shtxlo == ref3d.shtxhi - 1 and
+                        ref3d.rowxlo == ref3d.rowxhi - 1 and
+                        ref3d.colxlo == ref3d.colxhi - 1):
                     sh = self.book.sheet_by_index(ref3d.shtxlo)
                     return sh.cell(ref3d.rowxlo, ref3d.colxlo)
-        self.dump(self.book.logfile,
+        self.dump(
+            self.book.logfile,
             header="=== Dump of Name object ===",
             footer="======= End of dump =======",
-            )
+        )
         raise XLRDError("Not a constant absolute reference to a single cell")
 
     def area2d(self, clipped=True):
@@ -272,10 +275,11 @@ class Name(BaseObject):
                     assert 0 <= rowxlo <= rowxhi <= sh.nrows
                     assert 0 <= colxlo <= colxhi <= sh.ncols
                     return sh, rowxlo, rowxhi, colxlo, colxhi
-        self.dump(self.book.logfile,
+        self.dump(
+            self.book.logfile,
             header="=== Dump of Name object ===",
             footer="======= End of dump =======",
-            )
+        )
         raise XLRDError("Not a constant absolute reference to a single area in a single sheet")
 
 
@@ -589,12 +593,11 @@ class Book(BaseObject):
         self.filestr = b''
 
     def biff2_8_load(self, filename=None, file_contents=None,
-        logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
-        encoding_override=None,
-        formatting_info=False,
-        on_demand=False,
-        ragged_rows=False,
-        ):
+                     logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
+                     encoding_override=None,
+                     formatting_info=False,
+                     on_demand=False,
+                     ragged_rows=False):
         # DEBUG = 0
         self.logfile = logfile
         self.verbosity = verbosity
@@ -696,17 +699,18 @@ class Book(BaseObject):
             raise XLRDError("Can't load sheets after releasing resources.")
         if update_pos:
             self._position = self._sh_abs_posn[sh_number]
-        _unused_biff_version = self.getbof(XL_WORKSHEET)
+        self.getbof(XL_WORKSHEET)
         # assert biff_version == self.biff_version ### FAILS
         # Have an example where book is v7 but sheet reports v8!!!
         # It appears to work OK if the sheet version is ignored.
         # Confirmed by Daniel Rentz: happens when Excel does "save as"
         # creating an old version file; ignore version details on sheet BOF.
-        sh = sheet.Sheet(self,
-                self._position,
-                self._sheet_names[sh_number],
-                sh_number,
-                )
+        sh = sheet.Sheet(
+            self,
+            self._position,
+            self._sheet_names[sh_number],
+            sh_number,
+        )
         sh.read(self)
         self._sheet_list[sh_number] = sh
         return sh
@@ -765,7 +769,7 @@ class Book(BaseObject):
                 1: 'Macro sheet',
                 2: 'Chart',
                 6: 'Visual Basic module',
-                }.get(sheet_type, 'UNKNOWN')
+            }.get(sheet_type, 'UNKNOWN')
 
             if DEBUG or self.verbosity >= 1:
                 fprintf(self.logfile,
@@ -813,7 +817,7 @@ class Book(BaseObject):
             # If we don't have a codec that can decode ASCII into Unicode,
             # we're well & truly stuffed -- let the punter know ASAP.
             try:
-                _unused = unicode(b'trial', self.encoding)
+                unicode(b'trial', self.encoding)
             except BaseException as e:
                 fprintf(self.logfile,
                     "ERROR *** codepage %r -> encoding %r -> %s: %s\n",
@@ -876,7 +880,7 @@ class Book(BaseObject):
                         self.logfile,
                         "INFO: EXTERNSHEET needs %d bytes, have %d\n",
                         bytes_reqd, len(data),
-                        )
+                    )
                 code2, length2, data2 = self.get_record_parts()
                 if code2 != XL_CONTINUE:
                     raise XLRDError("Missing CONTINUE after EXTERNSHEET record")
@@ -892,7 +896,7 @@ class Book(BaseObject):
                         self.logfile,
                         "EXTERNSHEET(b8): k = %2d, record = %2d, first_sheet = %5d, last sheet = %5d\n",
                         k, ref_recordx, ref_first_sheetx, ref_last_sheetx,
-                        )
+                    )
         else:
             nc, ty = unpack("<BB", data[:2])
             if blah2:
@@ -903,7 +907,7 @@ class Book(BaseObject):
                     2: "Current sheet!!",
                     3: "Specific sheet in own doc't",
                     4: "Nonspecific sheet in own doc't!!",
-                    }.get(ty, "Not encoded")
+                }.get(ty, "Not encoded")
                 print("   %3d chars, type is %d (%s)" % (nc, ty, msg), file=self.logfile)
             if ty == 3:
                 sheet_name = unicode(data[2:nc+2], self.encoding)
@@ -945,8 +949,8 @@ class Book(BaseObject):
         # print
         # hex_char_dump(data, 0, len(data), fout=self.logfile)
         (
-        option_flags, kb_shortcut, name_len, fmla_len, extsht_index, sheet_index,
-        menu_text_len, description_text_len, help_topic_text_len, status_bar_text_len,
+            option_flags, kb_shortcut, name_len, fmla_len, extsht_index, sheet_index,
+            menu_text_len, description_text_len, help_topic_text_len, status_bar_text_len,
         ) = unpack("<HBBHHH4B", data[0:14])
         nobj = Name()
         nobj.book = self ### CIRCULAR ###
@@ -954,7 +958,7 @@ class Book(BaseObject):
         nobj.name_index = name_index
         self.name_obj_list.append(nobj)
         nobj.option_flags = option_flags
-        for attr, mask, nshift in (
+        attrs = [
             ('hidden', 1, 0),
             ('func', 2, 1),
             ('vbasic', 4, 2),
@@ -963,7 +967,8 @@ class Book(BaseObject):
             ('builtin', 0x20, 5),
             ('funcgroup', 0xFC0, 6),
             ('binary', 0x1000, 12),
-            ):
+        ]
+        for attr, mask, nshift in attrs:
             setattr(nobj, attr, (option_flags & mask) >> nshift)
 
         macro_flag = " M"[nobj.macro]
@@ -993,7 +998,7 @@ class Book(BaseObject):
                 self.logfile,
                 header="--- handle_name: name[%d] ---" % name_index,
                 footer="-------------------",
-                )
+            )
 
     def names_epilogue(self):
         blah = self.verbosity >= 2
@@ -1114,10 +1119,11 @@ class Book(BaseObject):
                 # #### FIX ME ####
                 # Should implement handling of CONTINUE record(s) ...
                 if self.verbosity:
-                    print((
+                    print(
                         "*** WARNING: unpack failure in sheet %d of %d in SUPBOOK record for file %r"
-                        % (x, num_sheets, url)
-                        ), file=self.logfile)
+                        % (x, num_sheets, url),
+                        file=self.logfile,
+                    )
                 break
             sheet_names.append(shname)
             if blah: fprintf(self.logfile, "  sheetx=%d namelen=%d name=%r (next pos=%d)\n", x, len(shname), shname, pos)
@@ -1153,7 +1159,7 @@ class Book(BaseObject):
         # DEBUG = 1
         if DEBUG:
             print("SST Processing", file=self.logfile)
-            t0 = time.time()
+            t0 = perf_counter()
         nbt = len(data)
         strlist = [data]
         uniquestrings = unpack('<i', data[4:8])[0]
@@ -1171,7 +1177,7 @@ class Book(BaseObject):
         if self.formatting_info:
             self._rich_text_runlist_map = rt_runlist
         if DEBUG:
-            t1 = time.time()
+            t1 = perf_counter()
             print("SST processing took %.2f seconds" % (t1 - t0, ), file=self.logfile)
 
     def handle_writeaccess(self, data):
@@ -1261,6 +1267,7 @@ class Book(BaseObject):
         # DEBUG = 1
         # if DEBUG: print >> self.logfile, "getbof(): position", self._position
         if DEBUG: print("reqd: 0x%04x" % rqd_stream, file=self.logfile)
+
         def bof_error(msg):
             raise XLRDError('Unsupported format, or corrupt file: ' + msg)
         savpos = self._position
@@ -1309,7 +1316,7 @@ class Book(BaseObject):
                     0x0200: 21,
                     0x0300: 30,
                     0x0400: 40,
-                    }.get(version2, 0)
+                }.get(version2, 0)
         elif version1 in (0x04, 0x02, 0x00):
             version = {0x04: 40, 0x02: 30, 0x00: 21}[version1]
 
@@ -1330,7 +1337,7 @@ class Book(BaseObject):
         bof_error(
             'BOF not workbook/worksheet: op=0x%04x vers=0x%04x strm=0x%04x build=%d year=%d -> BIFF%d'
             % (opcode, version2, streamtype, build, year, version)
-            )
+        )
 
 # === helper functions
 

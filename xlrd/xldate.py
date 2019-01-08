@@ -1,4 +1,4 @@
-# -*- coding: cp1252 -*-
+# -*- coding: utf-8 -*-
 # Copyright (c) 2005-2008 Stephen John Machin, Lingfo Pty Ltd
 # This module is part of the xlrd package, which is released under a
 # BSD-style licence.
@@ -196,8 +196,8 @@ def xldate_from_date_tuple(date_tuple, datemode):
         raise XLDateBadTuple("Invalid year: %r" % ((year, month, day),))
     if not (1 <= month <= 12):
         raise XLDateBadTuple("Invalid month: %r" % ((year, month, day),))
-    if  day < 1 \
-    or (day > _days_in_month[month] and not(day == 29 and month == 2 and _leap(year))):
+    if  (day < 1 or
+         (day > _days_in_month[month] and not(day == 29 and month == 2 and _leap(year)))):
         raise XLDateBadTuple("Invalid day: %r" % ((year, month, day),))
 
     Yp = year + 4716
@@ -243,7 +243,6 @@ def xldate_from_datetime_tuple(datetime_tuple, datemode):
     :param datemode: 0: 1900-based, 1: 1904-based.
     """
     return (
-        xldate_from_date_tuple(datetime_tuple[:3], datemode)
-        +
+        xldate_from_date_tuple(datetime_tuple[:3], datemode) +
         xldate_from_time_tuple(datetime_tuple[3:])
-        )
+    )

@@ -1,18 +1,20 @@
-# -*- coding: cp1252 -*-
+# -*- coding: utf-8 -*-
 
 ##
 # Module/script example of the xlrd API for extracting information
 # about named references, named constants, etc.
 #
-# <p>Copyright © 2006 Stephen John Machin, Lingfo Pty Ltd</p>
+# <p>Copyright Â© 2006 Stephen John Machin, Lingfo Pty Ltd</p>
 # <p>This module is part of the xlrd package, which is released under a BSD-style licence.</p>
 ##
 from __future__ import print_function
 
+import glob
+import sys
+
 import xlrd
 from xlrd.timemachine import REPR
-import sys
-import glob
+
 
 def scope_as_string(book, scope):
     if 0 <= scope < book.nsheets:
@@ -52,9 +54,7 @@ def show_name_details(book, name, show_contents=0, f=sys.stdout):
     for nobj in nobj_list:
         show_name_object(book, nobj, show_contents, f)
 
-def show_name_details_in_scope(
-    book, name, scope_strg, show_contents=0, f=sys.stdout,
-    ):
+def show_name_details_in_scope(book, name, scope_strg, show_contents=0, f=sys.stdout):
     try:
         scope = int(scope_strg)
     except ValueError:
@@ -161,8 +161,10 @@ Examples (script name and glob_pattern arg omitted for brevity)
     arg_pattern = sys.argv[1] # glob pattern e.g. "foo*.xls"
     arg_name = sys.argv[2]    # see below
     arg_scope = sys.argv[3]   # see below
-    arg_show_contents = int(sys.argv[4]) # 0: no show, 1: only non-empty cells,
-                                         # 2: all cells
+    # 0: no show,
+    # 1: only non-empty cells,
+    # 2: all cells
+    arg_show_contents = int(sys.argv[4])
     for fname in glob.glob(arg_pattern):
         book = xlrd.open_workbook(fname)
         if arg_name == "*":

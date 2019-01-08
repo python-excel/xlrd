@@ -31,11 +31,12 @@ xfc             Print "XF counts" and cell-type counts -- see code for details
 
 options = None
 if __name__ == "__main__":
-
-    PSYCO = 0
-
     import xlrd
-    import sys, time, glob, traceback, gc
+    import sys
+    import time
+    import glob
+    import traceback
+    import gc
 
     from xlrd.timemachine import xrange, REPR
 
@@ -194,9 +195,9 @@ if __name__ == "__main__":
                 for rowx in xrange(nrows):
                     nc = sh.row_len(rowx)
                     if nc:
-                        _junk = sh.row_types(rowx)[nc-1]
-                        _junk = sh.row_values(rowx)[nc-1]
-                        _junk = sh.cell(rowx, nc-1)
+                        sh.row_types(rowx)[nc-1]
+                        sh.row_values(rowx)[nc-1]
+                        sh.cell(rowx, nc-1)
             for rowx in xrange(anshow-1):
                 if not printit and rowx % 10000 == 1 and rowx > 1:
                     print("done %d rows" % (rowx-1,))
@@ -210,7 +211,7 @@ if __name__ == "__main__":
         bk_header(bk)
         for shx in range(bk.nsheets):
             sh = bk.sheet_by_index(shx)
-            nrows, ncols = sh.nrows, sh.ncols
+            nrows = sh.nrows
             print("sheet %d: name = %r; nrows = %d; ncols = %d" %
                 (shx, sh.name, sh.nrows, sh.ncols))
             # Access all xfindexes to force gathering stats
@@ -228,7 +229,7 @@ if __name__ == "__main__":
 
     def main(cmd_args):
         import optparse
-        global options, PSYCO
+        global options
         usage = "\n%prog [options] command [input-file-patterns]\n" + cmd_doc
         oparser = optparse.OptionParser(usage)
         oparser.add_option(
@@ -251,8 +252,8 @@ if __name__ == "__main__":
             "-f", "--formatting",
             type="int", default=0,
             help="0 (default): no fmt info\n"
-                 "1: fmt info (all cells)\n"
-            )
+                 "1: fmt info (all cells)\n",
+        )
         oparser.add_option(
             "-g", "--gc",
             type="int", default=0,
@@ -317,20 +318,17 @@ if __name__ == "__main__":
                     n_unreachable = gc.collect()
                     if n_unreachable:
                         print("GC before open:", n_unreachable, "unreachable objects")
-                if PSYCO:
-                    import psyco
-                    psyco.full()
-                    PSYCO = 0
                 try:
                     t0 = time.time()
-                    bk = xlrd.open_workbook(fname,
+                    bk = xlrd.open_workbook(
+                        fname,
                         verbosity=options.verbosity, logfile=logfile,
                         use_mmap=mmap_arg,
                         encoding_override=options.encoding,
                         formatting_info=fmt_opt,
                         on_demand=options.on_demand,
                         ragged_rows=options.ragged_rows,
-                        )
+                    )
                     t1 = time.time()
                     if not options.suppress_timing:
                         print("Open took %.2f seconds" % (t1-t0,))
@@ -388,7 +386,8 @@ if __name__ == "__main__":
         main(av)
     firstarg = av[0].lower()
     if firstarg == "hotshot":
-        import hotshot, hotshot.stats
+        import hotshot
+        import hotshot.stats
         av = av[1:]
         prof_log_name = "XXXX.prof"
         prof = hotshot.Profile(prof_log_name)
@@ -407,8 +406,5 @@ if __name__ == "__main__":
         import pstats
         p = pstats.Stats('YYYY.prof')
         p.strip_dirs().sort_stats('cumulative').print_stats(30)
-    elif firstarg == "psyco":
-        PSYCO = 1
-        main(av[1:])
     else:
         main(av)

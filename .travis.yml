@@ -1,24 +1,32 @@
-# for container-y goodness:
+dist: xenial
 sudo: false
+cache: pip
 
 language: python
 
-python:
-  - "3.6"
-  - "3.5"
-  - "3.4"
-  - "2.7"
+matrix:
+  include:
+    - python: "3.7"
+      env: TOXENV=py37
+    - python: "3.6"
+      env: TOXENV=py36
+    - python: "3.5"
+      env: TOXENV=py35
+    - python: "3.4"
+      env: TOXENV=py34
+    - python: "2.7"
+      env: TOXENV=py27
+    - env: TOXENV=lint
 
-# command to install dependencies
-install: 
-- "pip install -U pip setuptools"
-- "pip install -Ur requirements.txt"
+install:
+  - pip install tox
 
-# command to run tests, e.g. python setup.py test
-script: nosetests --with-cov --cov=xlrd
+script:
+  - tox
 
 after_success:
-  - coveralls
+  - if [ $TOXENV != lint ]; then pip install coveralls; fi
+  - if [ $TOXENV != lint ]; then coveralls; fi
 
 deploy:
   provider: pypi

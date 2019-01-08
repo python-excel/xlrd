@@ -1,9 +1,7 @@
- # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # Portions Copyright (C) 2010, Manfred Moitzi under a BSD licence
 
 from unittest import TestCase
-import os
-import sys
 
 import xlrd
 
@@ -31,8 +29,8 @@ class TestFormulas(TestCase):
     def test_cell_B2(self):
         self.assertEqual(
             self.get_value(1, 1),
-            r"'\u041c\u041e\u0421\u041a\u0412\u0410 \u041c\u043e\u0441\u043a\u0432\u0430'"
-            )
+            r"'\u041c\u041e\u0421\u041a\u0412\u0410 \u041c\u043e\u0441\u043a\u0432\u0430'",
+        )
 
     def test_cell_B3(self):
         self.assertEqual(self.get_value(1, 2), '0.14285714285714285')
@@ -52,8 +50,8 @@ class TestFormulas(TestCase):
     def test_cell_B8(self):
         self.assertEqual(
             self.get_value(1, 7),
-            r"'\u041c\u041e\u0421\u041a\u0412\u0410 \u041c\u043e\u0441\u043a\u0432\u0430'"
-            )
+            r"'\u041c\u041e\u0421\u041a\u0412\u0410 \u041c\u043e\u0441\u043a\u0432\u0430'",
+        )
 
 class TestNameFormulas(TestCase):
 

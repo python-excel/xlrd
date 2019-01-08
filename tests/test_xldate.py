@@ -5,7 +5,6 @@
 # Copyright (C) 2010, Manfred Moitzi
 # License: BSD licence
 
-import sys
 import unittest
 
 from xlrd import xldate

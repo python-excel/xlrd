@@ -24,7 +24,6 @@ your checkout into a virtualenv and then install the package in
 editable form as follows::
 
   $ virtualenv .
-  $ bin/pip install -Ur requirements.txt
   $ bin/pip install -e .
 
 Running the tests
@@ -32,7 +31,7 @@ Running the tests
 
 Once you've set up a virtualenv, the tests can be run as follows::
 
-  $ bin/nosetests
+  $ python -m unittest discover
 
 To run tests on all the versions of Python that are supported, you can do::
 
