@@ -263,6 +263,7 @@ class X12General(object):
             fprintf(self.logfile, "\n=== %s ===\n", heading)
         self.tree = ET.parse(stream)
         getmethod = self.tag2meth.get
+        global Element_has_iter
         for elem in self.tree.iter() if Element_has_iter else self.tree.getiterator():
             if self.verbosity >= 3:
                 self.dump_elem(elem)
@@ -309,6 +310,7 @@ class X12Book(X12General):
         self.tree = ET.parse(stream)
         getmenu = self.core_props_menu.get
         props = {}
+        global Element_has_iter
         for elem in self.tree.iter() if Element_has_iter else self.tree.getiterator():
             if self.verbosity >= 3:
                 self.dump_elem(elem)
