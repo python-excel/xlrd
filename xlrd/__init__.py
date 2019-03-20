@@ -38,7 +38,9 @@ def open_workbook(filename=None,
                   encoding_override=None,
                   formatting_info=False,
                   on_demand=False,
-                  ragged_rows=False):
+                  ragged_rows=False,
+                  store_formulas=False,
+                  ):
     """
     Open a spreadsheet file for data extraction.
 
@@ -100,6 +102,10 @@ def open_workbook(filename=None,
       This can result in substantial memory savings if rows are of widely
       varying sizes. See also the :meth:`~xlrd.sheet.Sheet.row_len` method.
 
+    :param store_formulas:
+
+       The default value of `False` means formulas for Biff v5-8 will not attempt to be stored.
+
     :returns: An instance of the :class:`~xlrd.book.Book` class.
     """
 
@@ -136,6 +142,7 @@ def open_workbook(filename=None,
                 formatting_info=formatting_info,
                 on_demand=on_demand,
                 ragged_rows=ragged_rows,
+                store_formulas=store_formulas,
             )
             return bk
         if 'xl/workbook.bin' in component_names:
