@@ -400,6 +400,38 @@ class Sheet(BaseObject):
         # self._put_cell_rows_appended = 0
         # self._put_cell_cells_appended = 0
 
+        # print settings
+        self.print_headers = 0
+        self.print_grid = 0
+        # self.grid_set = 1
+        # self.vert_page_breaks = []
+        # self.horz_page_breaks = []
+        self.header_str = ''
+        self.footer_str = ''
+        self.print_centered_vert = 0
+        self.print_centered_horz = 1
+        self.left_margin = 0.3  # 0.5
+        self.right_margin = 0.3  # 0.5
+        self.top_margin = 0.61  # 1.0
+        self.bottom_margin = 0.37  # 1.0
+        self.paper_size_code = 9  # A4
+        self.print_scaling = 100
+        self.start_page_number = 1
+        self.fit_width_to_pages = 1
+        self.fit_height_to_pages = 1
+        self.print_in_rows = 1
+        self.portrait = 1
+        self.print_not_colour = 0
+        self.print_draft = 0
+        self.print_notes = 0
+        self.print_notes_at_end = 0
+        self.print_omit_errors = 0
+        self.print_hres = 0x012C  # 300 dpi
+        self.print_vres = 0x012C  # 300 dpi
+        self.header_margin = 0.1
+        self.footer_margin = 0.1
+        self.copies_num = 1
+
     def cell(self, rowx, colx):
         """
         :class:`Cell` object in the given row and column.
@@ -1332,6 +1364,67 @@ class Sheet(BaseObject):
                     while pos < data_len:
                         self.vertical_page_breaks.append(local_unpack("<HHH", data[pos:pos+6]))
                         pos += 6
+            # handle print settings
+            elif rc == XL_PRINTHEADERS:
+                if not fmt_info: continue
+                self.print_headers, = local_unpack('<H', data[:2])
+            elif rc == XL_PRINTGRIDLINES:
+                if not fmt_info: continue
+                self.print_grid, = local_unpack('<H', data[:2])
+            elif rc == XL_HEADER:
+                if not fmt_info: continue
+                if data_len > 0:
+                    if bv < BIFF_FIRST_UNICODE:
+                        self.header_str = unpack_string(data, 0, bk.encoding or bk.derive_encoding(), lenlen=1)
+                    else:
+                        self.header_str = unpack_unicode(data, 0, lenlen=2)
+            elif rc == XL_FOOTER:
+                if not fmt_info: continue
+                if data_len > 0:
+                    if bv < BIFF_FIRST_UNICODE:
+                        self.footer_str = unpack_string(data, 0, bk.encoding or bk.derive_encoding(), lenlen=1)
+                    else:
+                        self.footer_str = unpack_unicode(data, 0, lenlen=2)
+            elif rc == XL_VCENTER:
+                if not fmt_info: continue
+                self.print_centered_vert, = local_unpack('<H', data[:2])
+            elif rc == XL_HCENTER:
+                if not fmt_info: continue
+                self.print_centered_horz, = local_unpack('<H', data[:2])
+            elif rc == XL_LEFTMARGIN:
+                if not fmt_info: continue
+                self.left_margin, = local_unpack('<d', data[:8])
+            elif rc == XL_RIGHTMARGIN:
+                if not fmt_info: continue
+                self.right_margin, = local_unpack('<d', data[:8])
+            elif rc == XL_TOPMARGIN:
+                if not fmt_info: continue
+                self.top_margin, = local_unpack('<d', data[:8])
+            elif rc == XL_BOTTOMMARGIN:
+                if not fmt_info: continue
+                self.bottom_margin, = local_unpack('<d', data[:8])
+            if rc == XL_PAGESETUP:
+                if not fmt_info: continue
+                if data_len == 12:
+                    self.paper_size_code, self.print_scaling, self.start_page_number, self.fit_width_to_pages, \
+                    self.fit_height_to_pages, option_flags = local_unpack('<HHHHHH', data[:12])
+                    self.print_in_rows = option_flags & 0x01
+                    self.portrait = (option_flags & 0x02) >> 1
+                    # is_initialised = (option_flags & 0x04) >> 2
+                    self.print_not_colour = (option_flags & 0x08) >> 3
+                elif data_len == 34:
+                    self.paper_size_code, self.print_scaling, self.start_page_number, self.fit_width_to_pages, \
+                    self.fit_height_to_pages, option_flags, self.print_hres, self.print_vres, self.header_margin, \
+                    self.footer_margin, self.copies_num = local_unpack('<HHHHHHHHddH', data[:34])
+                    self.print_in_rows = option_flags & 0x01
+                    self.portrait = (option_flags & 0x02) >> 1
+                    # is_initialised = (option_flags & 0x04) >> 2
+                    self.print_not_colour = (option_flags & 0x08) >> 3
+                    self.print_draft = (option_flags & 0x10) >> 4
+                    self.print_notes = (option_flags & 0x20) >> 5
+                    # use_paper_ori = (option_flags & 0x40) >> 6
+                    self.print_notes_at_end = (option_flags & 0x200) >> 9
+                    self.print_omit_errors = (option_flags & 0xC00) >> 10
             #### all of the following are for BIFF <= 4W
             elif bv <= 45:
                 if rc == XL_FORMAT or rc == XL_FORMAT2:
