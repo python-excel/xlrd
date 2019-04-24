@@ -322,7 +322,7 @@ class Sheet(BaseObject):
         self._position = position
         self.logfile = book.logfile
         self.bt = array('B', [XL_CELL_EMPTY])
-        self.bf = array('i', [-1])
+        self.bf = array('h', [-1])
         self.name = name
         self.number = number
         self.verbosity = book.verbosity
@@ -801,13 +801,13 @@ class Sheet(BaseObject):
             if rc == XL_NUMBER:
                 # [:14] in following stmt ignores extraneous rubbish at end of record.
                 # Sample file testEON-8.xls supplied by Jan Kraus.
-                rowx, colx, xf_index, d = local_unpack('<HHHd', data[:14])
+                rowx, colx, xf_index, d = local_unpack('<HHhd', data[:14])
                 # if xf_index == 0:
                 #     fprintf(self.logfile,
                 #         "NUMBER: r=%d c=%d xfx=%d %f\n", rowx, colx, xf_index, d)
                 self_put_cell(rowx, colx, None, d, xf_index)
             elif rc == XL_LABELSST:
-                rowx, colx, xf_index, sstindex = local_unpack('<HHHi', data)
+                rowx, colx, xf_index, sstindex = local_unpack('<HHhi', data)
                 # print "LABELSST", rowx, colx, sstindex, bk._sharedstrings[sstindex]
                 self_put_cell(rowx, colx, XL_CELL_TEXT, bk._sharedstrings[sstindex], xf_index)
                 if do_sst_rich_text:
@@ -815,14 +815,14 @@ class Sheet(BaseObject):
                     if runlist:
                         self.rich_text_runlist_map[(rowx, colx)] = runlist
             elif rc == XL_LABEL:
-                rowx, colx, xf_index = local_unpack('<HHH', data[0:6])
+                rowx, colx, xf_index = local_unpack('<HHh', data[0:6])
                 if bv < BIFF_FIRST_UNICODE:
                     strg = unpack_string(data, 6, bk.encoding or bk.derive_encoding(), lenlen=2)
                 else:
                     strg = unpack_unicode(data, 6, lenlen=2)
                 self_put_cell(rowx, colx, XL_CELL_TEXT, strg, xf_index)
             elif rc == XL_RSTRING:
-                rowx, colx, xf_index = local_unpack('<HHH', data[0:6])
+                rowx, colx, xf_index = local_unpack('<HHh', data[0:6])
                 if bv < BIFF_FIRST_UNICODE:
                     strg, pos = unpack_string_update_pos(data, 6, bk.encoding or bk.derive_encoding(), lenlen=2)
                     nrt = BYTES_ORD(data[pos])
@@ -844,7 +844,7 @@ class Sheet(BaseObject):
                 self_put_cell(rowx, colx, XL_CELL_TEXT, strg, xf_index)
                 self.rich_text_runlist_map[(rowx, colx)] = runlist
             elif rc == XL_RK:
-                rowx, colx, xf_index = local_unpack('<HHH', data[:6])
+                rowx, colx, xf_index = local_unpack('<HHh', data[:6])
                 d = unpack_RK(data[6:10])
                 self_put_cell(rowx, colx, None, d, xf_index)
             elif rc == XL_MULRK:
@@ -852,7 +852,7 @@ class Sheet(BaseObject):
                 mulrk_last, = local_unpack('<H', data[-2:])
                 pos = 4
                 for colx in xrange(mulrk_first, mulrk_last+1):
-                    xf_index, = local_unpack('<H', data[pos:pos+2])
+                    xf_index, = local_unpack('<h', data[pos:pos+2])
                     d = unpack_RK(data[pos+2:pos+6])
                     pos += 6
                     self_put_cell(mulrk_row, colx, None, d, xf_index)
@@ -912,9 +912,9 @@ class Sheet(BaseObject):
                 # DEBUG = 1
                 # if DEBUG: print "FORMULA: rc: 0x%04x data: %r" % (rc, data)
                 if bv >= 50:
-                    rowx, colx, xf_index, result_str, flags = local_unpack('<HHH8sH', data[0:16])
+                    rowx, colx, xf_index, result_str, flags = local_unpack('<HHh8sH', data[0:16])
                 elif bv >= 30:
-                    rowx, colx, xf_index, result_str, flags = local_unpack('<HHH8sH', data[0:16])
+                    rowx, colx, xf_index, result_str, flags = local_unpack('<HHh8sH', data[0:16])
                 else: # BIFF2
                     rowx, colx, cell_attr,  result_str, flags = local_unpack('<HH3s8sB', data[0:16])
                     xf_index =  self.fixed_BIFF2_xfindex(cell_attr, rowx, colx)
@@ -981,7 +981,7 @@ class Sheet(BaseObject):
                     d = local_unpack('<d', result_str)[0]
                     self_put_cell(rowx, colx, None, d, xf_index)
             elif rc == XL_BOOLERR:
-                rowx, colx, xf_index, value, is_err = local_unpack('<HHHBB', data[:8])
+                rowx, colx, xf_index, value, is_err = local_unpack('<HHhBB', data[:8])
                 # Note OOo Calc 2.0 writes 9-byte BOOLERR records.
                 # OOo docs say 8. Excel writes 8.
                 cellty = (XL_CELL_BOOLEAN, XL_CELL_ERROR)[is_err]
@@ -991,7 +991,7 @@ class Sheet(BaseObject):
                 if not fmt_info: continue
                 c = Colinfo()
                 first_colx, last_colx, c.width, c.xf_index, flags \
-                    = local_unpack("<HHHHH", data[:10])
+                    = local_unpack("<HHHhH", data[:10])
                 #### Colinfo.width is denominated in 256ths of a character,
                 #### *not* in characters.
                 if not(0 <= first_colx <= last_colx <= 256):
@@ -1048,7 +1048,7 @@ class Sheet(BaseObject):
                     print("GCW:", showgcw, file=self.logfile)
             elif rc == XL_BLANK:
                 if not fmt_info: continue
-                rowx, colx, xf_index = local_unpack('<HHH', data[:6])
+                rowx, colx, xf_index = local_unpack('<HHh', data[:6])
                 # if 0: print >> self.logfile, "BLANK", rowx, colx, xf_index
                 self_put_cell(rowx, colx, XL_CELL_BLANK, '', xf_index)
             elif rc == XL_MULBLANK: # 00BE
