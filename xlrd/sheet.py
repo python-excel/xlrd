@@ -322,7 +322,7 @@ class Sheet(BaseObject):
         self._position = position
         self.logfile = book.logfile
         self.bt = array('B', [XL_CELL_EMPTY])
-        self.bf = array('h', [-1])
+        self.bf = array('i', [-1])
         self.name = name
         self.number = number
         self.verbosity = book.verbosity
