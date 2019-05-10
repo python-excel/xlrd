@@ -31,12 +31,15 @@ def ensure_elementtree_imported(verbosity, logfile):
     global ET, ET_has_iterparse, Element_has_iter
     if ET is not None:
         return
+    is_defusedxml = False
     if "IronPython" in sys.version:
         import xml.etree.ElementTree as ET
         #### 2.7.2.1: fails later with
         #### NotImplementedError: iterparse is not supported on IronPython. (CP #31923)
     else:
-        try: import defusedxml.cElementTree as ET
+        try:
+            import defusedxml.cElementTree as ET
+            is_defusedxml = True
         except ImportError:
             try: import xml.etree.cElementTree as ET
             except ImportError:
@@ -56,7 +59,11 @@ def ensure_elementtree_imported(verbosity, logfile):
             ET_has_iterparse = True
         except NotImplementedError:
             pass
-    Element_has_iter = hasattr(ET, 'ElementTree') and hasattr(ET.ElementTree, 'iter')
+    if is_defusedxml:
+        import xml.etree.cElementTree as et_module
+    else:
+        et_module = ET
+    Element_has_iter = hasattr(et_module, 'ElementTree') and hasattr(et_module.ElementTree, 'iter')
     if verbosity:
         etree_version = repr([
             (item, getattr(ET, item))
