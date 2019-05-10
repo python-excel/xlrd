@@ -59,6 +59,7 @@ def ensure_elementtree_imported(verbosity, logfile):
             ET_has_iterparse = True
         except NotImplementedError:
             pass
+    # defusedxml.cElementTree uses xml.etree.cElementTree.ElementTree in it.
     if is_defusedxml:
         import xml.etree.cElementTree as et_module
     else:
