@@ -796,8 +796,8 @@ class Book(BaseObject):
         elif self.codepage is None:
             if self.biff_version < 80:
                 fprintf(self.logfile,
-                    "*** No CODEPAGE record, no encoding_override: will use 'ascii'\n")
-                self.encoding = 'ascii'
+                    "*** No CODEPAGE record, no encoding_override: will use 'iso-8859-1'\n")
+                self.encoding = 'iso-8859-1'
             else:
                 self.codepage = 1200 # utf16le
                 if self.verbosity >= 2:
@@ -808,6 +808,9 @@ class Book(BaseObject):
                 encoding = encoding_from_codepage[codepage]
             elif 300 <= codepage <= 1999:
                 encoding = 'cp' + str(codepage)
+            elif self.biff_version >= 80:
+                self.codepage = 1200
+                encoding = 'utf_16_le'
             else:
                 encoding = 'unknown_codepage_' + str(codepage)
             if DEBUG or (self.verbosity and encoding != self.encoding) :
