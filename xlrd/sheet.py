@@ -476,9 +476,26 @@ class Sheet(BaseObject):
             for colx in xrange(len(self._cell_values[rowx]))
         ]
 
+    def __getitem__(self, item):
+        """
+        Takes either rowindex or (rowindex, colindex) as an index,
+        and returns either row or cell respectively.
+        """
+        try:
+            rowix, colix = item
+        except TypeError:
+            # it's not a tuple (or of right size), let's try indexing as is
+            # if this is a problem, let this error propagate back
+            return self.row(item)
+        else:
+            return self.cell(rowix, colix)
+
     def get_rows(self):
         "Returns a generator for iterating through each row."
         return (self.row(index) for index in range(self.nrows))
+
+    # makes `for row in sheet` natural and intuitive
+    __iter__ = get_rows
 
     def row_types(self, rowx, start_colx=0, end_colx=None):
         """
@@ -2090,6 +2107,9 @@ class Sheet(BaseObject):
                 lt, idList, crwHeader, crwTotals, idFieldNext, cbFSData,
                 rupBuild, unusedShort,listFlags, lPosStmCache, cbStmCache,
                 cchStmCache, lem, rgbHashParam, cchName), file=self.logfile)
+
+    def __repr__(self):
+        return "Sheet {:>2}:<{}>".format(self.number, self.name)
 
 
 class MSODrawing(BaseObject):

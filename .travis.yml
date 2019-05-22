@@ -26,6 +26,7 @@ script:
 
 after_success:
   - if [ $TOXENV != lint ]; then pip install coveralls; fi
+  - if [ $TOXENV == py27 ]; then pip install requests --upgrade; fi
   - if [ $TOXENV != lint ]; then coveralls; fi
 
 deploy:
