@@ -351,7 +351,7 @@ class X12Book(X12General):
             self.dump_elem(elem)
         nobj = Name()
         bk = self.bk
-        nobj.bk = bk
+        nobj.book = bk
         nobj.name_index = len(bk.name_obj_list)
         bk.name_obj_list.append(nobj)
         nobj.name = elem.get('name')
