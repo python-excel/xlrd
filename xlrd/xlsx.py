@@ -825,12 +825,16 @@ def open_workbook_2007_xml(zf,
         # seen in MS sample file MergedCells.xlsx
         pass
 
-    sst_fname = 'xl/sharedstrings.xml'
     x12sst = X12SST(bk, logfile, verbosity)
-    if sst_fname in component_names:
-        zflo = zf.open(component_names[sst_fname])
-        x12sst.process_stream(zflo, 'SST')
-        del zflo
+
+    # Different versions place the shared strings file in different locations.
+    # It's easier to check for each instead fo parsing XML to find a specific path reference.
+    sst_fname_candidates = ['xl/sharedstrings.xml', 'sharedstrings.xml']
+    for sst_fname in sst_fname_candidates:
+        if sst_fname in component_names:
+            zflo = zf.open(component_names[sst_fname])
+            x12sst.process_stream(zflo, 'SST')
+            del zflo
 
     for sheetx in range(bk.nsheets):
         fname = x12book.sheet_targets[sheetx]
