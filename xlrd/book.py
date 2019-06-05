@@ -71,7 +71,8 @@ def open_workbook_xls(filename=None,
                       logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
                       file_contents=None,
                       encoding_override=None,
-                      formatting_info=False, on_demand=False, ragged_rows=False, ignore_workbook_corruption_error=False):
+                      formatting_info=False, on_demand=False, ragged_rows=False,
+                      ignore_workbook_corruption_error=False):
     t0 = perf_counter()
     if TOGGLE_GC:
         orig_gc_enabled = gc.isenabled()
@@ -651,7 +652,8 @@ class Book(BaseObject):
             # got this one at the antique store
             self.mem = self.filestr
         else:
-            cd = compdoc.CompDoc(self.filestr, logfile=self.logfile, ignore_workbook_corruption_error=ignore_workbook_corruption_error)
+            cd = compdoc.CompDoc(self.filestr, logfile=self.logfile,
+                                 ignore_workbook_corruption_error=ignore_workbook_corruption_error)
             if USE_FANCY_CD:
                 for qname in ['Workbook', 'Book']:
                     self.mem, self.base, self.stream_len = \
