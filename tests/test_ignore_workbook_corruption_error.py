@@ -6,7 +6,7 @@ import xlrd
 from .base import from_this_dir
 
 
-class TestFormulas(TestCase):
+class TestIgnoreWorkbookCorruption(TestCase):
 
     def test_not_corrupted(self):
         with self.assertRaises(Exception) as context:
