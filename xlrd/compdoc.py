@@ -81,9 +81,9 @@ class CompDoc(object):
     """
 
 
-    def __init__(self, mem, logfile=sys.stdout, DEBUG=0, ignore_workbook_corruption_error=False):
+    def __init__(self, mem, logfile=sys.stdout, DEBUG=0, ignore_workbook_corruption=False):
         self.logfile = logfile
-        self.ignore_workbook_corruption_error = ignore_workbook_corruption_error
+        self.ignore_workbook_corruption = ignore_workbook_corruption
         self.DEBUG = DEBUG
         if mem[0:8] != SIGNATURE:
             raise CompDocError('Not an OLE2 compound document')
@@ -424,7 +424,7 @@ class CompDoc(object):
         found_limit = (expected_stream_size + sec_size - 1) // sec_size
         while s >= 0:
             if self.seen[s]:
-                if not self.ignore_workbook_corruption_error:
+                if not self.ignore_workbook_corruption:
                     print("_locate_stream(%s): seen" % qname, file=self.logfile); dump_list(self.seen, 20, self.logfile)
                     raise CompDocError("%s corruption: seen[%d] == %d" % (qname, s, self.seen[s]))
             self.seen[s] = seen_id

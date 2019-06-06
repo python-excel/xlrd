@@ -39,7 +39,7 @@ def open_workbook(filename=None,
                   formatting_info=False,
                   on_demand=False,
                   ragged_rows=False,
-                  ignore_workbook_corruption_error=False
+                  ignore_workbook_corruption=False
                   ):
     """
     Open a spreadsheet file for data extraction.
@@ -103,7 +103,7 @@ def open_workbook(filename=None,
       varying sizes. See also the :meth:`~xlrd.sheet.Sheet.row_len` method.
 
 
-    :param ignore_workbook_corruption_error:
+    :param ignore_workbook_corruption:
 
       This option allows to read corrupted workbooks.
       When ``False`` you may face CompDocError: Workbook corruption.
@@ -164,7 +164,7 @@ def open_workbook(filename=None,
         formatting_info=formatting_info,
         on_demand=on_demand,
         ragged_rows=ragged_rows,
-        ignore_workbook_corruption_error=ignore_workbook_corruption_error,
+        ignore_workbook_corruption=ignore_workbook_corruption,
     )
     return bk
 
