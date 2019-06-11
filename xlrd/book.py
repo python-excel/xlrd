@@ -71,7 +71,8 @@ def open_workbook_xls(filename=None,
                       logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
                       file_contents=None,
                       encoding_override=None,
-                      formatting_info=False, on_demand=False, ragged_rows=False):
+                      formatting_info=False, on_demand=False, ragged_rows=False,
+                      ignore_workbook_corruption=False):
     t0 = perf_counter()
     if TOGGLE_GC:
         orig_gc_enabled = gc.isenabled()
@@ -86,6 +87,7 @@ def open_workbook_xls(filename=None,
             formatting_info=formatting_info,
             on_demand=on_demand,
             ragged_rows=ragged_rows,
+            ignore_workbook_corruption=ignore_workbook_corruption
         )
         t1 = perf_counter()
         bk.load_time_stage_1 = t1 - t0
@@ -616,7 +618,9 @@ class Book(BaseObject):
                      encoding_override=None,
                      formatting_info=False,
                      on_demand=False,
-                     ragged_rows=False):
+                     ragged_rows=False,
+                     ignore_workbook_corruption=False
+                     ):
         # DEBUG = 0
         self.logfile = logfile
         self.verbosity = verbosity
@@ -648,7 +652,8 @@ class Book(BaseObject):
             # got this one at the antique store
             self.mem = self.filestr
         else:
-            cd = compdoc.CompDoc(self.filestr, logfile=self.logfile)
+            cd = compdoc.CompDoc(self.filestr, logfile=self.logfile,
+                                 ignore_workbook_corruption=ignore_workbook_corruption)
             if USE_FANCY_CD:
                 for qname in ['Workbook', 'Book']:
                     self.mem, self.base, self.stream_len = \
