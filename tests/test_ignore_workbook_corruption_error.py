@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 import xlrd
+
 from .base import from_this_dir
 
 
