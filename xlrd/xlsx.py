@@ -670,7 +670,7 @@ class X12Sheet(X12General):
                     raise Exception('Unexpected character %r in cell name %r' % (c, cell_name))
                 if explicit_row_number and cell_name[charx:] != row_number:
                     raise Exception('cell name %r but row number is %r' % (cell_name, row_number))
-            xf_index = int(cell_elem.get('s', '0'))
+            xf_index = int(cell_elem.get('s') or 0)  # count any falsy value (e.g '') as 0
             cell_type = cell_elem.get('t', 'n')
             tvalue = None
             if cell_type == 'n':
