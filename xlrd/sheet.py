@@ -368,6 +368,7 @@ class Sheet(BaseObject):
         self.hyperlink_list = []
         self.hyperlink_map = {}
         self.cell_note_map = {}
+        self.codename = None
 
         # Values calculated by xlrd to predict the mag factors that
         # will actually be used by Excel to display your worksheet.
@@ -1349,6 +1350,11 @@ class Sheet(BaseObject):
                     while pos < data_len:
                         self.vertical_page_breaks.append(local_unpack("<HHH", data[pos:pos+6]))
                         pos += 6
+            elif rc == XL_CODENAME:
+                if bv < BIFF_FIRST_UNICODE:
+                    self.codename = unpack_string(data, 0, bk.encoding or bk.derive_encoding(), lenlen=2)
+                else:
+                    self.codename = unpack_unicode(data, 0, lenlen=2)
             #### all of the following are for BIFF <= 4W
             elif bv <= 45:
                 if rc == XL_FORMAT or rc == XL_FORMAT2:

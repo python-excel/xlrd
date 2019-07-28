@@ -7,7 +7,7 @@ from __future__ import print_function
 import gc
 import sys
 
-from . import compdoc, formatting, sheet
+from . import compdoc, formatting, sheet, chartsheet
 from .biffh import *
 from .formula import *
 from .timemachine import *
@@ -506,6 +506,24 @@ class Book(BaseObject):
         """
         return self._sheet_names[:]
 
+    def all_sheet_names(self):
+        """
+        :returns:
+          A list of the names of all the sheets in the workbook file,
+          including normal worksheets, macro sheets, chart cheets and VBA
+          modules.
+        """
+        return self._all_sheet_names[:]
+
+    def all_sheet_types(self):
+        """
+        :returns:
+          A list of the types of all the sheets in the workbook file,
+          including normal worksheets, macro sheets, chart cheets and VBA
+          modules.
+        """
+        return self._all_sheet_types[:]
+
     def sheet_loaded(self, sheet_name_or_index):
         """
         :param sheet_name_or_index: Name or index of sheet enquired upon
@@ -583,16 +601,19 @@ class Book(BaseObject):
     def __init__(self):
         self._sheet_list = []
         self._sheet_names = []
+        self._all_sheet_names = [] # Includes non-worksheet names in correct order
+        self._all_sheet_types = [] # Includes sheet types in correct order
         self._sheet_visibility = [] # from BOUNDSHEET record
         self.nsheets = 0
-        self._sh_abs_posn = [] # sheet's absolute position in the stream
+        self._sh_abs_posn = [] # worksheet's absolute position in the stream
+        self._all_sh_abs_posn = [] # all sheet's absolute position in the stream
         self._sharedstrings = []
         self._rich_text_runlist_map = {}
         self.raw_user_name = False
         self._sheethdr_count = 0 # BIFF 4W only
         self.builtinfmtcount = -1 # unknown as yet. BIFF 3, 4S, 4W
         self.initialise_format_info()
-        self._all_sheets_count = 0 # includes macro & VBA sheets
+        self._all_sheets_count = 0 # includes chart-sheets, macro & VBA sheets
         self._supbook_count = 0
         self._supbook_locals_inx = None
         self._supbook_addins_inx = None
@@ -739,6 +760,13 @@ class Book(BaseObject):
         self._sheet_list[sh_number] = sh
         return sh
 
+    def get_chart_sheet(self, index):
+        if self._resources_released:
+            raise XLRDError("Can't load sheets after releasing resources.")
+        sh = chartsheet.ChartSheet(self, self._all_sh_abs_posn[index], self._all_sheet_names[index])
+        sh.read(self)
+        return sh
+
     def get_sheets(self):
         # DEBUG = 0
         if DEBUG: print("GET_SHEETS:", self._sheet_names, self._sh_abs_posn, file=self.logfile)
@@ -787,12 +815,15 @@ class Book(BaseObject):
                 "BOUNDSHEET: inx=%d vis=%r sheet_name=%r abs_posn=%d sheet_type=0x%02x\n",
                 self._all_sheets_count, visibility, sheet_name, abs_posn, sheet_type)
         self._all_sheets_count += 1
+        self._all_sheet_names.append(sheet_name)
+        self._all_sheet_types.append(sheet_type)
+        self._all_sh_abs_posn.append(abs_posn)
         if sheet_type != XL_BOUNDSHEET_WORKSHEET:
             self._all_sheets_map.append(-1)
             descr = {
-                1: 'Macro sheet',
-                2: 'Chart',
-                6: 'Visual Basic module',
+                XL_BOUNDSHEET_MACRO: 'Macro sheet',
+                XL_BOUNDSHEET_CHART: 'Chart',
+                XL_BOUNDSHEET_VB_MODULE: 'Visual Basic module',
             }.get(sheet_type, 'UNKNOWN')
 
             if DEBUG or self.verbosity >= 1:
