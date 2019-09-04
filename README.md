@@ -5,7 +5,12 @@
 
 ### xlrd
 
-Please read this before using this library: https://groups.google.com/d/msg/python-excel/P6TjJgFVjMI/g8d0eWxTBQAJ
+PLEASE NOTE: This library currently has no active maintainers. You are advised to use [OpenPyXL](https://openpyxl.readthedocs.io/en/stable/) instead. If you absolutely have to read .xls files, then
+xlrd will probably still work for you, but please do not submit issues complaining that this library
+will not read you corrupted or non-standard file. Just because Excel or some other piece of software opens your
+file does not mean it is a valid xls file.
+
+For more background to this: https://groups.google.com/d/msg/python-excel/P6TjJgFVjMI/g8d0eWxTBQAJ
 
 **Purpose**: Provide a library for developers to use to extract data from Microsoft Excel (tm) spreadsheet files. It is not an end-user tool.
 
@@ -15,11 +20,7 @@ Please read this before using this library: https://groups.google.com/d/msg/pyth
 
 **Versions of Python supported**: 2.7, 3.4+.
 
-**External modules required**:
-
-The package itself is pure Python with no dependencies on modules or packages outside the standard Python distribution.
-
-**Outside the current scope**: xlrd will safely and reliably ignore any of these if present in the file:
+**Outside scope**: xlrd will safely and reliably ignore any of these if present in the file:
 
 *   Charts, Macros, Pictures, any other embedded object. WARNING: currently this includes embedded worksheets.
 *   VBA modules
@@ -27,17 +28,7 @@ The package itself is pure Python with no dependencies on modules or packages ou
 *   Comments
 *   Hyperlinks
 *   Autofilters, advanced filters, pivot tables, conditional formatting, data validation
-
-**Unlikely to be done**:
-
 *   Handling password-protected (encrypted) files.
-
-**Particular emphasis (refer docs for details)**:
-
-*   Operability across OS, regions, platforms
-*   Handling Excel's date problems, including the Windows / Macintosh four-year differential.
-*   Providing access to named constants and named groups of cells (from version 0.6.0)
-*   Providing access to "visual" information: font, "number format", background, border, alignment and protection for cells, height/width etc for rows/columns (from version 0.6.1)
 
 **Quick start**:
 
@@ -56,13 +47,6 @@ for rx in range(sh.nrows):
 **Another quick start**: This will show the first, second and last rows of each sheet in each file:
 
     python PYDIR/scripts/runxlrd.py 3rows *blah*.xls
-
-**Installation**:
-
-*   On Windows: use the installer.
-*   Any OS: Unzip the .zip file into a suitable directory, chdir to that directory, then do "python setup.py install".
-*   If PYDIR is your Python installation directory: the main files are in PYDIR/Lib/site-packages/xlrd the docs are in the doc subdirectory, and there's a sample script: PYDIR/Scripts/runxlrd.py
-*   If os.sep != "/": make the appropriate adjustments.
 
 **Acknowledgements**:
 
