@@ -14,7 +14,7 @@ For more background to this: https://groups.google.com/d/msg/python-excel/P6TjJg
 
 **Purpose**: Provide a library for developers to use to extract data from Microsoft Excel (tm) spreadsheet files. It is not an end-user tool.
 
-**Author**: John Machin, Lingfo Pty Ltd (sjmachin@lexicon.net)
+**Author**: John Machin
 
 **Licence**: BSD-style (see licences.py)
 
