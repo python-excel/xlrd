@@ -7,7 +7,7 @@
 
 PLEASE NOTE: This library currently has no active maintainers. You are advised to use [OpenPyXL](https://openpyxl.readthedocs.io/en/stable/) instead. If you absolutely have to read .xls files, then
 xlrd will probably still work for you, but please do not submit issues complaining that this library
-will not read you corrupted or non-standard file. Just because Excel or some other piece of software opens your
+will not read your corrupted or non-standard file. Just because Excel or some other piece of software opens your
 file does not mean it is a valid xls file.
 
 For more background to this: https://groups.google.com/d/msg/python-excel/P6TjJgFVjMI/g8d0eWxTBQAJ
