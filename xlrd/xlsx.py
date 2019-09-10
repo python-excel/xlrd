@@ -90,7 +90,7 @@ def cell_name_to_rowx_colx(cell_name, letter_value=_UPPERCASE_1_REL_INDEX,
     colx = 0
     charx = -1
     try:
-        for c in cell_name:
+        for c in cell_name.upper():
             charx += 1
             lv = letter_value[c]
             if lv:
@@ -655,7 +655,7 @@ class X12Sheet(X12General):
                 colx = 0
                 charx = -1
                 try:
-                    for c in cell_name:
+                    for c in cell_name.upper():
                         charx += 1
                         if c == '$':
                             continue

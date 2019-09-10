@@ -49,3 +49,7 @@ class TestOpen(TestCase):
     def test_err_cell_empty(self):
         # For cell with type "e" (error) but without inner 'val' tags
         open_workbook(from_this_dir('err_cell_empty.xlsx'))
+
+    def test_xlsx_lower_case_cellnames(self):
+        # Check if it opens with lower cell names
+        open_workbook(from_this_dir('test_lower_case_cellnames.xlsx'))
