@@ -56,7 +56,7 @@ def ensure_elementtree_imported(verbosity, logfile):
             ET_has_iterparse = True
         except NotImplementedError:
             pass
-    Element_has_iter = hasattr(ET, 'ElementTree') and hasattr(ET.ElementTree, 'iter')
+    Element_has_iter = hasattr(ET.parse(BYTES_IO(b'<xml></xml>')), 'iter')
     if verbosity:
         etree_version = repr([
             (item, getattr(ET, item))
