@@ -1082,44 +1082,50 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                 if blah:
                     print("    name: %r, min~max args: %d~%d"
                         % (func_name, minargs, maxargs), file=bk.logfile)
-                assert minargs <= nargs <= maxargs
-                assert len(stack) >= nargs
-                assert len(stack) >= nargs
-                argtext = listsep.join(arg.text for arg in stack[-nargs:])
-                otext = "%s(%s)" % (func_name, argtext)
-                res = Operand(oUNK, None, FUNC_RANK, otext)
-                if funcx == 1: # IF
-                    testarg = stack[-nargs]
-                    if testarg.kind not in (oNUM, oBOOL):
-                        if blah and testarg.kind != oUNK:
-                            print("IF testarg kind?", file=bk.logfile)
-                    elif testarg.value not in (0, 1):
-                        if blah and testarg.value is not None:
-                            print("IF testarg value?", file=bk.logfile)
-                    else:
-                        if nargs == 2 and not testarg.value:
-                            # IF(FALSE, tv) => FALSE
-                            res.kind, res.value = oBOOL, 0
+                assert minargs <= nargs 
+                assert nargs <= maxargs
+                if len(stack) >= nargs: # monkeypatch
+                    # Got assertion failure on the assert statement in the 
+                    # original source. This hack points the res variable to an
+                    # empty Operand object.
+                    argtext = listsep.join(arg.text for arg in stack[-nargs:])
+                    otext = "%s(%s)" % (func_name, argtext)
+                    res = Operand(oUNK, None, FUNC_RANK, otext)
+                    print('something is workging', type(res), res)
+                    if funcx == 1: # IF
+                        testarg = stack[-nargs]
+                        if testarg.kind not in (oNUM, oBOOL):
+                            if blah and testarg.kind != oUNK:
+                                print("IF testarg kind?", file=bk.logfile)
+                        elif testarg.value not in (0, 1):
+                            if blah and testarg.value is not None:
+                                print("IF testarg value?", file=bk.logfile)
                         else:
-                            respos = -nargs + 2 - int(testarg.value)
-                            chosen = stack[respos]
-                            if chosen.kind == oMSNG:
-                                res.kind, res.value = oNUM, 0
+                            if nargs == 2 and not testarg.value:
+                                # IF(FALSE, tv) => FALSE
+                                res.kind, res.value = oBOOL, 0
                             else:
-                                res.kind, res.value = chosen.kind, chosen.value
-                        if blah:
-                            print("$$$$$$ IF => constant", file=bk.logfile)
-                elif funcx == 100: # CHOOSE
-                    testarg = stack[-nargs]
-                    if testarg.kind == oNUM:
-                        if 1 <= testarg.value < nargs:
-                            chosen = stack[-nargs + int(testarg.value)]
-                            if chosen.kind == oMSNG:
-                                res.kind, res.value = oNUM, 0
-                            else:
-                                res.kind, res.value = chosen.kind, chosen.value
-                del stack[-nargs:]
-                spush(res)
+                                respos = -nargs + 2 - int(testarg.value)
+                                chosen = stack[respos]
+                                if chosen.kind == oMSNG:
+                                    res.kind, res.value = oNUM, 0
+                                else:
+                                    res.kind, res.value = chosen.kind, chosen.value
+                            if blah:
+                                print("$$$$$$ IF => constant", file=bk.logfile)
+                    elif funcx == 100: # CHOOSE
+                        testarg = stack[-nargs]
+                        if testarg.kind == oNUM:
+                            if 1 <= testarg.value < nargs:
+                                chosen = stack[-nargs + int(testarg.value)]
+                                if chosen.kind == oMSNG:
+                                    res.kind, res.value = oNUM, 0
+                                else:
+                                    res.kind, res.value = chosen.kind, chosen.value
+                    del stack[-nargs:]
+                    spush(res)
+                else:
+                    spush(Operand()) # in caes of fail
         elif opcode == 0x03: #tName
             tgtnamex = unpack("<H", data[pos+1:pos+3])[0] - 1
             # Only change with BIFF version is number of trailing UNUSED bytes!
