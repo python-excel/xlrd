@@ -568,7 +568,7 @@ class X12Sheet(X12General):
             if self.verbosity >= 2:
                 self.dumpout('Id=%r Type=%r Target=%r', rid, reltype, target)
             self.relid2reltype[rid] = reltype
-            self.relid2path[rid] = normpath(join('xl/worksheets', target))
+            self.relid2path[rid] = normpath(join('xl/worksheets', target)).replace('\\', '/').lower()
 
     def process_comments_stream(self, stream):
         root = ET.parse(stream).getroot()
