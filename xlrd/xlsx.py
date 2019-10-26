@@ -856,7 +856,7 @@ def open_workbook_2007_xml(zf,
             if reltype == 'comments':
                 comments_fname = x12sheet.relid2path.get(relid)
                 if comments_fname and comments_fname in component_names:
-                    comments_stream = zf.open(comments_fname)
+                    comments_stream = zf.open(component_names[comments_fname])
                     x12sheet.process_comments_stream(comments_stream)
                     del comments_stream
 
