@@ -6,17 +6,40 @@ language: python
 
 matrix:
   include:
-    - python: "3.7"
+    - arch: arm64
+      python: 3.7
       env: TOXENV=py37
-    - python: "3.6"
+    - arch: amd64
+      python: 3.7
+      env: TOXENV=py37
+    - arch: arm64
+      python: 3.6
       env: TOXENV=py36
-    - python: "3.5"
+    - arch: amd64
+      python: 3.6
+      env: TOXENV=py36
+    - arch: arm64
+      python: 3.5
       env: TOXENV=py35
-    - python: "3.4"
+    - arch: amd64
+      python: 3.5
+      env: TOXENV=py35
+    - arch: arm64
+      python: 3.4
       env: TOXENV=py34
-    - python: "2.7"
+    - arch: amd64
+      python: 3.4
+      env: TOXENV=py34
+    - arch: arm64
+      python: 2.7
       env: TOXENV=py27
-    - env: TOXENV=lint
+    - arch: amd64
+      python: 2.7
+      env: TOXENV=py27
+    - arch: arm64
+      env: TOXENV=lint
+    - arch: amd64
+      env: TOXENV=lint
 
 install:
   - pip install tox
