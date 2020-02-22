@@ -738,7 +738,7 @@ class Sheet(BaseObject):
                 if nr < self.nrows:
                     # cell data is not in non-descending row order *AND*
                     # self.ncols has been bumped up.
-                    # This very rare case ruins this optmisation.
+                    # This very rare case ruins this optimisation.
                     self._first_full_rowx = -2
                 elif rowx > self._first_full_rowx > -2:
                     self._first_full_rowx = rowx
