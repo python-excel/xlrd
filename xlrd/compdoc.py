@@ -13,6 +13,8 @@ from __future__ import print_function
 
 import array
 import sys
+import mmap
+from bisect import bisect_left
 from struct import unpack
 
 from .timemachine import *
@@ -71,6 +73,43 @@ def _build_family_tree(dirlist, parent_DID, child_DID):
         _build_family_tree(dirlist, child_DID, dirlist[child_DID].root_DID)
 
 
+class ScatteredMemory:
+    """Return a slice of big file with mmap"""
+    def __init__(self, filename, slices):
+        self.filename = filename
+        self.mem = b''
+        self.slices = slices
+
+        sizes = [y-x for x, y in slices]
+        self.cum_sum = [sum(sizes[:x + 1]) for x in range(0, len(sizes))]
+
+    def __getitem__(self, item):
+        if not self.mem or self.mem.closed:
+            with open(self.filename) as fi:
+                self.mem = mmap.mmap(fi.fileno(), 0, access=mmap.ACCESS_READ)
+
+        if type(item) is int:
+            idx = bisect_left(self.cum_sum, item)
+            _item = item - (self.cum_sum[idx-1] if idx > 0 else 0)
+            _idx = self.slices[idx][0] + _item
+            return self.mem[_idx]
+
+        else:
+            start, end = item.start, item.stop
+            length = end - start
+            assert not item.step, "stepping is not supported"
+            idx_0 = bisect_left(self.cum_sum, start)
+            idx_1 = bisect_left(self.cum_sum, end)
+
+            d_start = 0 if not idx_0 else self.cum_sum[idx_0-1]
+
+            data = b''.join(self.mem[start_pos:end_pos] for start_pos, end_pos in self.slices[idx_0:idx_1+1])
+            _start = start - d_start
+            mem = data[_start:_start+length]
+            del data
+            return mem
+
+
 class CompDoc(object):
     """
     Compound document handler.
@@ -80,8 +119,8 @@ class CompDoc(object):
       object. The only operation it needs to support is slicing.
     """
 
-
-    def __init__(self, mem, logfile=sys.stdout, DEBUG=0, ignore_workbook_corruption=False):
+    def __init__(self, xls_path, mem, logfile=sys.stdout, DEBUG=0, ignore_workbook_corruption=False):
+        self.xls_path = xls_path
         self.logfile = logfile
         self.ignore_workbook_corruption = ignore_workbook_corruption
         self.DEBUG = DEBUG
@@ -349,7 +388,6 @@ class CompDoc(object):
                 raise CompDocError("Requested stream is not a 'user stream'")
         return None
 
-
     def get_named_stream(self, qname):
         """
         Interrogate the compound document's directory; return the stream as a
@@ -452,10 +490,16 @@ class CompDoc(object):
         # print >> self.logfile, "_locate_stream(%s): seen" % qname; dump_list(self.seen, 20, self.logfile)
         if not slices:
             # The stream is contiguous ... just what we like!
-            return (mem, start_pos, expected_stream_size)
+            return mem, start_pos, expected_stream_size
+
         slices.append((start_pos, end_pos))
         # print >> self.logfile, "+++>>> %d fragments" % len(slices)
-        return (b''.join(mem[start_pos:end_pos] for start_pos, end_pos in slices), 0, expected_stream_size)
+        # return b''.join(mem[start_pos:end_pos] for start_pos, end_pos in slices), 0, expected_stream_size
+        if expected_stream_size < 1024*1024*100:     # less than 100MB, faster to read as a whole than mmaping
+            new_mem = b''.join(mem[start_pos:end_pos] for start_pos, end_pos in slices)
+        else:
+            new_mem = ScatteredMemory(self.xls_path, slices)
+        return new_mem, 0, expected_stream_size
 
 # ==========================================================================================
 def x_dump_line(alist, stride, f, dpos, equal=0):

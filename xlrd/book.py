@@ -652,7 +652,7 @@ class Book(BaseObject):
             # got this one at the antique store
             self.mem = self.filestr
         else:
-            cd = compdoc.CompDoc(self.filestr, logfile=self.logfile,
+            cd = compdoc.CompDoc(filename, self.filestr, logfile=self.logfile,
                                  ignore_workbook_corruption=ignore_workbook_corruption)
             if USE_FANCY_CD:
                 for qname in ['Workbook', 'Book']:
