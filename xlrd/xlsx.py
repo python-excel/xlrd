@@ -20,12 +20,12 @@ from .timemachine import *
 
 DEBUG = 0
 
-
-DLF = sys.stdout # Default Log File
+DLF = sys.stdout  # Default Log File
 
 ET = None
 ET_has_iterparse = False
 Element_has_iter = False
+
 
 def ensure_elementtree_imported(verbosity, logfile):
     global ET, ET_has_iterparse, Element_has_iter
@@ -65,26 +65,30 @@ def ensure_elementtree_imported(verbosity, logfile):
         ])
         print(ET.__file__, ET.__name__, etree_version, ET_has_iterparse, file=logfile)
 
+
 def split_tag(tag):
     pos = tag.rfind('}') + 1
     if pos >= 2:
         return tag[:pos], tag[pos:]
     return '', tag
 
+
 def augment_keys(adict, uri):
     # uri must already be enclosed in {}
     for x in list(adict.keys()):
         adict[uri + x] = adict[x]
 
-_UPPERCASE_1_REL_INDEX = {} # Used in fast conversion of column names (e.g. "XFD") to indices (16383)
+
+_UPPERCASE_1_REL_INDEX = {}  # Used in fast conversion of column names (e.g. "XFD") to indices (16383)
 for _x in xrange(26):
     _UPPERCASE_1_REL_INDEX["ABCDEFGHIJKLMNOPQRSTUVWXYZ"[_x]] = _x + 1
 for _x in "123456789":
     _UPPERCASE_1_REL_INDEX[_x] = 0
 del _x
 
+
 def cell_name_to_rowx_colx(cell_name, letter_value=_UPPERCASE_1_REL_INDEX,
-        allow_no_col=False):
+                           allow_no_col=False):
     # Extract column index from cell name
     # A<row number> => 0, Z =>25, AA => 26, XFD => 16383
     colx = 0
@@ -95,7 +99,7 @@ def cell_name_to_rowx_colx(cell_name, letter_value=_UPPERCASE_1_REL_INDEX,
             lv = letter_value[c]
             if lv:
                 colx = colx * 26 + lv
-            else: # start of row number; can't be '0'
+            else:  # start of row number; can't be '0'
                 if charx == 0:
                     # there was no col marker
                     if allow_no_col:
@@ -103,7 +107,7 @@ def cell_name_to_rowx_colx(cell_name, letter_value=_UPPERCASE_1_REL_INDEX,
                         break
                     else:
                         raise Exception(
-                                'Missing col in cell name %r', cell_name)
+                            'Missing col in cell name %r', cell_name)
                 else:
                     colx = colx - 1
                     assert 0 <= colx < X12_MAX_COLS
@@ -112,6 +116,7 @@ def cell_name_to_rowx_colx(cell_name, letter_value=_UPPERCASE_1_REL_INDEX,
         raise Exception('Unexpected character %r in cell name %r' % (c, cell_name))
     rowx = int(cell_name[charx:]) - 1
     return rowx, colx
+
 
 error_code_from_text = {}
 for _code, _text in error_text_from_code.items():
@@ -129,9 +134,10 @@ XML_SPACE_ATTR = "{http://www.w3.org/XML/1998/namespace}space"
 XML_WHITESPACE = "\t\n \r"
 X12_MAX_ROWS = 2 ** 20
 X12_MAX_COLS = 2 ** 14
-V_TAG = U_SSML12 + 'v' # cell child: value
-F_TAG = U_SSML12 + 'f' # cell child: formula
-IS_TAG = U_SSML12 + 'is' # cell child: inline string
+V_TAG = U_SSML12 + 'v'  # cell child: value
+F_TAG = U_SSML12 + 'f'  # cell child: formula
+IS_TAG = U_SSML12 + 'is'  # cell child: inline string
+
 
 def unescape(s,
              subber=re.compile(r'_x[0-9A-Fa-f]{4,4}_', re.UNICODE).sub,
@@ -139,6 +145,7 @@ def unescape(s,
     if "_" in s:
         return subber(repl, s)
     return s
+
 
 def cooked_text(self, elem):
     t = elem.text
@@ -148,7 +155,8 @@ def cooked_text(self, elem):
         t = t.strip(XML_WHITESPACE)
     return ensure_unicode(unescape(t))
 
-def get_text_from_si_or_is(self, elem, r_tag=U_SSML12+'r', t_tag=U_SSML12 +'t'):
+
+def get_text_from_si_or_is(self, elem, r_tag=U_SSML12 + 'r', t_tag=U_SSML12 + 't'):
     "Returns unescaped unicode"
     accum = []
     for child in elem:
@@ -156,7 +164,7 @@ def get_text_from_si_or_is(self, elem, r_tag=U_SSML12+'r', t_tag=U_SSML12 +'t'):
         tag = child.tag
         if tag == t_tag:
             t = cooked_text(self, child)
-            if t: # note: .text attribute can be None
+            if t:  # note: .text attribute can be None
                 accum.append(t)
         elif tag == r_tag:
             for tnode in child:
@@ -166,19 +174,22 @@ def get_text_from_si_or_is(self, elem, r_tag=U_SSML12+'r', t_tag=U_SSML12 +'t'):
                         accum.append(t)
     return ''.join(accum)
 
+
 def map_attributes(amap, elem, obj):
     for xml_attr, obj_attr, cnv_func_or_const in amap:
         if not xml_attr:
             setattr(obj, obj_attr, cnv_func_or_const)
             continue
-        if not obj_attr: continue #### FIX ME ####
+        if not obj_attr: continue  #### FIX ME ####
         raw_value = elem.get(xml_attr)
         cooked_value = cnv_func_or_const(raw_value)
         setattr(obj, obj_attr, cooked_value)
 
+
 def cnv_ST_Xstring(s):
     if s is None: return ""
     return ensure_unicode(s)
+
 
 def cnv_xsd_unsignedInt(s):
     if not s:
@@ -186,6 +197,7 @@ def cnv_xsd_unsignedInt(s):
     value = int(s)
     assert value >= 0
     return value
+
 
 def cnv_xsd_boolean(s):
     if not s:
@@ -228,6 +240,7 @@ _defined_name_attribute_map = (
     ("",                    "stack",        None,            ),
 )
 
+
 def make_name_access_maps(bk):
     name_and_scope_map = {} # (name.lower(), scope): Name_object
     name_map = {}           # name.lower() : list of Name_objects (sorted in scope order)
@@ -237,7 +250,7 @@ def make_name_access_maps(bk):
         name_lcase = nobj.name.lower()
         key = (name_lcase, nobj.scope)
         if key in name_and_scope_map:
-            msg = 'Duplicate entry %r in name_and_scope_map' % (key, )
+            msg = 'Duplicate entry %r in name_and_scope_map' % (key,)
             if 0:
                 raise XLRDError(msg)
             else:
@@ -255,6 +268,7 @@ def make_name_access_maps(bk):
         name_map[key] = [x[2] for x in alist]
     bk.name_and_scope_map = name_and_scope_map
     bk.name_map = name_map
+
 
 class X12General(object):
 
@@ -276,12 +290,13 @@ class X12General(object):
 
     def dump_elem(self, elem):
         fprintf(self.logfile,
-            "===\ntag=%r len=%d attrib=%r text=%r tail=%r\n",
-            split_tag(elem.tag)[1], len(elem), elem.attrib, elem.text, elem.tail)
+                "===\ntag=%r len=%d attrib=%r text=%r tail=%r\n",
+                split_tag(elem.tag)[1], len(elem), elem.attrib, elem.text, elem.tail)
 
     def dumpout(self, fmt, *vargs):
         text = (12 * ' ' + fmt + '\n') % vargs
         self.logfile.write(text)
+
 
 class X12Book(X12General):
 
@@ -293,14 +308,14 @@ class X12Book(X12General):
         self.bk.props = {}
         self.relid2path = {}
         self.relid2reltype = {}
-        self.sheet_targets = [] # indexed by sheetx
-        self.sheetIds = [] # indexed by sheetx
+        self.sheet_targets = []  # indexed by sheetx
+        self.sheetIds = []  # indexed by sheetx
 
     core_props_menu = {
-        U_CP+"lastModifiedBy": ("last_modified_by", cnv_ST_Xstring),
-        U_DC+"creator": ("creator", cnv_ST_Xstring),
-        U_DCTERMS+"modified": ("modified", cnv_ST_Xstring),
-        U_DCTERMS+"created": ("created", cnv_ST_Xstring),
+        U_CP + "lastModifiedBy": ("last_modified_by", cnv_ST_Xstring),
+        U_DC + "creator": ("creator", cnv_ST_Xstring),
+        U_DCTERMS + "modified": ("modified", cnv_ST_Xstring),
+        U_DCTERMS + "created": ("created", cnv_ST_Xstring),
     }
 
     def process_coreprops(self, stream):
@@ -341,7 +356,7 @@ class X12Book(X12General):
             self.relid2reltype[rid] = reltype
             # self.relid2path[rid] = 'xl/' + target
             if target.startswith('/'):
-                self.relid2path[rid]  = target[1:] # drop the /
+                self.relid2path[rid] = target[1:]  # drop the /
             else:
                 self.relid2path[rid] = 'xl/' + target
 
@@ -355,11 +370,11 @@ class X12Book(X12General):
         nobj.name_index = len(bk.name_obj_list)
         bk.name_obj_list.append(nobj)
         nobj.name = elem.get('name')
-        nobj.raw_formula = None # compiled bytecode formula -- not in XLSX
+        nobj.raw_formula = None  # compiled bytecode formula -- not in XLSX
         nobj.formula_text = cooked_text(self, elem)
         map_attributes(_defined_name_attribute_map, elem, nobj)
         if nobj.scope is None:
-            nobj.scope = -1 # global
+            nobj.scope = -1  # global
         if nobj.name.startswith("_xlnm."):
             nobj.builtin = 1
         if self.verbosity >= 2:
@@ -405,7 +420,6 @@ class X12Book(X12General):
         self.sheet_targets.append(target)
         self.sheetIds.append(sheetId)
 
-
     def do_workbookpr(self, elem):
         datemode = cnv_xsd_boolean(elem.get('date1904'))
         if self.verbosity >= 2:
@@ -413,11 +427,12 @@ class X12Book(X12General):
         self.bk.datemode = datemode
 
     tag2meth = {
-        'definedNames':  do_defined_names,
-        'workbookPr':   do_workbookpr,
-        'sheet':        do_sheet,
+        'definedNames': do_defined_names,
+        'workbookPr': do_workbookpr,
+        'sheet': do_sheet,
     }
     augment_keys(tag2meth, U_SSML12)
+
 
 class X12SST(X12General):
 
@@ -444,7 +459,7 @@ class X12SST(X12General):
                 self.dump_elem(elem)
             result = get_text_from_si_or_is(self, elem)
             sst.append(result)
-            elem.clear() # destroy all child elements
+            elem.clear()  # destroy all child elements
         if self.verbosity >= 2:
             self.dumpout('Entries in SST: %d', len(sst))
         if self.verbosity >= 3:
@@ -468,6 +483,7 @@ class X12SST(X12General):
         if self.verbosity >= 2:
             self.dumpout('Entries in SST: %d', len(sst))
 
+
 class X12Styles(X12General):
 
     def __init__(self, bk, logfile=DLF, verbosity=0):
@@ -477,7 +493,7 @@ class X12Styles(X12General):
         self.xf_counts = [0, 0]
         self.xf_type = None
         self.fmt_is_date = {}
-        for x in list(range(14, 23)) + list(range(45, 48)): #### hard-coding FIX ME ####
+        for x in list(range(14, 23)) + list(range(45, 48)):  #### hard-coding FIX ME ####
             self.fmt_is_date[x] = 1
         # dummy entry for XF 0 in case no Styles section
         self.bk._xf_index_to_xl_type_map[0] = 2
@@ -518,11 +534,12 @@ class X12Styles(X12General):
 
     tag2meth = {
         'cellStyleXfs': do_cellstylexfs,
-        'cellXfs':      do_cellxfs,
-        'numFmt':       do_numfmt,
-        'xf':           do_xf,
+        'cellXfs': do_cellxfs,
+        'numFmt': do_numfmt,
+        'xf': do_xf,
     }
     augment_keys(tag2meth, U_SSML12)
+
 
 class X12Sheet(X12General):
 
@@ -530,7 +547,7 @@ class X12Sheet(X12General):
         self.sheet = sheet
         self.logfile = logfile
         self.verbosity = verbosity
-        self.rowx = -1 # We may need to count them.
+        self.rowx = -1  # We may need to count them.
         self.bk = sheet.book
         self.sst = self.bk._sharedstrings
         self.relid2path = {}
@@ -549,7 +566,7 @@ class X12Sheet(X12General):
         for event, elem in ET.iterparse(stream):
             if elem.tag == row_tag:
                 self_do_row(elem)
-                elem.clear() # destroy all child elements (cells)
+                elem.clear()  # destroy all child elements (cells)
             elif elem.tag == U_SSML12 + "dimension":
                 self.do_dimension(elem)
             elif elem.tag == U_SSML12 + "mergeCell":
@@ -595,12 +612,12 @@ class X12Sheet(X12General):
             cell_note_map[coords] = note
 
     def do_dimension(self, elem):
-        ref = elem.get('ref') # example: "A1:Z99" or just "A1"
+        ref = elem.get('ref')  # example: "A1:Z99" or just "A1"
         if ref:
             # print >> self.logfile, "dimension: ref=%r" % ref
-            last_cell_ref = ref.split(':')[-1] # example: "Z99"
+            last_cell_ref = ref.split(':')[-1]  # example: "Z99"
             rowx, colx = cell_name_to_rowx_colx(
-                    last_cell_ref, allow_no_col=True)
+                last_cell_ref, allow_no_col=True)
             self.sheet._dimnrows = rowx + 1
             if colx is not None:
                 self.sheet._dimncols = colx + 1
@@ -623,10 +640,11 @@ class X12Sheet(X12General):
     def do_row(self, row_elem):
 
         def bad_child_tag(child_tag):
-            raise Exception('cell type %s has unexpected child <%s> at rowx=%r colx=%r' % (cell_type, child_tag, rowx, colx))
+            raise Exception(
+                'cell type %s has unexpected child <%s> at rowx=%r colx=%r' % (cell_type, child_tag, rowx, colx))
 
         row_number = row_elem.get('r')
-        if row_number is None: # Yes, it's optional.
+        if row_number is None:  # Yes, it's optional.
             self.rowx += 1
             explicit_row_number = 0
             if self.verbosity and not self.warned_no_row_num:
@@ -640,11 +658,11 @@ class X12Sheet(X12General):
         colx = -1
         if self.verbosity >= 3:
             self.dumpout("<row> row_number=%r rowx=%d explicit=%d",
-                row_number, self.rowx, explicit_row_number)
+                         row_number, self.rowx, explicit_row_number)
         letter_value = _UPPERCASE_1_REL_INDEX
         for cell_elem in row_elem:
             cell_name = cell_elem.get('r')
-            if cell_name is None: # Yes, it's optional.
+            if cell_name is None:  # Yes, it's optional.
                 colx += 1
                 if self.verbosity and not self.warned_no_cell_name:
                     self.dumpout("no cellname; assuming rowx=%d colx=%d", rowx, colx)
@@ -662,7 +680,7 @@ class X12Sheet(X12General):
                         lv = letter_value[c]
                         if lv:
                             colx = colx * 26 + lv
-                        else: # start of row number; can't be '0'
+                        else:  # start of row number; can't be '0'
                             colx = colx - 1
                             assert 0 <= colx < X12_MAX_COLS
                             break
@@ -778,9 +796,62 @@ class X12Sheet(X12General):
                 raise Exception("Unknown cell type %r in rowx=%d colx=%d" % (cell_type, rowx, colx))
 
     tag2meth = {
-        'row':          do_row,
+        'row': do_row,
     }
     augment_keys(tag2meth, U_SSML12)
+
+
+class BetterBook(Book):
+    """Make on_demand also work with xlsx"""
+    def __init__(self, logfile=sys.stdout, verbosity=0):
+        super().__init__()
+        self.logfile = logfile
+        self.verbosity = verbosity
+
+        self.x12book = None
+        self.x12zf = None
+        self.x12component_names = None
+
+    def populate_sheetx(self, sheetx):
+        fname = self.x12book.sheet_targets[sheetx]
+        zflo = self.x12zf.open(self.x12component_names[fname])
+
+        sheet = self._sheet_list[sheetx]
+        x12sheet = X12Sheet(sheet, self.logfile, self.verbosity)
+
+        heading = "Sheet %r (sheetx=%d) from %r" % (sheet.name, sheetx, fname)
+        x12sheet.process_stream(zflo, heading)
+        del zflo
+
+        rels_fname = 'xl/worksheets/_rels/%s.rels' % fname.rsplit('/', 1)[-1]
+        if rels_fname in self.x12component_names:
+            zfrels = self.x12zf.open(rels_fname)
+            x12sheet.process_rels(zfrels)
+            del zfrels
+
+        for relid, reltype in x12sheet.relid2reltype.items():
+            if reltype == 'comments':
+                comments_fname = x12sheet.relid2path.get(relid)
+                if comments_fname and comments_fname in self.x12component_names:
+                    comments_stream = self.x12zf.open(comments_fname)
+                    x12sheet.process_comments_stream(comments_stream)
+                    del comments_stream
+
+        sheet.tidy_dimensions()
+
+    def sheet_by_index(self, sheetx):
+        """
+            :param sheetx: Sheet index in ``range(nsheets)``
+            :returns: A :class:`~xlrd.sheet.Sheet`.
+            """
+
+        if self._sheet_list[sheetx]:
+            return self._sheet_list[sheetx]
+        else:
+            # on_demand is True
+            self.populate_sheetx(sheetx)
+            return self._sheet_list[sheetx]
+
 
 def open_workbook_2007_xml(zf,
                            component_names,
@@ -791,18 +862,18 @@ def open_workbook_2007_xml(zf,
                            on_demand=0,
                            ragged_rows=0):
     ensure_elementtree_imported(verbosity, logfile)
-    bk = Book()
+    bk = BetterBook()
+    bk.x12zf = zf
+    bk.x12component_names = component_names
     bk.logfile = logfile
     bk.verbosity = verbosity
     bk.formatting_info = formatting_info
+
     if formatting_info:
         raise NotImplementedError("formatting_info=True not yet implemented")
+
     bk.use_mmap = False #### Not supported initially
     bk.on_demand = on_demand
-    if on_demand:
-        if verbosity:
-            print("WARNING *** on_demand=True not yet implemented; falling back to False", file=bk.logfile)
-        bk.on_demand = False
     bk.ragged_rows = ragged_rows
 
     x12book = X12Book(bk, logfile, verbosity)
@@ -816,6 +887,8 @@ def open_workbook_2007_xml(zf,
     if props_name in component_names:
         zflo = zf.open(component_names[props_name])
         x12book.process_coreprops(zflo)
+
+    bk.x12book = x12book
 
     x12sty = X12Styles(bk, logfile, verbosity)
     if 'xl/styles.xml' in component_names:
@@ -837,29 +910,8 @@ def open_workbook_2007_xml(zf,
             x12sst.process_stream(zflo, 'SST')
             del zflo
 
-    for sheetx in range(bk.nsheets):
-        fname = x12book.sheet_targets[sheetx]
-        zflo = zf.open(component_names[fname])
-        sheet = bk._sheet_list[sheetx]
-        x12sheet = X12Sheet(sheet, logfile, verbosity)
-        heading = "Sheet %r (sheetx=%d) from %r" % (sheet.name, sheetx, fname)
-        x12sheet.process_stream(zflo, heading)
-        del zflo
-
-        rels_fname = 'xl/worksheets/_rels/%s.rels' % fname.rsplit('/', 1)[-1]
-        if rels_fname in component_names:
-            zfrels = zf.open(rels_fname)
-            x12sheet.process_rels(zfrels)
-            del zfrels
-
-        for relid, reltype in x12sheet.relid2reltype.items():
-            if reltype == 'comments':
-                comments_fname = x12sheet.relid2path.get(relid)
-                if comments_fname and comments_fname in component_names:
-                    comments_stream = zf.open(comments_fname)
-                    x12sheet.process_comments_stream(comments_stream)
-                    del comments_stream
-
-        sheet.tidy_dimensions()
+    if not on_demand:
+        for sheetx in range(bk.nsheets):
+            bk.populate_sheetx(sheetx)
 
     return bk
