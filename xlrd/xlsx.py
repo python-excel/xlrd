@@ -5,8 +5,8 @@
 
 from __future__ import print_function, unicode_literals
 
-import re
 import gc
+import re
 import sys
 from os.path import join, normpath
 

@@ -12,8 +12,8 @@ from an OLE2 Compound Document file.
 from __future__ import print_function
 
 import array
-import sys
 import mmap
+import sys
 from bisect import bisect_left
 from struct import unpack
 

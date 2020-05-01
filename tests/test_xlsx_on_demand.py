@@ -3,18 +3,19 @@
 # Test on_demand with high memory usage xlsx.
 #
 
-import unittest
+import sys
 import time
+import unittest
+from gc import get_referents
+from types import FunctionType, ModuleType
 
 import xlrd
+
 from .base import from_this_dir
+
 
 # ----------------------------- test memory without psutil --------------------------
 # solution from : https://stackoverflow.com/a/30316760/3655984
-import sys
-from gc import get_referents
-from types import ModuleType, FunctionType
-
 
 # Custom objects know their class.
 # Function objects seem to know way too much, including modules.
