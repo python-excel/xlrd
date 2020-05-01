@@ -59,4 +59,4 @@ class TestXlsMMAP(unittest.TestCase):
             workbook_size_new = getsize(workbook)
 
         # with the new code path, the size of workbook should be very small
-        self.assertLessEqual(70, workbook_size_old / workbook_size_new)
+        self.assertLessEqual(50, workbook_size_old / workbook_size_new)

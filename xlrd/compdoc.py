@@ -83,8 +83,20 @@ class ScatteredMemory:
         sizes = [y-x for x, y in slices]
         self.cum_sum = [sum(sizes[:x + 1]) for x in range(0, len(sizes))]
 
+    @staticmethod
+    def _mmap_closed(mmap):
+        try:    # py3
+            return mmap.closed
+        except AttributeError:
+            try:  # py2
+                mmap.read(1)
+                mmap.seek(-1, 1)
+                return False
+            except ValueError:
+                return True
+
     def __getitem__(self, item):
-        if not self.mem or self.mem.closed:
+        if not self.mem or self._mmap_closed(self.mem):
             with open(self.filename) as fi:
                 self.mem = mmap.mmap(fi.fileno(), 0, access=mmap.ACCESS_READ)
 

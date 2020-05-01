@@ -806,7 +806,7 @@ class X12Sheet(X12General):
 class BetterBook(Book):
     """Make on_demand also work with xlsx"""
     def __init__(self, logfile=sys.stdout, verbosity=0):
-        super().__init__()
+        super(BetterBook, self).__init__()
         self.logfile = logfile
         self.verbosity = verbosity
 

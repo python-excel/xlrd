@@ -60,7 +60,7 @@ class TestXlsxOnDemand(unittest.TestCase):
         #     original_load_time = time.perf_counter() - t0
 
         # with on_demand, everything should be quick
-        t0 = time.perf_counter()
+        t0 = time.time()
         with xlrd.open_workbook(test_file, on_demand=True) as workbook:
             # access the last sheet
             worksheet = workbook.sheet_by_name("Store days 100%")
@@ -68,7 +68,7 @@ class TestXlsxOnDemand(unittest.TestCase):
                              "Result should be the same as without on_demand")
 
             # it took around 14 seconds and memory usage about 83MB for this sheet
-            new_load_time = time.perf_counter() - t0
+            new_load_time = time.time() - t0
 
         # check if the load time is indeed faster
         self.assertLessEqual(new_load_time, (54 / 2))
