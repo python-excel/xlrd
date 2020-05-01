@@ -6,6 +6,7 @@
 from __future__ import print_function, unicode_literals
 
 import re
+import gc
 import sys
 from os.path import join, normpath
 
@@ -414,7 +415,8 @@ class X12Book(X12General):
         sheet = Sheet(bk, position=None, name=name, number=sheetx)
         sheet.utter_max_rows = X12_MAX_ROWS
         sheet.utter_max_cols = X12_MAX_COLS
-        bk._sheet_list.append(sheet)
+        bk._sheet_list.append(None)
+        bk.x12sheet_list.append(sheet)
         bk._sheet_names.append(name)
         bk.nsheets += 1
         self.sheet_targets.append(target)
@@ -811,15 +813,16 @@ class BetterBook(Book):
         self.x12book = None
         self.x12zf = None
         self.x12component_names = None
+        self.x12sheet_list = []
 
-    def populate_sheetx(self, sheetx):
-        fname = self.x12book.sheet_targets[sheetx]
+    def get_sheet(self, sh_number, update_pos=True):
+        fname = self.x12book.sheet_targets[sh_number]
         zflo = self.x12zf.open(self.x12component_names[fname])
 
-        sheet = self._sheet_list[sheetx]
+        sheet = self.x12sheet_list[sh_number]
         x12sheet = X12Sheet(sheet, self.logfile, self.verbosity)
 
-        heading = "Sheet %r (sheetx=%d) from %r" % (sheet.name, sheetx, fname)
+        heading = "Sheet %r (sheetx=%d) from %r" % (sheet.name, sh_number, fname)
         x12sheet.process_stream(zflo, heading)
         del zflo
 
@@ -838,19 +841,34 @@ class BetterBook(Book):
                     del comments_stream
 
         sheet.tidy_dimensions()
+        self._sheet_list[sh_number] = sheet
+        return sheet
 
-    def sheet_by_index(self, sheetx):
+    def sheets(self):
         """
-            :param sheetx: Sheet index in ``range(nsheets)``
-            :returns: A :class:`~xlrd.sheet.Sheet`.
-            """
+        :returns: A list of all sheets in the book.
 
-        if self._sheet_list[sheetx]:
-            return self._sheet_list[sheetx]
+        All sheets not already loaded will be loaded.
+        """
+        for sheetx in xrange(self.nsheets):
+            yield self._sheet_list[sheetx] or self.get_sheet(sheetx)
+
+    def unload_sheet(self, sheet_name_or_index):
+        """
+        :param sheet_name_or_index: Name or index of sheet to be unloaded.
+
+        .. versionadded:: 0.7.1
+        """
+        if isinstance(sheet_name_or_index, int):
+            sheetx = sheet_name_or_index
         else:
-            # on_demand is True
-            self.populate_sheetx(sheetx)
-            return self._sheet_list[sheetx]
+            try:
+                sheetx = self._sheet_names.index(sheet_name_or_index)
+            except ValueError:
+                raise XLRDError('No sheet named <%r>' % sheet_name_or_index)
+        self._sheet_list[sheetx] = None
+        self.x12sheet_list[sheetx] = None
+        gc.collect()
 
 
 def open_workbook_2007_xml(zf,
@@ -912,6 +930,6 @@ def open_workbook_2007_xml(zf,
 
     if not on_demand:
         for sheetx in range(bk.nsheets):
-            bk.populate_sheetx(sheetx)
+            bk.get_sheet(sheetx)
 
     return bk

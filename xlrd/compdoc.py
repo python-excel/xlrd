@@ -495,7 +495,7 @@ class CompDoc(object):
         slices.append((start_pos, end_pos))
         # print >> self.logfile, "+++>>> %d fragments" % len(slices)
         # return b''.join(mem[start_pos:end_pos] for start_pos, end_pos in slices), 0, expected_stream_size
-        if expected_stream_size < 1024*1024*100:     # less than 100MB, faster to read as a whole than mmaping
+        if expected_stream_size < 1024*1024*90:     # less than 90MB, faster to read as a whole than mmaping
             new_mem = b''.join(mem[start_pos:end_pos] for start_pos, end_pos in slices)
         else:
             new_mem = ScatteredMemory(self.xls_path, slices)
