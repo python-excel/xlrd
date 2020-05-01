@@ -71,7 +71,7 @@ class TestXlsxOnDemand(unittest.TestCase):
             new_load_time = time.time() - t0
 
         # check if the load time is indeed faster
-        self.assertLessEqual(new_load_time, (54 / 2))
+        self.assertLessEqual(new_load_time, 35)
 
     def test_xlsx_unload_sheet(self):
         test_file = from_this_dir('test_high_mem.xlsx')
@@ -81,7 +81,10 @@ class TestXlsxOnDemand(unittest.TestCase):
             wb_size_begin = getsize(workbook)
 
             worksheet = workbook.sheet_by_name("Store days 100%")
-            wb_size_now = getsize(workbook)
+            # wb_size_now = getsize(workbook)
+
+            self.assertEqual(59.0, worksheet.cell(rowx=49, colx=24).value,
+                             "Result should be the same as without on_demand")
 
             workbook.unload_sheet("Store days 100%")
             wb_size_then = getsize(workbook)
