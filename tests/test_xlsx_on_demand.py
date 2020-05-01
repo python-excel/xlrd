@@ -13,7 +13,6 @@ import xlrd
 
 from .base import from_this_dir
 
-
 # ----------------------------- test memory without psutil --------------------------
 # solution from : https://stackoverflow.com/a/30316760/3655984
 
