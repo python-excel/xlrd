@@ -3,6 +3,21 @@ version: 2.1
 orbs:
   python: cjw296/python-ci@2.1
 
+jobs:
+  coverage:
+    docker:
+      - image: circleci/python:3.8
+    steps:
+      - checkout
+      - attach_workspace:
+          at: coverage_output
+      - run:
+          name: "Check coverage"
+          command: |
+            sudo pip install coverage
+            coverage combine coverage_output/
+            bash <(curl -s https://codecov.io/bash)
+
 common: &common
   jobs:
 
@@ -14,6 +29,10 @@ common: &common
               - circleci/python:3.6
               - circleci/python:3.9
 
+    - coverage:
+        name: coverage
+        requires:
+          - python/pip-run-tests
 workflows:
   push:
     <<: *common
