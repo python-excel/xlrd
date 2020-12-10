@@ -1,0 +1,27 @@
+version: 2.1
+
+orbs:
+  python: cjw296/python-ci@2.1
+
+common: &common
+  jobs:
+
+    - python/pip-run-tests:
+        matrix:
+          parameters:
+            image:
+              - circleci/python:2.7
+              - circleci/python:3.6
+              - circleci/python:3.9
+
+workflows:
+  push:
+    <<: *common
+  periodic:
+    <<: *common
+    triggers:
+      - schedule:
+          cron: "0 0 11 * *"
+          filters:
+            branches:
+              only: master
