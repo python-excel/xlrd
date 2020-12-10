@@ -1,4 +1,2 @@
 include LICENSE
 include README.md
-graft docs
-graft tests
