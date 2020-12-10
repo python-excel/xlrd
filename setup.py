@@ -5,11 +5,11 @@ from xlrd.info import __VERSION__
 setup(
     name = 'xlrd',
     version = __VERSION__,
-    author = 'John Machin',
-    author_email = 'sjmachin@lexicon.net',
     url = 'http://www.python-excel.org/',
     packages = ['xlrd'],
     scripts = [
+    author='Chris Withers',
+    author_email='chris@withers.org',
         'scripts/runxlrd.py',
     ],
     description = (
