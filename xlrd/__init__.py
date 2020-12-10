@@ -23,17 +23,11 @@ if sys.version.startswith("IronPython"):
     # print >> sys.stderr, "...importing encodings"
     import encodings
 
-try:
-    import mmap
-    MMAP_AVAILABLE = 1
-except ImportError:
-    MMAP_AVAILABLE = 0
-USE_MMAP = MMAP_AVAILABLE
 
 def open_workbook(filename=None,
                   logfile=sys.stdout,
                   verbosity=0,
-                  use_mmap=USE_MMAP,
+                  use_mmap=True,
                   file_contents=None,
                   encoding_override=None,
                   formatting_info=False,
