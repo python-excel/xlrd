@@ -3,29 +3,26 @@ from setuptools import setup
 from xlrd.info import __VERSION__
 
 setup(
-    name = 'xlrd',
-    version = __VERSION__,
-    url = 'http://www.python-excel.org/',
-    packages = ['xlrd'],
-    scripts = [
+    name='xlrd',
+    version=__VERSION__,
     author='Chris Withers',
     author_email='chris@withers.org',
+    url='http://www.python-excel.org/',
+    packages=['xlrd'],
+    scripts=[
         'scripts/runxlrd.py',
     ],
-    description = (
+    description=(
         'Library for developers to extract data from '
-        'Microsoft Excel (tm) spreadsheet files'
+        'Microsoft Excel (tm) .xls spreadsheet files'
     ),
-    long_description = (
-        "Extract data from Excel spreadsheets "
-        "(.xls and .xlsx, versions 2.0 onwards) on any platform. "
-        "Strong support for Excel dates. Unicode-aware."
+    long_description=(
+        "Read Excel spreadsheets from .xls files."
         "Pure Python (2.7, 3.6+). "
     ),
-    platforms = ["Any platform -- don't need Windows"],
-    license = 'BSD',
-    keywords = ['xls', 'excel', 'spreadsheet', 'workbook'],
-    classifiers = [
+    license='BSD',
+    keywords=['xls', 'excel', 'spreadsheet', 'workbook'],
+    classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
