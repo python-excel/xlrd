@@ -237,7 +237,8 @@ class Sheet(BaseObject):
     #: From the *optional* ``DEFAULTROWHEIGHT`` record.
     default_additional_space_below = None
 
-    #: Visibility of the sheet::
+    #: Visibility of the sheet:
+    #: ::
     #:
     #:   0 = visible
     #:   1 = hidden (can be unhidden by user -- Format -> Sheet -> Unhide)

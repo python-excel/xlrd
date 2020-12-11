@@ -175,7 +175,8 @@ class Font(BaseObject, EqNeAttrs):
     #: 1 = Characters are bold. Redundant; see "weight" attribute.
     bold = 0
 
-    #: Values::
+    #: Values:
+    #: ::
     #:
     #:   0 = ANSI Latin
     #:   1 = System default
@@ -204,7 +205,8 @@ class Font(BaseObject, EqNeAttrs):
     #: 1 = Superscript, 2 = Subscript.
     escapement = 0
 
-    #: Values::
+    #: Values:
+    #: ::
     #:
     #:   0 = None (unknown or don't care)
     #:   1 = Roman (variable width, serifed)
@@ -230,7 +232,8 @@ class Font(BaseObject, EqNeAttrs):
     #: 1 = Characters are struck out.
     struck_out = 0
 
-    #: Values::
+    #: Values:
+    #: ::
     #:
     #:   0 = None
     #:   1 = Single;  0x21 (33) = Single accounting
