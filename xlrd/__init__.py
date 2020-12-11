@@ -20,7 +20,7 @@ from .sheet import empty_cell
 from .xldate import XLDateError, xldate_as_datetime, xldate_as_tuple
 
 
-#: descriptions of the version file types :mod:`xlrd` can :func:`inspect <inspect_format>`.
+#: descriptions of the file types :mod:`xlrd` can :func:`inspect <inspect_format>`.
 FILE_FORMAT_DESCRIPTIONS = {
     'xls': 'Excel xls',
     'xlsb': 'Excel 2007 xlsb file',
@@ -37,8 +37,21 @@ PEEK_SIZE = max(len(XLS_SIGNATURE), len(ZIP_SIGNATURE))
 
 def inspect_format(path=None, content=None):
     """
-    Inspect the supplied path or content stream and return the
-    file's type as a :class:`str` or ``None`` if it cannot be determined.
+    Inspect the content at the supplied path or the :class:`bytes` content provided
+    and return the file's type as a :class:`str`, or ``None`` if it cannot
+    be determined.
+
+    :param path:
+      A :class:`string <str>` path containing the content to inspect.
+      ``~`` will be expanded.
+
+    :param content:
+      The :class:`bytes` content to inspect.
+
+    :returns:
+       A :class:`str`, or ``None`` if the format cannot be determined.
+       The return value can always be looked up in :data:`FILE_FORMAT_DESCRIPTIONS`
+       to return a human-readable description of the format found.
     """
     if content:
         peek = content[:PEEK_SIZE]
