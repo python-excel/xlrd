@@ -1,6 +1,11 @@
 Changes
 =======
 
+2.0.1 (11 December 2020)
+------------------------
+
+- Use the README as the long description on PyPI.
+
 2.0.0 (11 December 2020)
 ------------------------
 

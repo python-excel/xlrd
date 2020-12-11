@@ -16,10 +16,7 @@ setup(
         'Library for developers to extract data from '
         'Microsoft Excel (tm) .xls spreadsheet files'
     ),
-    long_description=(
-        "Read Excel spreadsheets from .xls files."
-        "Pure Python (2.7, 3.6+). "
-    ),
+    long_description=open('README.rst').read(),
     license='BSD',
     keywords=['xls', 'excel', 'spreadsheet', 'workbook'],
     classifiers=[
