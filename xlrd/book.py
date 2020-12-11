@@ -4,6 +4,8 @@
 
 from __future__ import print_function
 
+import struct
+
 from . import compdoc, formatting, sheet
 from .biffh import *
 from .formula import *
