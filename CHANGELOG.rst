@@ -1,6 +1,30 @@
 Changes
 =======
 
+2.0.0 (11 December 2020)
+------------------------
+
+- Remove support for anything other than ``.xls`` files.
+- Remove support for ``psyco``.
+- Change the default encoding used when no ``CODEPAGE`` record can be found
+  from ``ascii`` to ``iso-8859-1``.
+- Add support for iterating over :class:`~xlrd.book.Book` objects.
+- Add support for item access from :class:`~xlrd.book.Book` objects,
+  where integer indices and string sheet names are supported.
+- Non-unicode spaces are now stripped from the "last author" information.
+- Workbook corruption errors can now be ignored using the
+  ``ignore_workbook_corruption`` option to :class:`~xlrd.open_workbook`.
+- Handle ``WRITEACCESS`` records with invalid trailing characters.
+- Officially support Python 3.8 and 3.9.
+
+Thanks to the following for their contributions to this release:
+
+- Jon Dufresne
+- Tore Lundqvist
+- nayyarv
+- Michael Davis
+- skonik
+
 1.2.0 (15 December 2018)
 ------------------------
 
