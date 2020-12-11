@@ -18,6 +18,26 @@ jobs:
             coverage combine coverage_output/
             bash <(curl -s https://codecov.io/bash)
 
+  check-package:
+    parameters:
+      image:
+        type: string
+    docker:
+      - image: << parameters.image >>
+    steps:
+      - python/check-package:
+          package: "xlrd"
+          test:
+          - run:
+              name: "Check Import"
+              command: python -c "import xlrd"
+          - run:
+              name: "Check no XLS in wheel"
+              command: "! unzip -l dist/*.whl | egrep '.xlsx?$'"
+          - run:
+              name: "Check no XLS in source dist"
+              command: "! tar tzf dist/*.tar.gz | egrep '.xlsx?$'"
+
 common: &common
   jobs:
 
@@ -34,11 +54,28 @@ common: &common
         requires:
           - python/pip-run-tests
 
+    - python/pip-setuptools-build-package:
+        name: package
+        requires:
+          - coverage
+        filters:
+          branches:
+            only: master
+
+    - check-package:
+        matrix:
+          parameters:
+            image:
+              - circleci/python:2.7
+              - circleci/python:3.9
+        requires:
+          - package
+
     - python/release:
         name: release
         config: .carthorse.yml
         requires:
-          - coverage
+          - check-package
         filters:
           branches:
             only: master
