@@ -1,8 +1,6 @@
 Changes
 =======
 
-.. currentmodule:: xlrd
-
 1.2.0 (15 December 2018)
 ------------------------
 
