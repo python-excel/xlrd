@@ -12,7 +12,6 @@ files, whether they are .xls or .xlsx files.
    references.rst
    formatting.rst
    on_demand.rst
-   vulnerabilities.rst
    api.rst
 
 You may also wish to consult the `tutorial`__.
