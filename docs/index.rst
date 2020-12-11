@@ -1,8 +1,10 @@
-xlrd documentation
-==================
+.. include:: ../README.rst
 
-xlrd is a library for reading data and formatting information from Excel
-files, whether they are .xls or .xlsx files.
+You may also wish to consult the `tutorial`__.
+
+__ https://github.com/python-excel/tutorial
+
+Details:
 
 .. toctree::
    :maxdepth: 1
@@ -14,12 +16,8 @@ files, whether they are .xls or .xlsx files.
    on_demand.rst
    api.rst
 
-You may also wish to consult the `tutorial`__.
-
-__ https://github.com/python-excel/tutorial
-
-For details of how to install the package or get involved in its
-development, please see the sections below:
+For details of how to get involved in development of this package,
+and other meta-information, please see the sections below:
 
 .. toctree::
    :maxdepth: 1
