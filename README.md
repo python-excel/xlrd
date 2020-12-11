@@ -1,5 +1,5 @@
 [![Build Status](https://circleci.com/gh/python-excel/xlrd/tree/master.svg?style=shield)](https://circleci.com/gh/python-excel/xlrd/tree/master)
-[![Coverage Status](https://coveralls.io/repos/github/python-excel/xlrd/badge.svg?branch=master)](https://coveralls.io/github/python-excel/xlrd?branch=master)
+[![Coverage Status](https://codecov.io/gh/python-excel/xlrd/branch/master/graph/badge.svg?token=lNSqwBBbvk)](https://codecov.io/gh/python-excel/xlrd)
 [![Documentation Status](https://readthedocs.org/projects/xlrd/badge/?version=latest)](http://xlrd.readthedocs.io/en/latest/?badge=latest)
 [![PyPI version](https://badge.fury.io/py/xlrd.svg)](https://badge.fury.io/py/xlrd)
 
