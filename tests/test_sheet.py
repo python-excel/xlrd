@@ -158,12 +158,3 @@ class TestSheetRagged(TestCase):
         self.assertEqual(sheet.row_len(2), 1)
         self.assertEqual(sheet.row_len(3), 4)
         self.assertEqual(sheet.row_len(4), 4)
-
-
-class TestMergedCells(TestCase):
-
-    def test_tidy_dimensions(self):
-        book = xlrd.open_workbook(from_this_dir('merged_cells.xlsx'))
-        for sheet in book.sheets():
-            for rowx in xrange(sheet.nrows):
-                self.assertEqual(sheet.row_len(rowx), sheet.ncols)

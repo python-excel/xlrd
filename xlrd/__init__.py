@@ -17,7 +17,6 @@ from .formula import *  # is constrained by __all__
 from .info import __VERSION__, __version__
 from .sheet import empty_cell
 from .xldate import XLDateError, xldate_as_datetime, xldate_as_tuple
-from .xlsx import X12Book
 
 
 def open_workbook(filename=None,
@@ -115,28 +114,20 @@ def open_workbook(filename=None,
         else:
             zf = zipfile.ZipFile(filename)
 
+        def convert_filename(name):
+            return name.replace('\\', '/').lower()
+
         # Workaround for some third party files that use forward slashes and
         # lower case names. We map the expected name in lowercase to the
         # actual filename in the zip container.
-        component_names = dict([(X12Book.convert_filename(name), name)
+        component_names = dict([(convert_filename(name), name)
                                 for name in zf.namelist()])
 
         if verbosity:
             logfile.write('ZIP component_names:\n')
             pprint.pprint(component_names, logfile)
         if 'xl/workbook.xml' in component_names:
-            from . import xlsx
-            bk = xlsx.open_workbook_2007_xml(
-                zf,
-                component_names,
-                logfile=logfile,
-                verbosity=verbosity,
-                use_mmap=use_mmap,
-                formatting_info=formatting_info,
-                on_demand=on_demand,
-                ragged_rows=ragged_rows,
-            )
-            return bk
+            raise NotImplementedError('no xlsx!')
         if 'xl/workbook.bin' in component_names:
             raise XLRDError('Excel 2007 xlsb file; not supported')
         if 'content.xml' in component_names:

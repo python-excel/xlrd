@@ -48,26 +48,3 @@ class TestCell(unittest.TestCase):
         row_lo, row_hi, col_lo, col_hi = sheet3.merged_cells[0]
         self.assertEqual(sheet3.cell(row_lo, col_lo).value, 'MERGED')
         self.assertEqual((row_lo, row_hi, col_lo, col_hi), (3, 7, 2, 5))
-
-    def test_merged_cells_xlsx(self):
-        book = xlrd.open_workbook(from_this_dir('merged_cells.xlsx'))
-
-        sheet1 = book.sheet_by_name('Sheet1')
-        expected = []
-        got = sheet1.merged_cells
-        self.assertEqual(expected, got)
-
-        sheet2 = book.sheet_by_name('Sheet2')
-        expected = [(0, 1, 0, 2)]
-        got = sheet2.merged_cells
-        self.assertEqual(expected, got)
-
-        sheet3 = book.sheet_by_name('Sheet3')
-        expected = [(0, 1, 0, 2), (0, 1, 2, 4), (1, 4, 0, 2), (1, 9, 2, 4)]
-        got = sheet3.merged_cells
-        self.assertEqual(expected, got)
-
-        sheet4 = book.sheet_by_name('Sheet4')
-        expected = [(0, 1, 0, 2), (2, 20, 0, 1), (1, 6, 2, 5)]
-        got = sheet4.merged_cells
-        self.assertEqual(expected, got)
