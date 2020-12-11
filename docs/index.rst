@@ -25,7 +25,6 @@ development, please see the sections below:
 .. toctree::
    :maxdepth: 1
 
-   installation.rst
    development.rst
    changes.rst
    acknowledgements.rst
