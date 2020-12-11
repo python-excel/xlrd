@@ -4,9 +4,6 @@
 
 from __future__ import print_function
 
-import gc
-import sys
-
 from . import compdoc, formatting, sheet
 from .biffh import *
 from .formula import *
@@ -18,23 +15,13 @@ except ImportError:
     # Python 2.7
     from time import clock as perf_counter
 
-import struct; unpack = struct.unpack
+from struct import unpack
 
 empty_cell = sheet.empty_cell # for exposure to the world ...
 
 DEBUG = 0
 
-USE_FANCY_CD = 1
-
-TOGGLE_GC = 0
-# gc.set_debug(gc.DEBUG_STATS)
-
-try:
-    import mmap
-    MMAP_AVAILABLE = 1
-except ImportError:
-    MMAP_AVAILABLE = 0
-USE_MMAP = MMAP_AVAILABLE
+import mmap
 
 MY_EOF = 0xF00BAAA # not a 16-bit number
 
@@ -68,16 +55,12 @@ for _bin, _bic in _code_from_builtin_name.items():
 del _bin, _bic, _code_from_builtin_name
 
 def open_workbook_xls(filename=None,
-                      logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
+                      logfile=sys.stdout, verbosity=0, use_mmap=True,
                       file_contents=None,
                       encoding_override=None,
                       formatting_info=False, on_demand=False, ragged_rows=False,
                       ignore_workbook_corruption=False):
     t0 = perf_counter()
-    if TOGGLE_GC:
-        orig_gc_enabled = gc.isenabled()
-        if orig_gc_enabled:
-            gc.disable()
     bk = Book()
     try:
         bk.biff2_8_load(
@@ -128,9 +111,6 @@ def open_workbook_xls(filename=None,
                 "*** Book-level data will be that of the last worksheet.\n",
                 bk.nsheets
             )
-        if TOGGLE_GC:
-            if orig_gc_enabled:
-                gc.enable()
         t2 = perf_counter()
         bk.load_time_stage_2 = t2 - t1
     except:
@@ -614,7 +594,7 @@ class Book(BaseObject):
         self.filestr = b''
 
     def biff2_8_load(self, filename=None, file_contents=None,
-                     logfile=sys.stdout, verbosity=0, use_mmap=USE_MMAP,
+                     logfile=sys.stdout, verbosity=0, use_mmap=True,
                      encoding_override=None,
                      formatting_info=False,
                      on_demand=False,
@@ -624,7 +604,7 @@ class Book(BaseObject):
         # DEBUG = 0
         self.logfile = logfile
         self.verbosity = verbosity
-        self.use_mmap = use_mmap and MMAP_AVAILABLE
+        self.use_mmap = use_mmap
         self.encoding_override = encoding_override
         self.formatting_info = formatting_info
         self.on_demand = on_demand
@@ -654,20 +634,13 @@ class Book(BaseObject):
         else:
             cd = compdoc.CompDoc(self.filestr, logfile=self.logfile,
                                  ignore_workbook_corruption=ignore_workbook_corruption)
-            if USE_FANCY_CD:
-                for qname in ['Workbook', 'Book']:
-                    self.mem, self.base, self.stream_len = \
-                                cd.locate_named_stream(UNICODE_LITERAL(qname))
-                    if self.mem: break
-                else:
-                    raise XLRDError("Can't find workbook in OLE2 compound document")
+            for qname in ['Workbook', 'Book']:
+                self.mem, self.base, self.stream_len = \
+                            cd.locate_named_stream(UNICODE_LITERAL(qname))
+                if self.mem:
+                    break
             else:
-                for qname in ['Workbook', 'Book']:
-                    self.mem = cd.get_named_stream(UNICODE_LITERAL(qname))
-                    if self.mem: break
-                else:
-                    raise XLRDError("Can't find workbook in OLE2 compound document")
-                self.stream_len = len(self.mem)
+                raise XLRDError("Can't find workbook in OLE2 compound document")
             del cd
             if self.mem is not self.filestr:
                 if hasattr(self.filestr, "close"):
