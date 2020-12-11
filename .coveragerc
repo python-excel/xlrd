@@ -1,2 +1,10 @@
 [run]
 source = xlrd,scripts,tests
+
+[report]
+exclude_lines =
+  # the original exclude
+  pragma: no cover
+
+  # debug stuff
+  if DEBUG:
