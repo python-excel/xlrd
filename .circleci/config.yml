@@ -54,10 +54,15 @@ common: &common
         requires:
           - python/pip-run-tests
 
+    - python/pip-docs:
+        name: docs
+        requires:
+          - coverage
+
     - python/pip-setuptools-build-package:
         name: package
         requires:
-          - coverage
+          - docs
         filters:
           branches:
             only: master
