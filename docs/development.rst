@@ -3,11 +3,6 @@ Development
 
 .. highlight:: bash
 
-This package is developed using continuous integration which can be
-found here:
-
-https://travis-ci.org/python-excel/xlrd
-
 If you wish to contribute to this project, then you should fork the
 repository found here:
 
@@ -24,23 +19,15 @@ your checkout into a virtualenv and then install the package in
 editable form as follows::
 
   $ virtualenv .
-  $ bin/pip install -e .
+  $ bin/pip install -e .[test]
 
 Running the tests
 -----------------
 
 Once you've set up a virtualenv, the tests can be run as follows::
 
-  $ python -m unittest discover
-
-To run tests on all the versions of Python that are supported, you can do::
-
-  $ bin/tox
-
-If you change the supported python versions in ``.travis.yml``, please remember
-to do the following to update ``tox.ini``::
-
-  $ bin/panci --to=tox .travis.yml > tox.ini
+  $ source bin/activate
+  $ pytest
 
 Building the documentation
 --------------------------
@@ -48,16 +35,18 @@ Building the documentation
 The Sphinx documentation is built by doing the following, having activated
 the virtualenv above, from the directory containing setup.py::
 
+  $ source bin/activate
   $ cd docs
   $ make html
+
+To check that the description that will be used on PyPI renders properly,
+do the following::
+
+  $ python setup.py --long-description | rst2html.py > desc.html
 
 Making a release
 ----------------
 
-To make a release, just update the version in ``xlrd.info.__VERSION__``,
-update the change log, tag it, push to https://github.com/python-excel/xlrd
-and Travis CI should take care of the rest.
-
-Once the above is done, make sure to go to
-https://readthedocs.org/projects/xlrd/versions/
-and make sure the new release is marked as an Active Version.
+To make a release, just update the version in ``xlrd.info.__VERSION__``, update the change log
+and push to https://github.com/python-excel/xlrd
+and Carthorse should take care of the rest.
