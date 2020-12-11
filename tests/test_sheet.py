@@ -6,7 +6,7 @@ from unittest import TestCase
 import xlrd
 from xlrd.timemachine import xrange
 
-from .base import from_this_dir
+from .helpers import from_sample
 
 SHEETINDEX = 0
 NROWS = 15
@@ -22,7 +22,7 @@ class TestSheet(TestCase):
                   'AXISDATUMLEVELS', 'PROFILELEVELS']
 
     def setUp(self):
-        self.book = xlrd.open_workbook(from_this_dir('profiles.xls'), formatting_info=True)
+        self.book = xlrd.open_workbook(from_sample('profiles.xls'), formatting_info=True)
 
     def check_sheet_function(self, function):
         self.assertTrue(function(0, 0))
@@ -151,7 +151,7 @@ class TestSheet(TestCase):
 class TestSheetRagged(TestCase):
 
     def test_read_ragged(self):
-        book = xlrd.open_workbook(from_this_dir('ragged.xls'), ragged_rows=True)
+        book = xlrd.open_workbook(from_sample('ragged.xls'), ragged_rows=True)
         sheet = book.sheet_by_index(0)
         self.assertEqual(sheet.row_len(0), 3)
         self.assertEqual(sheet.row_len(1), 2)

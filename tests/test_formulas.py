@@ -5,7 +5,7 @@ from unittest import TestCase
 
 import xlrd
 
-from .base import from_this_dir
+from .helpers import from_sample
 
 try:
     ascii
@@ -20,7 +20,7 @@ except NameError:
 class TestFormulas(TestCase):
 
     def setUp(self):
-        book = xlrd.open_workbook(from_this_dir('formula_test_sjmachin.xls'))
+        book = xlrd.open_workbook(from_sample('formula_test_sjmachin.xls'))
         self.sheet = book.sheet_by_index(0)
 
     def get_value(self, col, row):
@@ -56,7 +56,7 @@ class TestFormulas(TestCase):
 class TestNameFormulas(TestCase):
 
     def setUp(self):
-        book = xlrd.open_workbook(from_this_dir('formula_test_names.xls'))
+        book = xlrd.open_workbook(from_sample('formula_test_names.xls'))
         self.sheet = book.sheet_by_index(0)
 
     def get_value(self, col, row):

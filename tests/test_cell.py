@@ -5,13 +5,13 @@ import unittest
 import xlrd
 from xlrd.timemachine import UNICODE_LITERAL
 
-from .base import from_this_dir
+from .helpers import from_sample
 
 
 class TestCell(unittest.TestCase):
 
     def setUp(self):
-        self.book = xlrd.open_workbook(from_this_dir('profiles.xls'), formatting_info=True)
+        self.book = xlrd.open_workbook(from_sample('profiles.xls'), formatting_info=True)
         self.sheet = self.book.sheet_by_name('PROFILEDEF')
 
     def test_empty_cell(self):
@@ -43,7 +43,7 @@ class TestCell(unittest.TestCase):
         self.assertTrue(cell.xf_index > 0)
 
     def test_merged_cells(self):
-        book = xlrd.open_workbook(from_this_dir('xf_class.xls'), formatting_info=True)
+        book = xlrd.open_workbook(from_sample('xf_class.xls'), formatting_info=True)
         sheet3 = book.sheet_by_name('table2')
         row_lo, row_hi, col_lo, col_hi = sheet3.merged_cells[0]
         self.assertEqual(sheet3.cell(row_lo, col_lo).value, 'MERGED')
