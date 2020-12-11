@@ -12,11 +12,60 @@ from .biffh import (
     XL_CELL_NUMBER, XL_CELL_TEXT, XLRDError, biff_text_from_num,
     error_text_from_code,
 )
-from .book import Book, colname
+from .book import Book, colname, open_workbook_xls
+from .compdoc import SIGNATURE as XLS_SIGNATURE
 from .formula import *  # is constrained by __all__
 from .info import __VERSION__, __version__
 from .sheet import empty_cell
 from .xldate import XLDateError, xldate_as_datetime, xldate_as_tuple
+
+
+#: descriptions of the version file types :mod:`xlrd` can :func:`inspect <inspect_format>`.
+FILE_FORMAT_DESCRIPTIONS = {
+    'xls': 'Excel xls',
+    'xlsb': 'Excel 2007 xlsb file',
+    'xlsx': 'Excel xlsx file',
+    'ods': 'Openoffice.org ODS file',
+    'zip': 'Unknown ZIP file',
+    None: 'Unknown file type',
+}
+
+ZIP_SIGNATURE = b"PK\x03\x04"
+
+PEEK_SIZE = max(len(XLS_SIGNATURE), len(ZIP_SIGNATURE))
+
+
+def inspect_format(path=None, content=None):
+    """
+    Inspect the supplied path or content stream and return the
+    file's type as a :class:`str` or ``None`` if it cannot be determined.
+    """
+    if content:
+        peek = content[:PEEK_SIZE]
+    else:
+        path = os.path.expanduser(path)
+        with open(path, "rb") as f:
+            peek = f.read(PEEK_SIZE)
+
+    if peek.startswith(XLS_SIGNATURE):
+        return 'xls'
+
+    if peek.startswith(ZIP_SIGNATURE):
+        zf = zipfile.ZipFile(timemachine.BYTES_IO(content) if content else path)
+
+        # Workaround for some third party files that use forward slashes and
+        # lower case names. We map the expected name in lowercase to the
+        # actual filename in the zip container.
+        component_names = {name.replace('\\', '/').lower(): name
+                           for name in zf.namelist()}
+
+        if 'xl/workbook.xml' in component_names:
+            return 'xlsx'
+        if 'xl/workbook.bin' in component_names:
+            return 'xlsb'
+        if 'content.xml' in component_names:
+            return 'ods'
+        return 'zip'
 
 
 def open_workbook(filename=None,
