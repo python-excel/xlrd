@@ -150,41 +150,13 @@ def open_workbook(filename=None,
     :returns: An instance of the :class:`~xlrd.book.Book` class.
     """
 
-    peeksz = 4
-    if file_contents:
-        peek = file_contents[:peeksz]
-    else:
-        filename = os.path.expanduser(filename)
-        with open(filename, "rb") as f:
-            peek = f.read(peeksz)
-    if peek == b"PK\x03\x04": # a ZIP file
-        if file_contents:
-            zf = zipfile.ZipFile(timemachine.BYTES_IO(file_contents))
-        else:
-            zf = zipfile.ZipFile(filename)
+    file_format = inspect_format(filename, file_contents)
+    # We have to let unknown file formats pass through here, as some ancient
+    # files that xlrd can parse don't start with the expected signature.
+    if file_format and file_format != 'xls':
+        raise XLRDError(FILE_FORMAT_DESCRIPTIONS[file_format]+'; not supported')
 
-        def convert_filename(name):
-            return name.replace('\\', '/').lower()
-
-        # Workaround for some third party files that use forward slashes and
-        # lower case names. We map the expected name in lowercase to the
-        # actual filename in the zip container.
-        component_names = dict([(convert_filename(name), name)
-                                for name in zf.namelist()])
-
-        if verbosity:
-            logfile.write('ZIP component_names:\n')
-            pprint.pprint(component_names, logfile)
-        if 'xl/workbook.xml' in component_names:
-            raise NotImplementedError('no xlsx!')
-        if 'xl/workbook.bin' in component_names:
-            raise XLRDError('Excel 2007 xlsb file; not supported')
-        if 'content.xml' in component_names:
-            raise XLRDError('Openoffice.org ODS file; not supported')
-        raise XLRDError('ZIP file contents not a known type of workbook')
-
-    from . import book
-    bk = book.open_workbook_xls(
+    bk = open_workbook_xls(
         filename=filename,
         logfile=logfile,
         verbosity=verbosity,
@@ -196,6 +168,7 @@ def open_workbook(filename=None,
         ragged_rows=ragged_rows,
         ignore_workbook_corruption=ignore_workbook_corruption,
     )
+
     return bk
 
 
