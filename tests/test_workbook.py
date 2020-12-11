@@ -7,7 +7,7 @@ from xlrd import open_workbook
 from xlrd.book import Book
 from xlrd.sheet import Sheet
 
-from .base import from_this_dir
+from .helpers import from_sample
 
 SHEETINDEX = 0
 NROWS = 15
@@ -19,7 +19,7 @@ class TestWorkbook(TestCase):
                   'AXISDATUMLEVELS', 'PROFILELEVELS']
 
     def setUp(self):
-        self.book = open_workbook(from_this_dir('profiles.xls'))
+        self.book = open_workbook(from_sample('profiles.xls'))
 
     def test_open_workbook(self):
         self.assertTrue(isinstance(self.book, Book))

@@ -6,7 +6,7 @@ from unittest import TestCase
 
 import xlrd
 
-from .base import from_this_dir
+from .helpers import from_sample
 
 if sys.version_info[0] >= 3:
     def u(s): return s
@@ -18,7 +18,7 @@ else:
 class TestCellContent(TestCase):
 
     def setUp(self):
-        self.book = xlrd.open_workbook(from_this_dir('Formate.xls'), formatting_info=True)
+        self.book = xlrd.open_workbook(from_sample('Formate.xls'), formatting_info=True)
         self.sheet = self.book.sheet_by_name(u('Blätt1'))
 
     def test_text_cells(self):
