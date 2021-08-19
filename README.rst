@@ -37,6 +37,10 @@ Password-protected files are not supported and cannot be read by this library.
 
 Quick start:
 
+.. code-block:: bash
+
+    pip install xlrd
+    
 .. code-block:: python
 
     import xlrd
