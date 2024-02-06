@@ -419,6 +419,34 @@ class Sheet(BaseObject):
         "Value of the cell in the given row and column."
         return self._cell_values[rowx][colx]
 
+    def cell_value_by_code(self, code: str):
+        "Value of the cell in the cell code."
+        rowx, colx = self._cell_to_indices(code)
+        return self._cell_values[rowx][colx]
+
+    def _cell_to_indices(self, cell_code: str):
+        """
+        Converts a cell code from Excel format (e.g., "ABD137") into zero-based row and column indices.
+        
+        Parameters:
+        - cell_code (str): The Excel cell code, consisting of column letters followed by row numbers.
+        
+        Returns:
+        - tuple: A tuple containing two integers, where the first integer is the zero-based row index,
+          and the second integer is the zero-based column index.
+        """
+        # Extract letters for column and digits for row from the cell code
+        column_letters = ''.join([c for c in cell_code if c.isalpha()])
+        row_number = ''.join([c for c in cell_code if c.isdigit()])
+        
+        # Convert column letters to a zero-based column number
+        column_index = sum((ord(char) - ord('A') + 1) * (26 ** (len(column_letters) - index - 1)) for index, char in enumerate(column_letters)) - 1
+        # Convert row number to a zero-based row index
+        row_index = int(row_number) - 1
+    
+        return row_index, column_index
+
+    
     def cell_type(self, rowx, colx):
         """
         Type of the cell in the given row and column.
