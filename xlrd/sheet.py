@@ -419,12 +419,12 @@ class Sheet(BaseObject):
         "Value of the cell in the given row and column."
         return self._cell_values[rowx][colx]
 
-    def cell_value_by_code(self, code: str):
+    def cell_value_by_code(self, code):
         "Value of the cell in the cell code."
         rowx, colx = self._cell_to_indices(code)
         return self._cell_values[rowx][colx]
 
-    def _cell_to_indices(self, cell_code: str):
+    def _cell_to_indices(self, cell_code):
         """
         Converts a cell code from Excel format (e.g., "ABD137") into zero-based row and column indices.
         
