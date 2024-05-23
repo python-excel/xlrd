@@ -391,7 +391,7 @@ class Sheet(BaseObject):
         if self.biff_version >= 80:
             self.utter_max_rows = 65536
         else:
-            self.utter_max_rows = 16384
+            self.utter_max_rows = 32768
         self.utter_max_cols = 256
 
         self._first_full_rowx = -1
