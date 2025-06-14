@@ -1,6 +1,13 @@
 Changes
 =======
 
+2.0.2 (14 June 2025)
+--------------------
+
+- Fix bug reading sheets containing invalid formulae.
+
+Thanks to sanshi42 for the fix!
+
 2.0.1 (11 December 2020)
 ------------------------
 
