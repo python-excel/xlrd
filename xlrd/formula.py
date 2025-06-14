@@ -953,7 +953,7 @@ def evaluate_name_formula(bk, nobj, namex, blah=0, level=0):
                 ])
                 res = Operand(oREF, None, rank, otext)
                 if bop.kind == oERR or aop.kind == oERR:
-                    res = oERR
+                    res.kind = oERR
                 elif bop.kind == oREF == aop.kind:
                     if aop.value is not None and bop.value is not None:
                         assert len(aop.value) == 1
