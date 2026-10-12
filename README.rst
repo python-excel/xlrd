@@ -24,13 +24,14 @@ files in the historical ``.xls`` format.
   This library will no longer read anything other than ``.xls`` files. For
   alternatives that read newer file formats, please see http://www.python-excel.org/.
 
+Cell comments are available through ``Sheet.cell_note_map``. Hyperlinks are
+available through ``Sheet.hyperlink_list`` and ``Sheet.hyperlink_map``.
+
 The following are also not supported but will safely and reliably be ignored:
 
 *   Charts, Macros, Pictures, any other embedded object, **including** embedded worksheets.
 *   VBA modules
 *   Formulas, but results of formula calculations are extracted.
-*   Comments
-*   Hyperlinks
 *   Autofilters, advanced filters, pivot tables, conditional formatting, data validation
 
 Password-protected files are not supported and cannot be read by this library.
