@@ -53,7 +53,7 @@ def inspect_format(path=None, content=None):
        The return value can always be looked up in :data:`FILE_FORMAT_DESCRIPTIONS`
        to return a human-readable description of the format found.
     """
-    if content:
+    if content is not None:
         peek = content[:PEEK_SIZE]
     else:
         path = os.path.expanduser(path)
