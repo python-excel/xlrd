@@ -30,3 +30,11 @@ def test_content():
 
 def test_unknown():
     assert inspect_format(from_sample('sample.txt')) is None
+
+
+def test_empty_content():
+    assert inspect_format(content=b'') is None
+
+
+def test_empty_content_takes_precedence_over_path():
+    assert inspect_format(from_sample('sample.xlsx'), content=b'') is None
