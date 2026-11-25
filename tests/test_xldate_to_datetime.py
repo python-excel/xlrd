@@ -19,6 +19,12 @@ class TestConvertToDateTime(unittest.TestCase):
 
     """
 
+    def test_invalid_datemode(self):
+        for datemode in (-1, 2, None):
+            with self.assertRaises(xldate.XLDateBadDatemode) as raised:
+                xldate.xldate_as_datetime(36526, datemode)
+            self.assertEqual(raised.exception.args, (datemode,))
+
     def test_dates_and_times_1900_epoch(self):
         """
         Test the _xldate_to_datetime() function for dates and times in

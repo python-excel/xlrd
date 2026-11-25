@@ -134,18 +134,21 @@ def xldate_as_datetime(xldate, datemode):
     :param xldate: The Excel number
     :param datemode: 0: 1900-based, 1: 1904-based.
 
+    :raises xlrd.xldate.XLDateBadDatemode: If datemode is neither 0 nor 1.
     :returns: A :class:`datetime.datetime` object.
     """
 
     # Set the epoch based on the 1900/1904 datemode.
-    if datemode:
+    if datemode == 1:
         epoch = epoch_1904
-    else:
+    elif datemode == 0:
         if xldate < 60:
             epoch = epoch_1900
         else:
             # Workaround Excel 1900 leap year bug by adjusting the epoch.
             epoch = epoch_1900_minus_1
+    else:
+        raise XLDateBadDatemode(datemode)
 
     # The integer part of the Excel date stores the number of days since
     # the epoch and the fractional part stores the percentage of the day.
