@@ -6,6 +6,7 @@
 from __future__ import print_function
 
 from array import array
+from operator import index
 from struct import calcsize, unpack
 
 from .biffh import *
@@ -435,10 +436,18 @@ class Sheet(BaseObject):
         .. versionadded:: 0.6.1
         """
         self.req_fmt_info()
-        xfx = self._cell_xf_indexes[rowx][colx]
+        xf_row = self._cell_xf_indexes[rowx]
+        xfx = xf_row[colx]
         if xfx > -1:
             self._xf_index_stats[0] += 1
             return xfx
+        # Default formats are keyed by nonnegative row and column indexes.
+        rowx = index(rowx)
+        colx = index(colx)
+        if rowx < 0:
+            rowx += len(self._cell_xf_indexes)
+        if colx < 0:
+            colx += len(xf_row)
         # Check for a row xf_index
         try:
             xfx = self.rowinfo_map[rowx].xf_index

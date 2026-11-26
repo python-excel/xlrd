@@ -158,3 +158,28 @@ class TestSheetRagged(TestCase):
         self.assertEqual(sheet.row_len(2), 1)
         self.assertEqual(sheet.row_len(3), 4)
         self.assertEqual(sheet.row_len(4), 4)
+
+
+    def test_negative_column_index_uses_column_default_format(self):
+        book = xlrd.open_workbook(
+            from_sample('issue20.xls'), formatting_info=True, ragged_rows=True,
+        )
+        sheet = book.sheet_by_index(0)
+        rowx = 10
+        colx = -sheet.row_len(rowx)
+        expected = sheet.colinfo_map[0].xf_index
+        self.assertEqual(sheet.cell_type(rowx, 0), xlrd.XL_CELL_EMPTY)
+        self.assertEqual(sheet.cell_xf_index(rowx, colx), expected)
+        self.assertEqual(sheet.cell(rowx, colx).xf_index, expected)
+
+    def test_negative_row_index_uses_row_default_format(self):
+        book = xlrd.open_workbook(
+            from_sample('issue20.xls'), formatting_info=True, ragged_rows=True,
+        )
+        sheet = book.sheet_by_index(0)
+        rowx = 10
+        rowinfo = xlrd.sheet.Rowinfo()
+        rowinfo.xf_index = 21
+        sheet.rowinfo_map[rowx] = rowinfo
+        self.assertEqual(sheet.cell_type(rowx, 0), xlrd.XL_CELL_EMPTY)
+        self.assertEqual(sheet.cell_xf_index(rowx - sheet.nrows, 0), rowinfo.xf_index)
